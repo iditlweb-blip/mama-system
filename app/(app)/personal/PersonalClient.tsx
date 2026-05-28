@@ -1,0 +1,323 @@
+'use client'
+
+import { useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
+import { Plus, Loader2, Heart, Trash2, Sparkles } from 'lucide-react'
+
+export interface PersonalLog {
+  id: string
+  user_id: string
+  category: string
+  title: string
+  notes?: string | null
+  duration_min?: number | null
+  created_at: string
+}
+
+const ACTIVITIES = [
+  { key: 'coffee', emoji: '☕', label: 'קפה עם חברה', color: '#8B5A2B' },
+  { key: 'sport', emoji: '🏃', label: 'ספורט', color: '#4A7C59' },
+  { key: 'hobby', emoji: '🎨', label: 'חוג / תחביב', color: '#7F5268' },
+  { key: 'reading', emoji: '📚', label: 'קריאה', color: '#5C6BA0' },
+  { key: 'meditation', emoji: '🧘', label: 'מנוחה / מדיטציה', color: '#7A6A3C' },
+  { key: 'pampering', emoji: '💆', label: 'טיפוח עצמי', color: '#A0567A' },
+  { key: 'music', emoji: '🎵', label: 'מוסיקה / יצירה', color: '#5C7A8A' },
+  { key: 'nature', emoji: '🌿', label: 'טבע / הליכה', color: '#4A7C59' },
+  { key: 'other', emoji: '✨', label: 'משהו אחר', color: '#7F5268' },
+]
+
+const MOTIVATIONS = [
+  'את מתנה לעצמך כשאת דואגת לעצמך 💜',
+  'אמא מאושרת = ילד מאושר 🌸',
+  'לא אנוכי לדאוג לעצמך — זה הכרחי',
+  'כל דקה לעצמך היא השקעה במשפחה שלך',
+  'את מספיקה. את עושה מספיק. את מספיקה.',
+  'גם סופגנייה עם קפה ספירה כ"לעצמי"  ☕',
+]
+
+interface Props {
+  userId: string
+  initialLogs: PersonalLog[]
+}
+
+export default function PersonalClient({ userId, initialLogs }: Props) {
+  const supabase = createClient()
+  const [logs, setLogs] = useState<PersonalLog[]>(initialLogs)
+  const [adding, setAdding] = useState(false)
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [customTitle, setCustomTitle] = useState('')
+  const [notes, setNotes] = useState('')
+  const [duration, setDuration] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [dbError, setDbError] = useState(false)
+
+  const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length]
+
+  // Stats
+  const today = new Date().toISOString().split('T')[0]
+  const thisWeek = new Date(Date.now() - 7 * 24 * 3600 * 1000).toISOString()
+  const todayCount = logs.filter(l => l.created_at.startsWith(today)).length
+  const weekCount = logs.filter(l => l.created_at >= thisWeek).length
+
+  const selectedActivity = ACTIVITIES.find(a => a.key === selectedCategory)
+
+  async function handleAdd() {
+    if (!selectedCategory) return
+    setSaving(true)
+    setDbError(false)
+
+    const activity = ACTIVITIES.find(a => a.key === selectedCategory)!
+    const title = selectedCategory === 'other' && customTitle ? customTitle : activity.label
+
+    const newLog = {
+      user_id: userId,
+      category: selectedCategory,
+      title,
+      notes: notes || null,
+      duration_min: duration ? parseInt(duration) : null,
+    }
+
+    const { data, error } = await supabase
+      .from('personal_logs')
+      .insert(newLog)
+      .select()
+      .single()
+
+    if (error) {
+      // Table might not exist — store locally
+      setDbError(true)
+      const localLog: PersonalLog = {
+        id: crypto.randomUUID(),
+        ...newLog,
+        notes: notes || null,
+        duration_min: duration ? parseInt(duration) : null,
+        created_at: new Date().toISOString(),
+      }
+      setLogs(prev => [localLog, ...prev])
+    } else {
+      setLogs(prev => [data, ...prev])
+    }
+
+    setSelectedCategory('')
+    setCustomTitle('')
+    setNotes('')
+    setDuration('')
+    setAdding(false)
+    setSaving(false)
+  }
+
+  async function handleDelete(id: string) {
+    setLogs(prev => prev.filter(l => l.id !== id))
+    await supabase.from('personal_logs').delete().eq('id', id)
+  }
+
+  return (
+    <div className="space-y-6 max-w-2xl">
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            תדאגי לעצמך
+            <Heart className="w-5 h-5" style={{ color: '#7F5268' }} />
+          </h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>כי אמא מאושרת = ילד מאושר</p>
+        </div>
+        {!adding && (
+          <button
+            onClick={() => setAdding(true)}
+            className="btn-brand text-sm px-4 py-2"
+          >
+            <Plus className="w-4 h-4" />
+            רשמי פעילות
+          </button>
+        )}
+      </div>
+
+      {/* Motivation */}
+      <div className="rounded-2xl p-4 flex items-start gap-3"
+        style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.12)' }}>
+        <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#7F5268' }} />
+        <p className="text-sm font-light italic" style={{ color: '#7F5268' }}>{motivation}</p>
+      </div>
+
+      {/* DB warning */}
+      {dbError && (
+        <div className="rounded-xl p-3 text-xs" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E' }}>
+          הפעילות נשמרה זמנית (ברמת הדפדפן). להפעלת שמירה מלאה — יש להריץ את <code>supabase/migrations/003_personal.sql</code> בדשבורד Supabase.
+        </div>
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 gap-3">
+        <StatCard emoji="🌟" label="היום" value={todayCount} unit="פעילויות" />
+        <StatCard emoji="📅" label="השבוע" value={weekCount} unit="פעילויות" />
+      </div>
+
+      {/* Add form */}
+      {adding && (
+        <div className="card space-y-4">
+          <h2 className="font-semibold" style={{ color: 'var(--text)' }}>מה עשית לעצמך? 🌸</h2>
+
+          {/* Activity grid */}
+          <div className="grid grid-cols-3 gap-2">
+            {ACTIVITIES.map(act => (
+              <button
+                key={act.key}
+                onClick={() => setSelectedCategory(act.key)}
+                className="rounded-xl p-3 text-center transition-all flex flex-col items-center gap-1"
+                style={selectedCategory === act.key
+                  ? { background: act.color, color: '#fff', transform: 'scale(1.03)' }
+                  : { background: `${act.color}15`, color: act.color, border: `1px solid ${act.color}30` }
+                }
+              >
+                <span className="text-xl">{act.emoji}</span>
+                <span className="text-xs font-medium leading-tight">{act.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Custom title if "other" */}
+          {selectedCategory === 'other' && (
+            <div>
+              <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>מה עשית?</label>
+              <input
+                value={customTitle}
+                onChange={e => setCustomTitle(e.target.value)}
+                placeholder="תיאור קצר..."
+                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
+            </div>
+          )}
+
+          {/* Duration */}
+          {selectedCategory && (
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>משך (דקות)</label>
+                <input
+                  type="number"
+                  value={duration}
+                  onChange={e => setDuration(e.target.value)}
+                  placeholder="30"
+                  min="1"
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>הערה (אופציונלי)</label>
+                <input
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="עם מי, איפה..."
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="flex gap-2">
+            <button
+              onClick={handleAdd}
+              disabled={!selectedCategory || saving}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
+              style={{ background: selectedActivity?.color || '#7F5268' }}
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Heart className="w-4 h-4" />}
+              {saving ? 'שומרת...' : 'שמרי!'}
+            </button>
+            <button
+              onClick={() => { setAdding(false); setSelectedCategory(''); setNotes(''); setDuration('') }}
+              className="px-4 py-2.5 rounded-xl text-sm"
+              style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Activities grid (quick-add shortcuts) */}
+      {!adding && (
+        <div className="card">
+          <h2 className="font-semibold mb-4" style={{ color: 'var(--text)' }}>מה מתחשק לי עכשיו?</h2>
+          <div className="grid grid-cols-3 gap-2">
+            {ACTIVITIES.filter(a => a.key !== 'other').map(act => (
+              <button
+                key={act.key}
+                onClick={() => { setSelectedCategory(act.key); setAdding(true) }}
+                className="rounded-xl p-3 text-center transition-all hover:scale-105 flex flex-col items-center gap-1"
+                style={{ background: `${act.color}12`, color: act.color, border: `1px solid ${act.color}20` }}
+              >
+                <span className="text-2xl">{act.emoji}</span>
+                <span className="text-xs font-medium leading-tight">{act.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Log */}
+      <div>
+        <h2 className="font-semibold mb-3" style={{ color: 'var(--text)' }}>
+          פעילויות אחרונות {logs.length > 0 && <span className="text-sm font-light" style={{ color: 'var(--text-muted)' }}>({logs.length})</span>}
+        </h2>
+
+        {logs.length === 0 ? (
+          <div className="card text-center py-10">
+            <p className="text-4xl mb-3">🌸</p>
+            <p className="font-medium" style={{ color: 'var(--text)' }}>עוד לא רשמת שום דבר</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>הגיע הזמן לעשות משהו רק לעצמך!</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {logs.map(log => {
+              const act = ACTIVITIES.find(a => a.key === log.category) || ACTIVITIES[ACTIVITIES.length - 1]
+              const date = new Date(log.created_at)
+              const dateStr = date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', weekday: 'short' })
+              const timeStr = date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+              return (
+                <div key={log.id} className="card py-3 px-4 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                    style={{ background: `${act.color}15` }}>
+                    {act.emoji}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{log.title}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{dateStr} · {timeStr}</span>
+                      {log.duration_min && (
+                        <span className="text-xs px-2 py-0.5 rounded-full"
+                          style={{ background: `${act.color}15`, color: act.color }}>
+                          {log.duration_min} דק׳
+                        </span>
+                      )}
+                    </div>
+                    {log.notes && (
+                      <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>{log.notes}</p>
+                    )}
+                  </div>
+                  <button onClick={() => handleDelete(log.id)} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity flex-shrink-0">
+                    <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function StatCard({ emoji, label, value, unit }: { emoji: string; label: string; value: number; unit: string }) {
+  return (
+    <div className="card text-center py-4">
+      <p className="text-2xl mb-1">{emoji}</p>
+      <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{value}</p>
+      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{unit} {label}</p>
+    </div>
+  )
+}

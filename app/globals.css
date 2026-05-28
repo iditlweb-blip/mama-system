@@ -1,26 +1,165 @@
 @import "tailwindcss";
 
+/* ─── Custom Fonts ─────────────────────────────────────────── */
+@font-face {
+  font-family: 'OHLior';
+  src: url('/fonts/OHLiorAtias-Regular.woff2') format('woff2'),
+       url('/fonts/OHLiorAtias-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TalentFS';
+  src: url('/fonts/Talent_FS-Medium.woff2') format('woff2'),
+       url('/fonts/Talent_FS-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'TalentFS';
+  src: url('/fonts/TalentFS-Light.woff2') format('woff2'),
+       url('/fonts/TalentFS-Light.woff') format('woff');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Design Tokens ────────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Brand palette */
+  --purple:       #7F5268;
+  --purple-light: #C4A0B4;
+  --purple-faint: rgba(127, 82, 104, 0.08);
+  --black:        #000000;
+  --cream:        #F7EDE2;
+  --cream-dark:   #EEE0D0;
+
+  /* Semantic aliases */
+  --bg:           #F7EDE2;
+  --surface:      #FFFFFF;
+  --surface-2:    #FAF4ED;
+  --text:         #000000;
+  --text-muted:   #7F5268;
+  --primary:      #7F5268;
+  --primary-light:#C4A0B4;
+  --border:       rgba(127, 82, 104, 0.15);
+  --border-solid: #DDD0C8;
+
+  /* Feedback colors */
+  --success: #4A7C59;
+  --warning: #B8860B;
+  --danger:  #C0392B;
+
+  /* Layout */
+  --sidebar-w: 240px;
+
+  /* Fonts */
+  --font-display: 'OHLior', serif;
+  --font-body:    'TalentFS', 'Heebo', 'Segoe UI', sans-serif;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ─── Dark mode (optional, stays warm) ────────────────────── */
+.dark {
+  --bg:           #1A1210;
+  --surface:      #241916;
+  --surface-2:    #2E1F1B;
+  --text:         #F5EDE2;
+  --text-muted:   #C4A0B4;
+  --primary:      #C4A0B4;
+  --primary-light:#7F5268;
+  --border:       rgba(196, 160, 180, 0.18);
+  --border-solid: #3D2A25;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
+/* ─── Base ─────────────────────────────────────────────────── */
+* { box-sizing: border-box; }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 500;
+  direction: rtl;
+  -webkit-font-smoothing: antialiased;
 }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--purple-light); border-radius: 10px; }
+
+/* ─── Card ─────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+  box-shadow: 0 2px 16px rgba(127, 82, 104, 0.07);
+}
+
+/* ─── Brand Button ─────────────────────────────────────────── */
+.btn-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  background: var(--purple);
+  color: #FFFFFF;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.9375rem;
+  padding: 0.75rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn-brand:hover { opacity: 0.85; transform: translateY(-1px); }
+.btn-brand:active { transform: translateY(0); }
+
+.btn-brand-outline {
+  background: transparent;
+  border: 1.5px solid var(--purple);
+  color: var(--purple);
+}
+.btn-brand-outline:hover { background: rgba(127,82,104,0.06); opacity: 1; }
+
+/* ─── Display stroke text ──────────────────────────────────── */
+.text-stroke {
+  -webkit-text-stroke: 1.5px var(--purple);
+  color: transparent;
+}
+
+/* ─── Fade-in animation ────────────────────────────────────── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes floatY {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-10px); }
+}
+.anim-fade-up   { animation: fadeUp  0.7s ease both; }
+.anim-fade-up-2 { animation: fadeUp  0.7s 0.15s ease both; }
+.anim-fade-up-3 { animation: fadeUp  0.7s 0.3s  ease both; }
+.anim-float     { animation: floatY  4s ease-in-out infinite; }
+
+/* ─── Category badges ──────────────────────────────────────── */
+.cat-work  { background: rgba(127, 82, 104, 0.12); color: #7F5268; }
+.cat-home  { background: rgba(74, 124, 89,  0.12); color: #4A7C59; }
+.cat-baby  { background: rgba(139, 90, 43,  0.12); color: #8B5A2B; }
+
+.dark .cat-work  { background: rgba(127,82,104,0.25); color: #C4A0B4; }
+.dark .cat-home  { background: rgba(74,124,89,0.25);  color: #86EFAC; }
+.dark .cat-baby  { background: rgba(139,90,43,0.25);  color: #F5C17A; }
+
+/* ─── Display font helper ──────────────────────────────────── */
+.font-display { font-family: var(--font-display) !important; }
