@@ -3,24 +3,14 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminClient from './AdminClient'
 
-const ADMIN_EMAIL = 'idit62@gmail.com'
+const ADMIN_EMAIL = 'iditlweb@gmail.com'
 
 export default async function AdminPage() {
   // 1. Auth check
   const supabase = await createClient()
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
 
-  // DEBUG — temporary, will remove after fix
-  if (!user || user.email !== ADMIN_EMAIL) {
-    return (
-      <div style={{ padding: 40, fontFamily: 'monospace', direction: 'ltr' }}>
-        <h2>Admin Auth Debug</h2>
-        <p>user: <b>{user ? JSON.stringify({ email: user.email, id: user.id }) : 'NULL'}</b></p>
-        <p>authError: <b>{authError?.message ?? 'none'}</b></p>
-        <p>expected email: <b>{ADMIN_EMAIL}</b></p>
-      </div>
-    )
-  }
+  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
 
   // 2. Fetch all users via admin client
   const admin = createAdminClient()
