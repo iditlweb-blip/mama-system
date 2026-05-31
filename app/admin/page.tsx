@@ -9,7 +9,6 @@ export default async function AdminPage() {
   // 1. Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-
   if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
 
   // 2. Fetch all users via admin client
@@ -22,22 +21,28 @@ export default async function AdminPage() {
         <h2>Admin Error</h2>
         <p>Logged in as: <b>{user.email}</b></p>
         <p>Error: <b style={{ color: 'red' }}>{error.message}</b></p>
-        <p>Make sure SUPABASE_SERVICE_ROLE_KEY is set in Vercel and you redeployed.</p>
+        <p>Make sure SUPABASE_SERVICE_ROLE_KEY is set in Vercel and redeployed.</p>
       </div>
     )
   }
   const users = authData.users
 
-  // 3. Fetch app stats from DB
+  // 3. Fetch app stats + PWA data
   const [
     { count: taskCount },
     { count: logCount },
-    { count: chatCount },
+    { data: pwaProfiles },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
-    admin.from('chat_messages').select('*', { count: 'exact', head: true }),
+    admin.from('profiles').select('id, pwa_installed_at').not('pwa_installed_at', 'is', null),
   ])
+
+  // Build PWA lookup map
+  const pwaMap: Record<string, string> = {}
+  for (const p of (pwaProfiles ?? [])) {
+    if (p.pwa_installed_at) pwaMap[p.id] = p.pwa_installed_at
+  }
 
   // 4. Build user summaries
   const userList = users.map(u => ({
@@ -48,6 +53,7 @@ export default async function AdminPage() {
     created_at: u.created_at,
     last_sign_in: u.last_sign_in_at ?? null,
     confirmed: !!u.email_confirmed_at,
+    pwa_installed_at: pwaMap[u.id] ?? null,
   }))
 
   const now = Date.now()
@@ -55,13 +61,13 @@ export default async function AdminPage() {
   const dayAgo  = now - 24 * 3600 * 1000
 
   const stats = {
-    total: users.length,
-    newThisWeek: users.filter(u => new Date(u.created_at).getTime() > weekAgo).length,
-    activeToday: users.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() > dayAgo).length,
-    confirmed: users.filter(u => u.email_confirmed_at).length,
-    taskCount:  taskCount  ?? 0,
-    logCount:   logCount   ?? 0,
-    chatCount:  chatCount  ?? 0,
+    total:        users.length,
+    newThisWeek:  users.filter(u => new Date(u.created_at).getTime() > weekAgo).length,
+    activeToday:  users.filter(u => u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() > dayAgo).length,
+    confirmed:    users.filter(u => u.email_confirmed_at).length,
+    taskCount:    taskCount ?? 0,
+    logCount:     logCount  ?? 0,
+    pwaCount:     Object.keys(pwaMap).length,
   }
 
   return <AdminClient users={userList} stats={stats} />
