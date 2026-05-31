@@ -13,8 +13,19 @@ export default async function AdminPage() {
 
   // 2. Fetch all users via admin client
   const admin = createAdminClient()
-  const { data: { users }, error } = await admin.auth.admin.listUsers({ perPage: 500 })
-  if (error) redirect('/dashboard')
+  const { data: authData, error } = await admin.auth.admin.listUsers({ perPage: 500 })
+  if (error) {
+    console.error('[ADMIN] listUsers error:', error.message)
+    return (
+      <div style={{ padding: 40, fontFamily: 'monospace', direction: 'ltr' }}>
+        <h2>Admin Error</h2>
+        <p>Logged in as: <b>{user.email}</b></p>
+        <p>Error: <b style={{ color: 'red' }}>{error.message}</b></p>
+        <p>Make sure SUPABASE_SERVICE_ROLE_KEY is set in Vercel and you redeployed.</p>
+      </div>
+    )
+  }
+  const users = authData.users
 
   // 3. Fetch app stats from DB
   const [
