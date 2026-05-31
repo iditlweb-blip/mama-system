@@ -1,0 +1,28 @@
+{
+  "name": "אמא בסדר",
+  "short_name": "אמא בסדר",
+  "description": "מערכת ניהול לאמהות — משימות, מעקב תינוק, AI ועוד",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#F7EDE2",
+  "theme_color": "#7F5268",
+  "orientation": "portrait",
+  "lang": "he",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "categories": ["lifestyle", "productivity"]
+}
