@@ -17,13 +17,13 @@ export default function LandingPage() {
           background: '#F7EDE2',
         }}
       >
-        {/* ── Nav ── */}
+        {/* ── Nav — logo right (RTL start), button left (RTL end) ── */}
         <nav style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 28px' }}>
+          <Image src="/logo.svg" alt="אמא בסדר" width={22} height={38} priority />
           <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
             כניסה
             <ArrowIcon />
           </Link>
-          <Image src="/logo.svg" alt="אמא בסדר" width={22} height={38} priority />
         </nav>
 
         {/* ── Content ── */}
@@ -36,20 +36,20 @@ export default function LandingPage() {
           >
             <h1
               style={{
-                fontSize: 'clamp(1.75rem, 5.5vw, 4.2rem)',
+                fontSize: 'clamp(1.4rem, 3.2vw, 2.6rem)',
                 fontWeight: 800,
-                lineHeight: 1.18,
+                lineHeight: 1.2,
                 color: '#111',
                 letterSpacing: '-0.02em',
-                margin: '0 auto 8px',
-                maxWidth: 680,
+                margin: '0 auto 6px',
+                whiteSpace: 'nowrap',
               }}
             >
-              אמא אחת. אלף משימות.<br />מערכת אחת.
+              אמא אחת. אלף משימות. מערכת אחת.
             </h1>
             <p
               className="anim-fade-up-2"
-              style={{ fontSize: 'clamp(0.85rem, 2vw, 1.1rem)', color: '#7F5268', margin: '0 auto', maxWidth: 380, fontWeight: 300 }}
+              style={{ fontSize: 'clamp(0.8rem, 1.6vw, 1rem)', color: '#7F5268', margin: '0 auto', whiteSpace: 'nowrap', fontWeight: 300 }}
             >
               המערכת שמסדרת לך את החיים — לא רק את העסק
             </p>
@@ -102,26 +102,26 @@ export default function LandingPage() {
               />
             </div>
 
-            {/* Center mom — z-10, full height */}
+            {/* Center mom — centered with flex, z-10 */}
             <div
               className="anim-float"
               style={{
                 position: 'absolute',
                 top: 0, bottom: 0,
-                left: '50%',
-                transform: 'translateX(-50%)',
-                width: 'clamp(260px, 55%, 520px)',
+                left: 0, right: 0,
+                display: 'flex',
+                justifyContent: 'center',
                 zIndex: 10,
                 pointerEvents: 'none',
               }}
             >
-              <Image
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
                 src="/images/hero-mom.png"
                 alt="אמא ותינוק"
-                fill
-                priority
-                sizes="(max-width: 768px) 80vw, 55vw"
                 style={{
+                  width: 'clamp(240px, 52%, 500px)',
+                  height: '100%',
                   objectFit: 'contain',
                   objectPosition: 'center top',
                   maskImage: 'linear-gradient(to top, transparent 0%, black 18%)',
@@ -135,7 +135,7 @@ export default function LandingPage() {
               className="anim-fade-up-3"
               style={{
                 position: 'absolute',
-                bottom: 'clamp(52px, 10%, 80px)',
+                bottom: 'clamp(68px, 13%, 100px)',
                 left: 0, right: 0,
                 textAlign: 'center',
                 zIndex: 20,
