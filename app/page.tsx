@@ -3,149 +3,221 @@ import Image from 'next/image'
 
 export default function LandingPage() {
   return (
-    <main style={{ background: '#F7EDE2', fontFamily: 'var(--font-body)', overflowX: 'hidden' }}>
+    <main style={{ background: '#F7EDE2', fontFamily: 'var(--font-body)', overflowX: 'hidden', direction: 'rtl' }}>
 
-      {/* ── Nav ──────────────────────────────────────────────────── */}
-      <nav className="flex items-center justify-between px-6 md:px-12 py-5 w-full">
-        <Image src="/logo.svg" alt="אמא בסדר" width={26} height={44} priority />
-        <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
-          כניסה
-          <ArrowIcon />
-        </Link>
-      </nav>
-
-      {/* ── Hero ─────────────────────────────────────────────────── */}
-      <section className="w-full text-center px-4 pt-6">
-
-        {/* Headlines */}
-        <h1
-          className="anim-fade-up text-4xl md:text-5xl lg:text-6xl font-bold leading-tight mx-auto mb-3"
-          style={{ color: '#000', maxWidth: 640, letterSpacing: '-0.015em' }}
-        >
-          אמא אחת. אלף משימות.<br />מערכת אחת.
-        </h1>
-        <p
-          className="anim-fade-up-2 text-base md:text-lg font-light mb-8 mx-auto"
-          style={{ color: '#7F5268', maxWidth: 420 }}
-        >
-          המערכת שמסדרת לך את החיים — לא רק את העסק
-        </p>
-
-        {/* ── Three-image hero — full bleed ── */}
-        <div
-          className="anim-fade-up-3 relative w-full flex items-end justify-center"
-          style={{ minHeight: 420, maxHeight: 560 }}
-        >
-          {/* Left — office (was right, now swapped) */}
-          <div
-            className="absolute bottom-0 right-0 md:right-4 lg:right-8 hidden md:block"
-            style={{ width: '28%', maxWidth: 320 }}
-          >
-            <Image
-              src="/images/office-right.png"
-              alt=""
-              width={320}
-              height={400}
-              className="w-full h-auto object-cover"
-              style={{
-                borderRadius: '2rem 2rem 0 0',
-                maskImage: 'linear-gradient(to top, transparent 0%, black 35%)',
-                WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 35%)',
-              }}
-            />
-          </div>
-
-          {/* Center — mom hero, biggest */}
-          <div
-            className="relative z-10 anim-float"
-            style={{ width: '100%', maxWidth: 480, margin: '0 auto' }}
-          >
-            <Image
-              src="/images/hero-mom.png"
-              alt="אמא ותינוק"
-              width={480}
-              height={560}
-              priority
-              className="w-full h-auto object-contain mx-auto"
-              style={{
-                maskImage: 'linear-gradient(to top, transparent 0%, black 20%)',
-                WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 20%)',
-              }}
-            />
-          </div>
-
-          {/* Right — toys (was left, now swapped) */}
-          <div
-            className="absolute bottom-0 left-0 md:left-4 lg:left-8 hidden md:block"
-            style={{ width: '28%', maxWidth: 320 }}
-          >
-            <Image
-              src="/images/toys-left.png"
-              alt=""
-              width={320}
-              height={400}
-              className="w-full h-auto object-cover"
-              style={{
-                borderRadius: '2rem 2rem 0 0',
-                maskImage: 'linear-gradient(to top, transparent 0%, black 35%)',
-                WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 35%)',
-              }}
-            />
-          </div>
-        </div>
-
-        {/* ── Big display text ── */}
-        <div
-          className="font-display select-none pointer-events-none -mt-6 mb-8 overflow-hidden"
-          style={{ lineHeight: 1 }}
-          aria-hidden="true"
-        >
-          <span
-            className="text-stroke"
-            style={{
-              fontSize: 'clamp(3.5rem, 12vw, 9rem)',
-              fontFamily: 'var(--font-display)',
-              display: 'block',
-              letterSpacing: '0.04em',
-              WebkitTextStroke: '1.5px #7F5268',
-              color: 'transparent',
-              opacity: 0.55,
-            }}
-          >
-            אמא בסדר
-          </span>
-        </div>
-
-        {/* ── CTA ── */}
-        <div className="flex flex-col items-center gap-2 pb-16">
-          <Link href="/auth" className="btn-brand text-base px-9 py-3.5">
-            כניסה למערכת
+      {/* ═══════════════════════════════════════════════════════════
+          HERO — full viewport, no scroll
+      ═══════════════════════════════════════════════════════════ */}
+      <section
+        style={{
+          height: '100svh',
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          background: '#F7EDE2',
+        }}
+      >
+        {/* ── Nav ── */}
+        <nav style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 28px' }}>
+          <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
+            כניסה
             <ArrowIcon />
           </Link>
-          <span className="text-xs font-light mt-1" style={{ color: '#7F5268', opacity: 0.65 }}>
-            בחינם · ללא כרטיס אשראי
-          </span>
+          <Image src="/logo.svg" alt="אמא בסדר" width={22} height={38} priority />
+        </nav>
+
+        {/* ── Content ── */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+
+          {/* Headlines */}
+          <div
+            className="anim-fade-up"
+            style={{ textAlign: 'center', padding: '10px 16px 0', flexShrink: 0, position: 'relative', zIndex: 10 }}
+          >
+            <h1
+              style={{
+                fontSize: 'clamp(1.75rem, 5.5vw, 4.2rem)',
+                fontWeight: 800,
+                lineHeight: 1.18,
+                color: '#111',
+                letterSpacing: '-0.02em',
+                margin: '0 auto 8px',
+                maxWidth: 680,
+              }}
+            >
+              אמא אחת. אלף משימות.<br />מערכת אחת.
+            </h1>
+            <p
+              className="anim-fade-up-2"
+              style={{ fontSize: 'clamp(0.85rem, 2vw, 1.1rem)', color: '#7F5268', margin: '0 auto', maxWidth: 380, fontWeight: 300 }}
+            >
+              המערכת שמסדרת לך את החיים — לא רק את העסק
+            </p>
+          </div>
+
+          {/* Image area — flex-1, images + overlay */}
+          <div style={{ flex: 1, position: 'relative', minHeight: 0, overflow: 'hidden' }}>
+
+            {/* Toys — physical left (visual right in RTL) */}
+            <div
+              className="hidden md:block"
+              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none' }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/toys-left.png"
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  maskImage: 'linear-gradient(to top, transparent 0%, black 22%), linear-gradient(to right, transparent 0%, black 35%)',
+                  maskComposite: 'intersect',
+                  WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 22%), linear-gradient(to right, transparent 0%, black 35%)',
+                  WebkitMaskComposite: 'destination-in',
+                }}
+              />
+            </div>
+
+            {/* Office — physical right (visual left in RTL) */}
+            <div
+              className="hidden md:block"
+              style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none' }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/office-right.png"
+                alt=""
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  maskImage: 'linear-gradient(to top, transparent 0%, black 22%), linear-gradient(to left, transparent 0%, black 35%)',
+                  maskComposite: 'intersect',
+                  WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 22%), linear-gradient(to left, transparent 0%, black 35%)',
+                  WebkitMaskComposite: 'destination-in',
+                }}
+              />
+            </div>
+
+            {/* Center mom — z-10, full height */}
+            <div
+              className="anim-float"
+              style={{
+                position: 'absolute',
+                top: 0, bottom: 0,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: 'clamp(260px, 55%, 520px)',
+                zIndex: 10,
+                pointerEvents: 'none',
+              }}
+            >
+              <Image
+                src="/images/hero-mom.png"
+                alt="אמא ותינוק"
+                fill
+                priority
+                sizes="(max-width: 768px) 80vw, 55vw"
+                style={{
+                  objectFit: 'contain',
+                  objectPosition: 'center top',
+                  maskImage: 'linear-gradient(to top, transparent 0%, black 18%)',
+                  WebkitMaskImage: 'linear-gradient(to top, transparent 0%, black 18%)',
+                }}
+              />
+            </div>
+
+            {/* "אמא בסדר" — handwriting display text, overlaid */}
+            <div
+              className="anim-fade-up-3"
+              style={{
+                position: 'absolute',
+                bottom: 'clamp(52px, 10%, 80px)',
+                left: 0, right: 0,
+                textAlign: 'center',
+                zIndex: 20,
+                pointerEvents: 'none',
+                lineHeight: 1,
+              }}
+              aria-hidden="true"
+            >
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(3rem, 10.5vw, 8rem)',
+                  color: '#7F5268',
+                  WebkitTextStroke: '1px #7F5268',
+                  paintOrder: 'stroke fill',
+                  letterSpacing: '0.03em',
+                  display: 'block',
+                }}
+              >
+                אמא בסדר
+              </span>
+            </div>
+
+            {/* CTA */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 'clamp(10px, 2.5%, 20px)',
+                left: 0, right: 0,
+                textAlign: 'center',
+                zIndex: 20,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <Link href="/auth" className="btn-brand px-9 py-3 text-base">
+                כניסה למערכת
+                <ArrowIcon />
+              </Link>
+              <span style={{ fontSize: '0.72rem', color: '#7F5268', opacity: 0.7 }}>
+                עדיין אין לך חשבון?{' '}
+                <Link href="/auth" style={{ textDecoration: 'underline', color: '#7F5268' }}>
+                  הירשמי עכשיו
+                </Link>
+              </span>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* ── Features strip ───────────────────────────────────────── */}
-      <section style={{ background: '#fff', borderTop: '1px solid rgba(127,82,104,0.1)', borderBottom: '1px solid rgba(127,82,104,0.1)' }}>
+      {/* ═══════════════════════════════════════════════════════════
+          FEATURES STRIP — SVG icons
+      ═══════════════════════════════════════════════════════════ */}
+      <section
+        style={{
+          background: '#fff',
+          borderTop: '1px solid rgba(127,82,104,0.1)',
+          borderBottom: '1px solid rgba(127,82,104,0.1)',
+        }}
+      >
         <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { emoji: '👶', label: 'מעקב תינוק', sub: 'האכלות, שינה, חיתולים' },
-            { emoji: '✅', label: 'ניהול משימות', sub: 'Kanban + Pomodoro' },
-            { emoji: '💼', label: 'ניהול עבודה', sub: 'לוז, משימות עסקיות' },
-            { emoji: '🤖', label: 'AI בעברית', sub: 'ייעוץ, תמיכה, טיפים' },
-          ].map(({ emoji, label, sub }) => (
-            <div key={label} className="flex flex-col items-center gap-3">
-              <span
-                className="w-20 h-20 rounded-3xl text-4xl flex items-center justify-center"
+            { icon: '/icons/baby.svg',  w: 44, h: 40, label: 'מעקב תינוק',    sub: 'האכלות, שינה, חיתולים' },
+            { icon: '/icons/task.svg',  w: 40, h: 37, label: 'ניהול משימות',  sub: 'Kanban + Pomodoro'     },
+            { icon: '/icons/work.svg',  w: 40, h: 40, label: 'ניהול עבודה',   sub: 'לוז, משימות עסקיות'   },
+            { icon: '/icons/chat.svg',  w: 42, h: 42, label: 'AI בעברית',     sub: 'ייעוץ, תמיכה, טיפים'  },
+          ].map(({ icon, w, h, label, sub }, i) => (
+            <div
+              key={label}
+              className={`reveal hover-lift flex flex-col items-center gap-3 reveal-delay-${i}`}
+            >
+              <div
+                className="icon-box w-20 h-20 rounded-3xl flex items-center justify-center"
                 style={{ background: 'rgba(127,82,104,0.08)' }}
               >
-                {emoji}
-              </span>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={icon} alt="" width={w} height={h} />
+              </div>
               <div>
-                <p className="font-semibold text-base" style={{ color: '#000' }}>{label}</p>
+                <p className="font-semibold text-base" style={{ color: '#111' }}>{label}</p>
                 <p className="text-xs font-light mt-0.5" style={{ color: '#7F5268' }}>{sub}</p>
               </div>
             </div>
@@ -153,13 +225,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Why choose this ──────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════
+          WHY — "למה דווקא אמא בסדר?"
+      ═══════════════════════════════════════════════════════════ */}
       <section className="max-w-5xl mx-auto px-6 py-20">
         <h2
-          className="text-3xl md:text-4xl font-bold text-center mb-12"
-          style={{ color: '#000' }}
+          className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
+          style={{ color: '#111' }}
         >
-          למה דווקא <span style={{ color: '#7F5268' }}>אמא בסדר</span>?
+          למה דווקא{' '}
+          <span
+            style={{
+              fontFamily: 'var(--font-display)',
+              color: '#7F5268',
+              WebkitTextStroke: '0.5px #7F5268',
+              paintOrder: 'stroke fill',
+            }}
+          >
+            אמא בסדר
+          </span>
+          ?
         </h2>
         <div className="grid md:grid-cols-3 gap-6">
           {[
@@ -178,41 +263,43 @@ export default function LandingPage() {
               title: 'AI שמבין אמא',
               body: '4 מצבי ייעוץ בעברית: עצות לתינוק, ניהול זמן, עסק מהבית, ותמיכה רגשית — בלי שיפוטיות.',
             },
-          ].map(({ icon, title, body }) => (
+          ].map(({ icon, title, body }, i) => (
             <div
               key={title}
-              className="rounded-2xl p-7"
+              className={`reveal hover-lift rounded-2xl p-7 reveal-delay-${i}`}
               style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.12)' }}
             >
               <span className="text-3xl block mb-4">{icon}</span>
-              <h3 className="text-lg font-bold mb-2" style={{ color: '#000' }}>{title}</h3>
+              <h3 className="text-lg font-bold mb-2" style={{ color: '#111' }}>{title}</h3>
               <p className="text-sm leading-relaxed font-light" style={{ color: '#7F5268' }}>{body}</p>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ── How it helps ─────────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════
+          HOW IT HELPS
+      ═══════════════════════════════════════════════════════════ */}
       <section style={{ background: 'rgba(127,82,104,0.05)' }}>
         <div className="max-w-5xl mx-auto px-6 py-20">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#000' }}>
+          <h2 className="reveal text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#111' }}>
             איך זה עוזר ביום יום?
           </h2>
           <div className="grid md:grid-cols-2 gap-5">
             {[
               { emoji: '🌅', title: 'בוקר שלישי 06:00', body: 'בדקי מה שלום התינוק בדשבורד, רשמי האכלה בלחיצה, וראי את 3 המשימות הדחופות של היום.' },
-              { emoji: '💤', title: 'נמנום קצר', body: 'לחצי Start בטיימר השינה. כשהתינוק קם — לחצי Stop. הנמנום נרשם אוטומטית.' },
-              { emoji: '💻', title: 'שעת עבודה', body: 'פתחי Pomodoro, סמני משימות שהושלמו, ושאלי את ה-AI על הצעד הבא בפרויקט.' },
-              { emoji: '🌙', title: 'סוף יום', body: 'קבלי סיכום: כמה ישן, כמה אכל, מה הושלם. מחר מתחיל יום חדש — את מוכנה.' },
-            ].map(({ emoji, title, body }) => (
+              { emoji: '💤', title: 'נמנום קצר',          body: 'לחצי Start בטיימר השינה. כשהתינוק קם — לחצי Stop. הנמנום נרשם אוטומטית.' },
+              { emoji: '💻', title: 'שעת עבודה',          body: 'פתחי Pomodoro, סמני משימות שהושלמו, ושאלי את ה-AI על הצעד הבא בפרויקט.' },
+              { emoji: '🌙', title: 'סוף יום',            body: 'קבלי סיכום: כמה ישן, כמה אכל, מה הושלם. מחר מתחיל יום חדש — את מוכנה.' },
+            ].map(({ emoji, title, body }, i) => (
               <div
                 key={title}
-                className="flex gap-4 rounded-2xl p-6"
+                className={`reveal hover-lift flex gap-4 rounded-2xl p-6 reveal-delay-${i % 2}`}
                 style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.1)' }}
               >
                 <span className="text-3xl flex-shrink-0">{emoji}</span>
                 <div>
-                  <h3 className="font-semibold text-base mb-1" style={{ color: '#000' }}>{title}</h3>
+                  <h3 className="font-semibold text-base mb-1" style={{ color: '#111' }}>{title}</h3>
                   <p className="text-sm font-light leading-relaxed" style={{ color: '#7F5268' }}>{body}</p>
                 </div>
               </div>
@@ -221,9 +308,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Quotes ───────────────────────────────────────────────── */}
+      {/* ═══════════════════════════════════════════════════════════
+          QUOTES
+      ═══════════════════════════════════════════════════════════ */}
       <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#000' }}>
+        <h2 className="reveal text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#111' }}>
           כי את עושה את הכי חשוב בעולם
         </h2>
         <div className="grid md:grid-cols-3 gap-5">
@@ -231,10 +320,10 @@ export default function LandingPage() {
             '"את עושה יותר ממה שאת חושבת שאת עושה"',
             '"לא צריך להיות מושלמת — רק נוכחת"',
             '"עסק מהבית עם תינוק זה כפול מאמץ, כפול גאווה"',
-          ].map(q => (
+          ].map((q, i) => (
             <blockquote
               key={q}
-              className="rounded-2xl p-6 italic text-sm leading-relaxed font-light"
+              className={`reveal hover-lift rounded-2xl p-6 italic text-sm leading-relaxed font-light reveal-delay-${i}`}
               style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.12)', color: '#7F5268' }}
             >
               {q}
@@ -243,13 +332,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Final CTA ────────────────────────────────────────────── */}
-      <section
-        className="w-full text-center py-20 px-6"
-        style={{ background: '#7F5268' }}
-      >
+      {/* ═══════════════════════════════════════════════════════════
+          FINAL CTA
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="w-full text-center py-20 px-6" style={{ background: '#7F5268' }}>
         <h2
-          className="font-display mb-4"
+          className="reveal font-display mb-4"
           style={{
             fontSize: 'clamp(3rem, 9vw, 6.5rem)',
             fontFamily: 'var(--font-display)',
@@ -259,12 +347,12 @@ export default function LandingPage() {
         >
           מתחילים?
         </h2>
-        <p className="text-base font-light mb-10" style={{ color: 'rgba(247,237,226,0.7)' }}>
+        <p className="reveal text-base font-light mb-10" style={{ color: 'rgba(247,237,226,0.7)' }}>
           הצטרפי לאמהות שכבר מנהלות חיים שלמים מממשק אחד
         </p>
         <Link
           href="/auth"
-          className="inline-flex items-center gap-3 px-9 py-3.5 rounded-full font-medium text-base transition-opacity hover:opacity-90"
+          className="reveal inline-flex items-center gap-3 px-9 py-3.5 rounded-full font-medium text-base transition-opacity hover:opacity-90"
           style={{ background: '#F7EDE2', color: '#7F5268' }}
         >
           כניסה למערכת
@@ -272,11 +360,8 @@ export default function LandingPage() {
         </Link>
       </section>
 
-      {/* ── Footer ───────────────────────────────────────────────── */}
-      <footer
-        className="w-full text-center py-7 px-6"
-        style={{ background: '#F7EDE2', borderTop: '1px solid rgba(127,82,104,0.1)' }}
-      >
+      {/* ── Footer ── */}
+      <footer className="w-full text-center py-7 px-6" style={{ background: '#F7EDE2', borderTop: '1px solid rgba(127,82,104,0.1)' }}>
         <p className="text-sm font-light" style={{ color: '#7F5268' }}>
           נעשה עם המון אהבה ע״י <strong className="font-semibold">עידית לאוב</strong>
         </p>
