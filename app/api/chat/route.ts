@@ -39,6 +39,7 @@ export async function POST(req: Request) {
             }
           }
         } catch (e) {
+          console.error('[chat stream error]', e)
           controller.enqueue(encoder.encode('\n\nאירעה שגיאה בחיבור ל-AI. אנא נסי שוב.'))
         }
         controller.close()
