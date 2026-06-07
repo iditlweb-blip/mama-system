@@ -63,8 +63,9 @@ export default function LandingPage() {
 
             {/* Toys — physical left (visual right in RTL) */}
             <div
+              data-hero="side"
               className="hidden md:block"
-              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none' }}
+              style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none', zIndex: 1 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -85,8 +86,9 @@ export default function LandingPage() {
 
             {/* Office — physical right (visual left in RTL) */}
             <div
+              data-hero="side"
               className="hidden md:block"
-              style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none' }}
+              style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none', zIndex: 1 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -168,6 +170,7 @@ export default function LandingPage() {
 
             {/* CTA */}
             <div
+              data-hero="cta-wrap"
               style={{
                 position: 'absolute',
                 bottom: 'clamp(10px, 2.5%, 20px)',
