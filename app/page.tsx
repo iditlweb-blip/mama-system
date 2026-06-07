@@ -13,7 +13,7 @@ export default function LandingPage() {
           [data-hero="img-wrap"]     { top: 5% !important; }
           [data-hero="img"]          { width: 90% !important; }
           [data-hero="display-wrap"] { bottom: 21% !important; }
-          [data-hero="side"]         { opacity: 0.55 !important; z-index: 15 !important; }
+          [data-hero="side"]         { opacity: 0.8 !important; z-index: 5 !important; bottom: 25% !important; }
           [data-hero="side"] img     { mask-image: none !important; -webkit-mask-image: none !important; }
         }
       `}</style>
