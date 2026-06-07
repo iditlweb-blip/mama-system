@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, baby_name')
+    .select('name, baby_name, baby_gender, profile_picture_url')
     .eq('id', user.id)
     .single()
 
@@ -19,7 +19,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
       <Sidebar userName={profile?.name} />
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar babyName={profile?.baby_name} />
+        <TopBar
+          babyName={profile?.baby_name}
+          babyGender={profile?.baby_gender}
+          profilePicUrl={profile?.profile_picture_url}
+        />
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           {children}
         </main>

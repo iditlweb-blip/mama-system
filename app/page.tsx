@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import HeroEditor from '@/components/HeroEditor'
+import PwaInstallTabs from '@/components/PwaInstallTabs'
 
 export default function LandingPage() {
   return (
@@ -30,13 +31,22 @@ export default function LandingPage() {
           background: '#F7EDE2',
         }}
       >
-        {/* ── Nav — logo right (RTL start), button left (RTL end) ── */}
+        {/* ── Nav — logo right (RTL start), buttons left (RTL end) ── */}
         <nav style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 28px' }}>
           <Image src="/logo.svg" alt="אמא בסדר" width={36} height={62} priority data-hero="logo" />
-          <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
-            כניסה
-            <ArrowIcon />
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <a
+              href="#pwa-install"
+              className="btn-brand btn-brand-outline text-sm px-4 py-2"
+              style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+            >
+              📲 הורדה לטלפון
+            </a>
+            <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
+              כניסה
+              <ArrowIcon />
+            </Link>
+          </div>
         </nav>
 
         {/* ── Content ── */}
@@ -378,6 +388,36 @@ export default function LandingPage() {
           כניסה למערכת
           <ArrowIcon color="#7F5268" />
         </Link>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          PWA INSTALL — "איך מורידים לטלפון"
+      ═══════════════════════════════════════════════════════════ */}
+      <section id="pwa-install" className="max-w-3xl mx-auto px-6 py-20">
+        <h2
+          className="reveal text-3xl md:text-4xl font-bold text-center mb-3"
+          style={{ color: '#111' }}
+        >
+          הורידי לטלפון — בלי חנות
+        </h2>
+        <p className="reveal text-center text-sm font-light mb-3" style={{ color: '#7F5268' }}>
+          הוסיפי לדף הבית וזה פועל כמו אפליקציה — חינם, בלחיצה אחת
+        </p>
+
+        {/* note: also works on desktop */}
+        <div
+          className="reveal rounded-2xl p-4 mb-8 flex gap-3 items-start"
+          style={{ background: 'rgba(127,82,104,0.07)', border: '1px solid rgba(127,82,104,0.15)' }}
+        >
+          <span className="text-xl flex-shrink-0">💻</span>
+          <p className="text-sm font-light" style={{ color: '#7F5268' }}>
+            <strong className="font-semibold">לא חייבים להוריד.</strong>{' '}
+            אמא בסדר עובדת ישירות מהדפדפן — במחשב ובטלפון — גם בלי הוספה לדף הבית.
+            אם לא הצלחתם, פשוט גשו ל-<strong className="font-semibold">mama-system.vercel.app</strong> מכל דפדפן.
+          </p>
+        </div>
+
+        <PwaInstallTabs />
       </section>
 
       <HeroEditor />

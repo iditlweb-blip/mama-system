@@ -91,7 +91,7 @@ export default function ChatClient({ history }: { history: ChatMessage[] }) {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-130px)] max-w-3xl">
+    <div className="flex flex-col h-[calc(100svh-130px)] max-w-3xl">
       {/* Mode Selector */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {modes.map(m => {

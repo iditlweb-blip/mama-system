@@ -13,10 +13,10 @@ import { useState } from 'react'
 
 const navItems = [
   { href: '/dashboard',   icon: LayoutDashboard, label: 'דשבורד' },
+  { href: '/tracker',     icon: Activity,        label: 'מעקב תינוק' },
   { href: '/tasks',       icon: CheckSquare,     label: 'משימות' },
   { href: '/business',    icon: Briefcase,       label: 'ניהול עבודה' },
   { href: '/development', icon: Baby,            label: 'התפתחות' },
-  { href: '/tracker',     icon: Activity,        label: 'מעקב תינוק' },
   { href: '/personal',    icon: Heart,           label: 'לעצמי' },
   { href: '/chat',        icon: MessageCircle,   label: "צ׳אט AI" },
   { href: '/settings',    icon: Settings,        label: 'הגדרות' },

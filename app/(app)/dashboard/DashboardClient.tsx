@@ -100,7 +100,12 @@ export default function DashboardClient({
             />
           </div>
           <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>
-            💜 {profile.baby_name} מתקדמ.ת בקצב שלו.ה ועושה עבודה מדהימה
+            💜 {profile.baby_name}{' '}
+            {profile.baby_gender === 'girl'
+              ? 'מתקדמת בקצב שלה ועושה עבודה מדהימה'
+              : profile.baby_gender === 'boy'
+              ? 'מתקדם בקצב שלו ועושה עבודה מדהים'
+              : 'מתקדמ.ת בקצב שלו.ה ועושה עבודה מדהימה'}
           </p>
         </div>
       )}
