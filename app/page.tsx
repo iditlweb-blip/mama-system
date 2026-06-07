@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import HeroEditor from '@/components/HeroEditor'
 
 export default function LandingPage() {
   return (
@@ -19,7 +20,7 @@ export default function LandingPage() {
       >
         {/* ── Nav — logo right (RTL start), button left (RTL end) ── */}
         <nav style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 28px' }}>
-          <Image src="/logo.svg" alt="אמא בסדר" width={22} height={38} priority />
+          <Image src="/logo.svg" alt="אמא בסדר" width={36} height={62} priority data-hero="logo" />
           <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
             כניסה
             <ArrowIcon />
@@ -35,21 +36,23 @@ export default function LandingPage() {
             style={{ textAlign: 'center', padding: '10px 16px 0', flexShrink: 0, position: 'relative', zIndex: 10 }}
           >
             <h1
+              data-hero="h1"
+              className="md:whitespace-nowrap"
               style={{
-                fontSize: 'clamp(1.4rem, 3.2vw, 2.6rem)',
+                fontSize: 'clamp(1.55rem, 3.2vw, 3.3rem)',
                 fontWeight: 800,
                 lineHeight: 1.2,
                 color: '#111',
                 letterSpacing: '-0.02em',
-                margin: '0 auto 6px',
-                whiteSpace: 'nowrap',
+                margin: '0 auto 8px',
               }}
             >
               אמא אחת. אלף משימות. מערכת אחת.
             </h1>
             <p
-              className="anim-fade-up-2"
-              style={{ fontSize: 'clamp(0.8rem, 1.6vw, 1rem)', color: '#7F5268', margin: '0 auto', whiteSpace: 'nowrap', fontWeight: 300 }}
+              data-hero="subtitle"
+              className="anim-fade-up-2 md:whitespace-nowrap"
+              style={{ fontSize: 'clamp(0.9rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300 }}
             >
               המערכת שמסדרת לך את החיים — לא רק את העסק
             </p>
@@ -102,12 +105,13 @@ export default function LandingPage() {
               />
             </div>
 
-            {/* Center mom — centered with flex, z-10 */}
+            {/* Center mom — centered, shifted down slightly */}
             <div
+              data-hero="img-wrap"
               className="anim-float"
               style={{
                 position: 'absolute',
-                top: 0, bottom: 0,
+                top: '3%', bottom: 0,
                 left: 0, right: 0,
                 display: 'flex',
                 justifyContent: 'center',
@@ -117,10 +121,11 @@ export default function LandingPage() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
+                data-hero="img"
                 src="/images/hero-mom.png"
                 alt="אמא ותינוק"
                 style={{
-                  width: 'clamp(240px, 52%, 500px)',
+                  width: 'clamp(220px, 60%, 520px)',
                   height: '100%',
                   objectFit: 'contain',
                   objectPosition: 'center top',
@@ -132,10 +137,11 @@ export default function LandingPage() {
 
             {/* "אמא בסדר" — handwriting display text, overlaid */}
             <div
+              data-hero="display-wrap"
               className="anim-fade-up-3"
               style={{
                 position: 'absolute',
-                bottom: 'clamp(68px, 13%, 100px)',
+                bottom: 'clamp(72px, 14.5%, 115px)',
                 left: 0, right: 0,
                 textAlign: 'center',
                 zIndex: 20,
@@ -145,9 +151,10 @@ export default function LandingPage() {
               aria-hidden="true"
             >
               <span
+                data-hero="display-text"
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(3rem, 10.5vw, 8rem)',
+                  fontSize: 'clamp(3.5rem, 12vw, 9.5rem)',
                   color: '#7F5268',
                   WebkitTextStroke: '1px #7F5268',
                   paintOrder: 'stroke fill',
@@ -359,6 +366,8 @@ export default function LandingPage() {
           <ArrowIcon color="#7F5268" />
         </Link>
       </section>
+
+      <HeroEditor />
 
       {/* ── Footer ── */}
       <footer className="w-full text-center py-7 px-6" style={{ background: '#F7EDE2', borderTop: '1px solid rgba(127,82,104,0.1)' }}>
