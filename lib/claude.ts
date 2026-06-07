@@ -45,13 +45,7 @@ export async function streamChatResponse(
   return anthropic.messages.stream({
     model: 'claude-sonnet-4-5',
     max_tokens: 1024,
-    system: [
-      {
-        type: 'text',
-        text: systemPrompts[mode],
-        cache_control: { type: 'ephemeral' }
-      }
-    ],
+    system: systemPrompts[mode],
     messages,
   })
 }

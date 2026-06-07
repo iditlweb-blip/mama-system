@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { User, Baby, Briefcase, Link, Check, Loader2, Camera, AlertTriangle, X } from 'lucide-react'
 
@@ -24,6 +25,7 @@ interface Props { profile: ProfileFull | null; userId: string; userEmail: string
 
 export default function SettingsClient({ profile, userId, userEmail }: Props) {
   const supabase = createClient()
+  const router = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -65,6 +67,8 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       setProfilePicUrl(publicUrl)
 
       await supabase.from('profiles').upsert({ id: userId, profile_picture_url: publicUrl })
+      // Refresh server components so TopBar picks up the new photo immediately
+      router.refresh()
     } catch (err: unknown) {
       setError('שגיאה בהעלאת התמונה. ודאי שה-bucket "avatars" קיים ב-Supabase Storage.')
     } finally {
@@ -111,6 +115,8 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
+      // Refresh server components (TopBar name, baby name, etc.)
+      router.refresh()
     }
 
     setSaving(false)
