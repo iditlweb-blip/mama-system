@@ -1,4 +1,4 @@
-import { streamChatResponse } from '@/lib/claude'
+import { streamGeminiResponse } from '@/lib/gemini'
 import { createClient } from '@/lib/supabase/server'
 import { ChatMode } from '@/types/database'
 import { NextResponse } from 'next/server'
@@ -24,35 +24,31 @@ export async function POST(req: Request) {
       }).then(() => {})
     }
 
-    const stream = await streamChatResponse(messages, mode)
-    let fullResponse = ''
-    const encoder = new TextEncoder()
+    const readable = await streamGeminiResponse(messages, mode)
 
-    const readable = new ReadableStream({
-      async start(controller) {
-        try {
-          for await (const chunk of stream) {
-            if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-              const text = chunk.delta.text
-              fullResponse += text
-              controller.enqueue(encoder.encode(text))
-            }
-          }
-        } catch (e) {
-          console.error('[chat stream error]', e)
-          controller.enqueue(encoder.encode('\n\nאירעה שגיאה בחיבור ל-AI. אנא נסי שוב.'))
-        }
-        controller.close()
-        // Save response (non-blocking)
-        if (fullResponse) {
-          supabase.from('chat_messages').insert({
-            user_id: user.id, role: 'assistant', content: fullResponse, mode
-          }).then(() => {})
-        }
-      },
-    })
+    // Save assistant response after stream finishes (via tee)
+    const [stream1, stream2] = readable.tee()
 
-    return new Response(readable, {
+    // Background: collect full response and save
+    ;(async () => {
+      try {
+        const reader = stream2.getReader()
+        const decoder = new TextDecoder()
+        let full = ''
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          full += decoder.decode(value)
+        }
+        if (full) {
+          await supabase.from('chat_messages').insert({
+            user_id: user.id, role: 'assistant', content: full, mode
+          })
+        }
+      } catch { /* silent */ }
+    })()
+
+    return new Response(stream1, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
