@@ -14,6 +14,7 @@ export default function LandingPage() {
           [data-hero="img"]          { width: 90% !important; }
           [data-hero="display-wrap"] { bottom: 21% !important; }
           [data-hero="side"]         { opacity: 0.55 !important; z-index: 15 !important; }
+          [data-hero="side"] img     { mask-image: none !important; -webkit-mask-image: none !important; }
         }
       `}</style>
 
