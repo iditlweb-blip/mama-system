@@ -6,6 +6,16 @@ export default function LandingPage() {
   return (
     <main style={{ background: '#F7EDE2', fontFamily: 'var(--font-body)', overflowX: 'hidden', direction: 'rtl' }}>
 
+      {/* ── Mobile hero overrides ── */}
+      <style>{`
+        @media (max-width: 767px) {
+          [data-hero="display-text"] { font-size: 7.5vw !important; }
+          [data-hero="img-wrap"]     { top: 5% !important; }
+          [data-hero="img"]          { width: 90% !important; }
+          [data-hero="display-wrap"] { bottom: 21% !important; }
+        }
+      `}</style>
+
       {/* ═══════════════════════════════════════════════════════════
           HERO — full viewport, no scroll
       ═══════════════════════════════════════════════════════════ */}
@@ -39,7 +49,7 @@ export default function LandingPage() {
               data-hero="h1"
               className="md:whitespace-nowrap"
               style={{
-                fontSize: 'clamp(1.55rem, 3.2vw, 3.3rem)',
+                fontSize: 'clamp(1.85rem, 3.2vw, 3.3rem)',
                 fontWeight: 800,
                 lineHeight: 1.2,
                 color: '#111',
@@ -52,7 +62,7 @@ export default function LandingPage() {
             <p
               data-hero="subtitle"
               className="anim-fade-up-2 md:whitespace-nowrap"
-              style={{ fontSize: 'clamp(0.9rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300 }}
+              style={{ fontSize: 'clamp(0.85rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300 }}
             >
               המערכת שמסדרת לך את החיים — לא רק את העסק
             </p>
