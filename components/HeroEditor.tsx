@@ -25,8 +25,8 @@ const DESK_DEF: DeskVals = {
   displayBottom: 14.5, imageTop: 3, imageWidth: 60, logoSize: 62, ctaBottom: 2.5,
 }
 const MOB_DEF: MobVals = {
-  h1Size: 1.55, subtitleSize: 0.88, displaySize: 13,
-  displayBottom: 12, imageTop: 2, imageWidth: 88, ctaBottom: 2.5,
+  h1Size: 1.85, subtitleSize: 0.85, displaySize: 42,
+  displayBottom: 21, imageTop: 5, imageWidth: 90, ctaBottom: 2.5,
 }
 
 export default function HeroEditor() {
@@ -81,12 +81,12 @@ function EditorPanel() {
       el.textContent = `
         [data-hero="h1"]           { font-size: ${v.h1Size}rem    !important; white-space: normal !important; }
         [data-hero="subtitle"]     { font-size: ${v.subtitleSize}rem !important; white-space: normal !important; }
-        [data-hero="display-text"] { font-size: ${v.displaySize}vw !important; }
+        [data-hero="display-text"] { font-size: ${v.displaySize}px !important; }
         [data-hero="display-wrap"] { bottom: clamp(55px, ${v.displayBottom}%, 100px) !important; }
         [data-hero="img-wrap"]     { top: ${v.imageTop}% !important; }
         [data-hero="img"]          { width: ${v.imageWidth}% !important; }
         [data-hero="cta-wrap"]     { bottom: clamp(8px, ${v.ctaBottom}%, 32px) !important; }
-        [data-hero="side"]         { display: none !important; }
+        [data-hero="side"]         { opacity: 0.35 !important; }
       `
     } else {
       // Real @media for actual device testing
@@ -94,11 +94,12 @@ function EditorPanel() {
         @media (max-width: 767px) {
           [data-hero="h1"]           { font-size: ${v.h1Size}rem    !important; white-space: normal !important; }
           [data-hero="subtitle"]     { font-size: ${v.subtitleSize}rem !important; white-space: normal !important; }
-          [data-hero="display-text"] { font-size: ${v.displaySize}vw !important; }
+          [data-hero="display-text"] { font-size: ${v.displaySize}px !important; }
           [data-hero="display-wrap"] { bottom: clamp(55px, ${v.displayBottom}%, 100px) !important; }
           [data-hero="img-wrap"]     { top: ${v.imageTop}% !important; }
           [data-hero="img"]          { width: ${v.imageWidth}% !important; }
           [data-hero="cta-wrap"]     { bottom: clamp(8px, ${v.ctaBottom}%, 32px) !important; }
+          [data-hero="side"]         { opacity: 0.35 !important; }
         }
       `
     }
@@ -170,7 +171,7 @@ function EditorPanel() {
   const mobSliders: SliderCfg[] = [
     { key: 'h1Size',        label: 'כותרת ראשית',     min: 1,   max: 3,   step: 0.05, unit: 'rem' },
     { key: 'subtitleSize',  label: 'כותרת משנה',      min: 0.6, max: 1.5, step: 0.05, unit: 'rem' },
-    { key: 'displaySize',   label: '"אמא בסדר" גודל',  min: 6,   max: 20,  step: 0.5,  unit: 'vw'  },
+    { key: 'displaySize',   label: '"אמא בסדר" גודל',  min: 20,  max: 80,  step: 1,    unit: 'px'  },
     { key: 'displayBottom', label: '"אמא בסדר" גובה',  min: 4,   max: 25,  step: 0.5,  unit: '%'   },
     { key: 'imageTop',      label: 'תמונה ↓',          min: 0,   max: 15,  step: 0.5,  unit: '%'   },
     { key: 'imageWidth',    label: 'תמונה רוחב',       min: 50,  max: 100, step: 1,    unit: '%'   },
@@ -179,7 +180,7 @@ function EditorPanel() {
 
   // ── copy prompt ───────────────────────────────────────────────────────────
   const deskPrompt = `DESKTOP: h1=${desk.h1Size}rem | sub=${desk.subtitleSize}rem | display=${desk.displaySize}vw | displayBottom=${desk.displayBottom}% | imgTop=${desk.imageTop}% | imgW=${desk.imageWidth}% | logo=${desk.logoSize}px`
-  const mobPrompt  = `MOBILE:  h1=${mob.h1Size}rem | sub=${mob.subtitleSize}rem | display=${mob.displaySize}vw | displayBottom=${mob.displayBottom}% | imgTop=${mob.imageTop}% | imgW=${mob.imageWidth}%`
+  const mobPrompt  = `MOBILE:  h1=${mob.h1Size}rem | sub=${mob.subtitleSize}rem | display=${mob.displaySize}px | displayBottom=${mob.displayBottom}% | imgTop=${mob.imageTop}% | imgW=${mob.imageWidth}%`
 
   function copyAll() {
     navigator.clipboard.writeText(deskPrompt + '\n' + mobPrompt)

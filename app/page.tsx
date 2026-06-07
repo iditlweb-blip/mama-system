@@ -9,10 +9,11 @@ export default function LandingPage() {
       {/* ── Mobile hero overrides ── */}
       <style>{`
         @media (max-width: 767px) {
-          [data-hero="display-text"] { font-size: 7.5vw !important; }
+          [data-hero="display-text"] { font-size: 42px !important; }
           [data-hero="img-wrap"]     { top: 5% !important; }
           [data-hero="img"]          { width: 90% !important; }
           [data-hero="display-wrap"] { bottom: 21% !important; }
+          [data-hero="side"]         { opacity: 0.35 !important; }
         }
       `}</style>
 
@@ -74,7 +75,6 @@ export default function LandingPage() {
             {/* Toys — physical left (visual right in RTL) */}
             <div
               data-hero="side"
-              className="hidden md:block"
               style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none', zIndex: 1 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -97,7 +97,6 @@ export default function LandingPage() {
             {/* Office — physical right (visual left in RTL) */}
             <div
               data-hero="side"
-              className="hidden md:block"
               style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '33%', pointerEvents: 'none', zIndex: 1 }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
