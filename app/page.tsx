@@ -9,11 +9,11 @@ export default function LandingPage() {
       {/* ── Mobile hero overrides ── */}
       <style>{`
         @media (max-width: 767px) {
-          [data-hero="display-text"] { font-size: 42px !important; }
+          [data-hero="display-text"] { font-size: 96px !important; }
           [data-hero="img-wrap"]     { top: 5% !important; }
           [data-hero="img"]          { width: 90% !important; }
           [data-hero="display-wrap"] { bottom: 21% !important; }
-          [data-hero="side"]         { opacity: 0.35 !important; }
+          [data-hero="side"]         { opacity: 0.55 !important; z-index: 15 !important; }
         }
       `}</style>
 
