@@ -1,4 +1,4 @@
-import { streamGeminiResponse } from '@/lib/gemini'
+import { streamGroqResponse } from '@/lib/groq'
 import { createClient } from '@/lib/supabase/server'
 import { ChatMode } from '@/types/database'
 import { NextResponse } from 'next/server'
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
       }).then(() => {})
     }
 
-    const readable = await streamGeminiResponse(messages, mode)
+    const readable = await streamGroqResponse(messages, mode)
 
     return new Response(readable, {
       headers: {
