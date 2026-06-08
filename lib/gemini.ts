@@ -1,8 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { ChatMode } from '@/types/database'
 
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!)
-
 const systemPrompts: Record<ChatMode, string> = {
   baby: `את עוזרת אישית לאמא ישראלית עם תינוק בגילאי 0-12 חודשים.
 ענ/י בעברית בלבד, בטון חם, תומך ומבין.
@@ -39,8 +37,21 @@ export async function streamGeminiResponse(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   mode: ChatMode
 ): Promise<ReadableStream<Uint8Array>> {
+  const apiKey = process.env.GOOGLE_API_KEY
+  if (!apiKey) {
+    const encoder = new TextEncoder()
+    return new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode('⚠️ שגיאת הגדרות: GOOGLE_API_KEY לא מוגדר. יש להוסיף אותו ב-Vercel → Settings → Environment Variables.'))
+        controller.close()
+      }
+    })
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey)
+
   const model = genAI.getGenerativeModel({
-    model: 'gemini-2.0-flash',
+    model: 'gemini-1.5-flash',
     systemInstruction: systemPrompts[mode],
   })
 
@@ -66,7 +77,8 @@ export async function streamGeminiResponse(
         }
       } catch (e) {
         console.error('[gemini stream error]', e)
-        controller.enqueue(encoder.encode('\n\nאירעה שגיאה. אנא נסי שוב.'))
+        const errMsg = e instanceof Error ? e.message : String(e)
+        controller.enqueue(encoder.encode(`\n\nשגיאה: ${errMsg}`))
       }
       controller.close()
     },

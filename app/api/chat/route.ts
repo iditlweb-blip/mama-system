@@ -35,6 +35,17 @@ export async function POST(req: Request) {
     })
   } catch (e: unknown) {
     console.error('Chat API error:', e)
-    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+    const errMsg = e instanceof Error ? e.message : String(e)
+    // Return error as a stream so the chat UI shows it inline
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(encoder.encode(`⚠️ שגיאה: ${errMsg}`))
+        controller.close()
+      }
+    })
+    return new Response(stream, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+    })
   }
 }
