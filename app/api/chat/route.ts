@@ -26,29 +26,7 @@ export async function POST(req: Request) {
 
     const readable = await streamGeminiResponse(messages, mode)
 
-    // Save assistant response after stream finishes (via tee)
-    const [stream1, stream2] = readable.tee()
-
-    // Background: collect full response and save
-    ;(async () => {
-      try {
-        const reader = stream2.getReader()
-        const decoder = new TextDecoder()
-        let full = ''
-        while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          full += decoder.decode(value)
-        }
-        if (full) {
-          await supabase.from('chat_messages').insert({
-            user_id: user.id, role: 'assistant', content: full, mode
-          })
-        }
-      } catch { /* silent */ }
-    })()
-
-    return new Response(stream1, {
+    return new Response(readable, {
       headers: {
         'Content-Type': 'text/plain; charset=utf-8',
         'Cache-Control': 'no-cache',
