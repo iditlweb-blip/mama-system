@@ -35,7 +35,7 @@ export default function PreloaderLottie() {
         }
         @media (max-width: 1025px) {
           #preloader-lottie {
-            width: 250px;
+            width: 500px;
           }
         }
       `}</style>

@@ -36,7 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="אמא בסדר" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
-      <body className="min-h-screen">
+      {/* Inline bg on <body> loads instantly — prevents white flash when opening PWA from home screen */}
+      <body className="min-h-screen" style={{ backgroundColor: '#f7ede2' }}>
         {children}
       </body>
     </html>
