@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
 import PwaTracker from '@/components/PwaTracker'
+import PreloaderLottie from '@/components/PreloaderLottie'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -17,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
+      <PreloaderLottie />
       <Sidebar userName={profile?.name} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
