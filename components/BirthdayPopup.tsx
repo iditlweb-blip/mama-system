@@ -42,7 +42,7 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
 
   if (!visible || !milestone) return null
 
-  const genderSuffix = babyGender === 'girl' ? 'ה' : ''
+  const genderWord = babyGender === 'girl' ? 'בת' : 'בן'
 
   return (
     <div
@@ -64,7 +64,7 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
 
         <div className="text-5xl mb-3">{milestone.emoji}</div>
         <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>
-          {babyName} בן{genderSuffix} {milestone.label}! 🎊
+          {babyName} {genderWord} {milestone.label}! 🎊
         </h3>
         <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
           איך את רוצה לציין או לחגוג ל{babyName}?
