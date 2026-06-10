@@ -14,6 +14,18 @@ export const metadata: Metadata = {
     icon: "/icons/icon-192.png",
     apple: "/icons/icon-192.png",
   },
+  openGraph: {
+    title: "אמא בסדר",
+    description: "מערכת ניהול לאמהות עצמאיות — משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
+    siteName: "אמא בסדר",
+    locale: "he_IL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "אמא בסדר",
+    description: "מערכת ניהול לאמהות עצמאיות",
+  },
 }
 
 export const viewport: Viewport = {
