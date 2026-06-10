@@ -1,7 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Moon, Sun, Bell } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Moon, Sun, Bell, X, Check } from 'lucide-react'
+
+interface AppNotification {
+  id: string
+  text: string
+  read: boolean
+  ts: number
+}
 
 interface Props {
   babyName?: string | null
@@ -9,11 +16,25 @@ interface Props {
   profilePicUrl?: string | null
 }
 
+function loadNotifications(): AppNotification[] {
+  try {
+    const raw = localStorage.getItem('mama_notifications')
+    return raw ? JSON.parse(raw) : []
+  } catch { return [] }
+}
+
+function saveNotifications(list: AppNotification[]) {
+  localStorage.setItem('mama_notifications', JSON.stringify(list))
+}
+
 export default function TopBar({ babyName, profilePicUrl }: Props) {
   const [dark, setDark] = useState(false)
   const [date, setDate] = useState('')
-  const [notification, setNotification] = useState<string | null>(null)
-  const [showNotifDrop, setShowNotifDrop] = useState(false)
+  const [notifications, setNotifications] = useState<AppNotification[]>([])
+  const [showDrop, setShowDrop] = useState(false)
+  const dropRef = useRef<HTMLDivElement>(null)
+
+  const hasUnread = notifications.some(n => !n.read)
 
   useEffect(() => {
     const d = new Date()
@@ -21,25 +42,34 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
     const saved = localStorage.getItem('darkMode')
     if (saved === 'true') { setDark(true); document.documentElement.classList.add('dark') }
 
-    // Load pending notification
-    loadNotification()
-    window.addEventListener('notification_update', loadNotification)
-    return () => window.removeEventListener('notification_update', loadNotification)
+    setNotifications(loadNotifications())
+
+    function onUpdate() { setNotifications(loadNotifications()) }
+    window.addEventListener('notification_update', onUpdate)
+    return () => window.removeEventListener('notification_update', onUpdate)
   }, [])
 
-  function loadNotification() {
-    const raw = localStorage.getItem('pending_notification')
-    if (raw) {
-      try { setNotification(JSON.parse(raw).text) } catch { setNotification(null) }
-    } else {
-      setNotification(null)
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (dropRef.current && !dropRef.current.contains(e.target as Node)) {
+        setShowDrop(false)
+      }
     }
+    if (showDrop) document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showDrop])
+
+  function markRead(id: string) {
+    const updated = notifications.map(n => n.id === id ? { ...n, read: true } : n)
+    setNotifications(updated)
+    saveNotifications(updated)
   }
 
-  function dismissNotification() {
-    localStorage.removeItem('pending_notification')
-    setNotification(null)
-    setShowNotifDrop(false)
+  function deleteNotification(id: string) {
+    const updated = notifications.filter(n => n.id !== id)
+    setNotifications(updated)
+    saveNotifications(updated)
   }
 
   function toggleDark() {
@@ -88,47 +118,105 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
         </button>
 
         {/* Bell with badge */}
-        <div style={{ position: 'relative' }}>
+        <div ref={dropRef} style={{ position: 'relative' }}>
           <button
-            onClick={() => setShowNotifDrop(v => !v)}
+            onClick={() => setShowDrop(v => !v)}
             className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', position: 'relative' }}
             title="התראות"
           >
-            <Bell className="w-3.5 h-3.5" style={{ color: notification ? '#7F5268' : 'var(--text-muted)' }} />
-            {notification && (
+            <Bell className="w-3.5 h-3.5" style={{ color: hasUnread ? '#7F5268' : 'var(--text-muted)' }} />
+            {hasUnread && (
               <span style={{
                 position: 'absolute', top: '-3px', right: '-3px',
                 width: 10, height: 10, borderRadius: '50%',
                 background: '#C0392B', border: '1.5px solid white',
+                pointerEvents: 'none',
               }} />
             )}
           </button>
 
           {/* Dropdown */}
-          {showNotifDrop && (
+          {showDrop && (
             <div
               style={{
-                position: 'absolute', top: '100%', left: 0, marginTop: 6,
-                minWidth: 220, background: 'var(--bg)',
+                position: 'absolute', top: 'calc(100% + 6px)', left: 0,
+                minWidth: 260, background: 'var(--bg)',
                 border: '1px solid var(--border)', borderRadius: 12,
                 boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
-                padding: 12, zIndex: 200,
+                zIndex: 200, overflow: 'hidden',
               }}
             >
-              {notification ? (
-                <>
-                  <p className="text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>🎉 {notification}</p>
+              <div
+                className="px-3 py-2 border-b flex items-center justify-between"
+                style={{ borderColor: 'var(--border)' }}
+              >
+                <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>התראות</span>
+                {notifications.length > 0 && (
                   <button
-                    onClick={dismissNotification}
-                    className="text-xs w-full text-center py-1.5 rounded-lg"
-                    style={{ background: 'var(--surface-2)', color: 'var(--text-muted)' }}
+                    onClick={() => { setNotifications([]); saveNotifications([]) }}
+                    className="text-xs"
+                    style={{ color: 'var(--text-muted)' }}
                   >
-                    סמן כנקרא
+                    נקה הכל
                   </button>
-                </>
+                )}
+              </div>
+
+              {notifications.length === 0 ? (
+                <p className="text-xs text-center py-4" style={{ color: 'var(--text-muted)' }}>אין התראות</p>
               ) : (
-                <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>אין התראות חדשות</p>
+                <div style={{ maxHeight: 320, overflowY: 'auto' }}>
+                  {notifications.map(n => (
+                    <div
+                      key={n.id}
+                      className="px-3 py-2.5 flex items-start gap-2"
+                      style={{
+                        borderBottom: '1px solid var(--border)',
+                        background: n.read ? 'transparent' : 'rgba(127,82,104,0.04)',
+                      }}
+                    >
+                      {/* Unread dot */}
+                      <span
+                        style={{
+                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0, marginTop: 5,
+                          background: n.read ? 'transparent' : '#C0392B',
+                          border: n.read ? '1.5px solid var(--border)' : 'none',
+                        }}
+                      />
+
+                      {/* Text */}
+                      <p
+                        className="flex-1 text-sm leading-snug"
+                        style={{ color: 'var(--text)', fontWeight: n.read ? 400 : 600 }}
+                      >
+                        {n.text}
+                      </p>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0 mt-0.5">
+                        {!n.read && (
+                          <button
+                            onClick={() => markRead(n.id)}
+                            title="סמן כנקרא"
+                            className="w-5 h-5 rounded flex items-center justify-center hover:opacity-70"
+                            style={{ background: 'rgba(74,124,89,0.12)' }}
+                          >
+                            <Check className="w-3 h-3" style={{ color: '#4A7C59' }} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteNotification(n.id)}
+                          title="מחק"
+                          className="w-5 h-5 rounded flex items-center justify-center hover:opacity-70"
+                          style={{ background: 'rgba(192,57,43,0.1)' }}
+                        >
+                          <X className="w-3 h-3" style={{ color: '#C0392B' }} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}

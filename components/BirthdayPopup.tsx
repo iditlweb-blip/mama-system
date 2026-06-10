@@ -10,12 +10,29 @@ interface Props {
   babyWeeks: number
 }
 
+interface AppNotification {
+  id: string
+  text: string
+  read: boolean
+  ts: number
+}
+
 function getMilestone(weeks: number): { key: string; label: string; emoji: string } | null {
-  // 6 months = ~26 weeks (show between 24-28 weeks)
   if (weeks >= 24 && weeks <= 28) return { key: 'half', label: 'חצי שנה', emoji: '🎉' }
-  // 1 year = ~52 weeks (show between 50-54 weeks)
   if (weeks >= 50 && weeks <= 54) return { key: 'year', label: 'שנה שלמה', emoji: '🎂' }
   return null
+}
+
+function pushNotification(notif: Omit<AppNotification, 'ts' | 'read'>) {
+  try {
+    const raw = localStorage.getItem('mama_notifications')
+    const list: AppNotification[] = raw ? JSON.parse(raw) : []
+    // Avoid duplicates
+    if (list.find(n => n.id === notif.id)) return
+    list.unshift({ ...notif, read: false, ts: Date.now() })
+    localStorage.setItem('mama_notifications', JSON.stringify(list))
+    window.dispatchEvent(new Event('notification_update'))
+  } catch {}
 }
 
 export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props) {
@@ -26,19 +43,17 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
     if (!milestone) return
     const key = `milestone_${milestone.key}_shown`
     if (localStorage.getItem(key)) return
-    // Show after 2s
     const timer = setTimeout(() => {
       setVisible(true)
       localStorage.setItem(key, '1')
-      // Set notification badge
-      localStorage.setItem('pending_notification', JSON.stringify({
-        text: `${babyName} ${milestone.label}! 🎉`,
-        key: milestone.key,
-      }))
-      window.dispatchEvent(new Event('notification_update'))
+      const genderWord = babyGender === 'girl' ? 'בת' : 'בן'
+      pushNotification({
+        id: `milestone_${milestone.key}`,
+        text: `${babyName} ${genderWord} ${milestone.label}! ${milestone.emoji}`,
+      })
     }, 2000)
     return () => clearTimeout(timer)
-  }, [milestone, babyName])
+  }, [milestone, babyName, babyGender])
 
   if (!visible || !milestone) return null
 
