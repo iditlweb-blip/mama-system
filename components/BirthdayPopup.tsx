@@ -23,13 +23,12 @@ function getMilestone(weeks: number): { key: string; label: string; emoji: strin
   return null
 }
 
-function pushNotification(notif: Omit<AppNotification, 'ts' | 'read'>) {
+function ensureNotification(id: string, text: string, read: boolean) {
   try {
     const raw = localStorage.getItem('mama_notifications')
     const list: AppNotification[] = raw ? JSON.parse(raw) : []
-    // Avoid duplicates
-    if (list.find(n => n.id === notif.id)) return
-    list.unshift({ ...notif, read: false, ts: Date.now() })
+    if (list.find(n => n.id === id)) return   // already exists — don't touch it
+    list.unshift({ id, text, read, ts: Date.now() })
     localStorage.setItem('mama_notifications', JSON.stringify(list))
     window.dispatchEvent(new Event('notification_update'))
   } catch {}
@@ -41,16 +40,23 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
 
   useEffect(() => {
     if (!milestone) return
-    const key = `milestone_${milestone.key}_shown`
-    if (localStorage.getItem(key)) return
+
+    const shownKey  = `milestone_${milestone.key}_shown`
+    const alreadyShown = !!localStorage.getItem(shownKey)
+    const genderWord   = babyGender === 'girl' ? 'בת' : 'בן'
+    const notifId      = `milestone_${milestone.key}`
+    const notifText    = `${babyName} ${genderWord} ${milestone.label}! ${milestone.emoji}`
+
+    // Always make sure the notification exists in the list.
+    // If popup was already shown → create as read (no red dot).
+    // If not yet shown → create as unread (red dot).
+    ensureNotification(notifId, notifText, alreadyShown)
+
+    // Show popup only the first time
+    if (alreadyShown) return
     const timer = setTimeout(() => {
       setVisible(true)
-      localStorage.setItem(key, '1')
-      const genderWord = babyGender === 'girl' ? 'בת' : 'בן'
-      pushNotification({
-        id: `milestone_${milestone.key}`,
-        text: `${babyName} ${genderWord} ${milestone.label}! ${milestone.emoji}`,
-      })
+      localStorage.setItem(shownKey, '1')
     }, 2000)
     return () => clearTimeout(timer)
   }, [milestone, babyName, babyGender])
