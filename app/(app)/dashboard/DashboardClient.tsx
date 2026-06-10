@@ -3,8 +3,10 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check } from 'lucide-react'
 import { Task, BabyLog, Profile } from '@/types/database'
+import SelfCarePopup from './SelfCarePopup'
+import BirthdayPopup from '@/components/BirthdayPopup'
 
 interface Props {
   profile: Profile | null
@@ -22,7 +24,6 @@ const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
 const categoryLabels  = { work: '💼 עבודה', home: '🏠 בית', baby: '👶 תינוק' }
 const categoryClass   = { work: 'cat-work', home: 'cat-home', baby: 'cat-baby' }
 
-// Tracker quick-log colors aligned with new palette
 const TRACK = [
   { type: 'feed'   as const, icon: Milk,     label: 'האכלה', color: '#7F5268' },
   { type: 'sleep'  as const, icon: BedDouble, label: 'שינה',  color: '#5C7A6A' },
@@ -33,25 +34,49 @@ export default function DashboardClient({
   profile, tasks, motivation, babyWeeks, babyAgeLabel,
   nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs,
 }: Props) {
-  const [quickLoading, setQuickLoading] = useState<string | null>(null)
   const supabase = createClient()
 
-  const feedCount   = todayLogs.filter(l => l.type === 'feed').length
-  const sleepCount  = todayLogs.filter(l => l.type === 'sleep').length
-  const diaperCount = todayLogs.filter(l => l.type === 'diaper').length
+  const [feedCount,   setFeedCount]   = useState(todayLogs.filter(l => l.type === 'feed').length)
+  const [sleepCount,  setSleepCount]  = useState(todayLogs.filter(l => l.type === 'sleep').length)
+  const [diaperCount, setDiaperCount] = useState(todayLogs.filter(l => l.type === 'diaper').length)
 
-  async function quickLog(type: 'feed' | 'sleep' | 'diaper') {
-    setQuickLoading(type)
+  const [quickOpen,    setQuickOpen]    = useState(false)
+  const [selectedType, setSelectedType] = useState<'feed'|'sleep'|'diaper'|null>(null)
+  const [saving,       setSaving]       = useState(false)
+  const [savedFlash,   setSavedFlash]   = useState(false)
+
+  async function saveLog() {
+    if (!selectedType) return
+    setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('baby_logs').insert({ user_id: user!.id, type, start_time: new Date().toISOString() })
-    setQuickLoading(null)
-    window.location.reload()
+    await supabase.from('baby_logs').insert({ user_id: user!.id, type: selectedType, start_time: new Date().toISOString() })
+    // Optimistic counter update — no reload
+    if (selectedType === 'feed')   setFeedCount(c => c + 1)
+    if (selectedType === 'sleep')  setSleepCount(c => c + 1)
+    if (selectedType === 'diaper') setDiaperCount(c => c + 1)
+    setSaving(false)
+    setSelectedType(null)
+    setQuickOpen(false)
+    setSavedFlash(true)
+    setTimeout(() => setSavedFlash(false), 2000)
   }
 
   const progressPercent = Math.min((babyWeeks / 52) * 100, 100)
 
   return (
     <div className="space-y-5 max-w-5xl">
+
+      {/* Self-care popup — once per session, 4s delay */}
+      <SelfCarePopup />
+
+      {/* Birthday milestone popup — at 6 months & 1 year */}
+      {profile?.baby_name && (
+        <BirthdayPopup
+          babyName={profile.baby_name}
+          babyGender={profile.baby_gender}
+          babyWeeks={babyWeeks}
+        />
+      )}
 
       {/* ── Greeting card ─────────────────────────── */}
       <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)' }}>
@@ -115,34 +140,74 @@ export default function DashboardClient({
 
         {/* Quick Log */}
         <div className="card">
-          <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <Plus className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-            רישום מהיר
-          </h2>
-          <div className="grid grid-cols-3 gap-2">
-            {TRACK.map(({ type, icon: Icon, label, color }) => (
-              <button
-                key={type}
-                onClick={() => quickLog(type)}
-                disabled={quickLoading === type}
-                className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all hover:opacity-80"
-                style={{ background: `${color}12`, border: `1px solid ${color}28` }}
-              >
-                <Icon className="w-4 h-4" style={{ color }} />
-                <span className="text-xs" style={{ color }}>{label}</span>
-              </button>
-            ))}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Plus className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+              רישום מהיר
+            </h2>
+            {savedFlash && (
+              <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
+                <Check className="w-3 h-3" /> נשמר!
+              </span>
+            )}
           </div>
-          <div className="grid grid-cols-3 gap-2 mt-3">
-            {TRACK.map(({ type, label, color }) => (
-              <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
-                <p className="text-base font-semibold" style={{ color }}>
-                  {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
-                </p>
-                <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
+
+          {!quickOpen ? (
+            /* Counts + open button */
+            <div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {TRACK.map(({ type, label, color }) => (
+                  <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
+                    <p className="text-base font-semibold" style={{ color }}>
+                      {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
+                    </p>
+                    <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+              <button
+                onClick={() => setQuickOpen(true)}
+                className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={{ background: 'rgba(127,82,104,0.1)', color: 'var(--primary)', border: '1px solid rgba(127,82,104,0.2)' }}
+              >
+                + הוסיפי רישום
+              </button>
+            </div>
+          ) : (
+            /* Inline type selector */
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>בחרי מה לרשום:</p>
+                <button onClick={() => { setQuickOpen(false); setSelectedType(null) }}>
+                  <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-2 mb-3">
+                {TRACK.map(({ type, icon: Icon, label, color }) => (
+                  <button
+                    key={type}
+                    onClick={() => setSelectedType(type)}
+                    className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all"
+                    style={{
+                      background: selectedType === type ? color : `${color}12`,
+                      border: `1.5px solid ${selectedType === type ? color : `${color}28`}`,
+                    }}
+                  >
+                    <Icon className="w-4 h-4" style={{ color: selectedType === type ? '#fff' : color }} />
+                    <span className="text-xs font-medium" style={{ color: selectedType === type ? '#fff' : color }}>{label}</span>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={saveLog}
+                disabled={!selectedType || saving}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
+                style={{ background: selectedType ? TRACK.find(t => t.type === selectedType)!.color : 'var(--border)' }}
+              >
+                {saving ? 'שומר...' : 'שמור'}
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Status */}
@@ -237,15 +302,6 @@ export default function DashboardClient({
         ))}
       </div>
 
-    </div>
-  )
-}
-
-function Stat({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
-      <p className="text-base font-semibold" style={{ color }}>{value}</p>
-      <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
     </div>
   )
 }

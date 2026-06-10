@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Send, Baby, Clock, Briefcase, Heart, Loader2, Bot } from 'lucide-react'
 import { ChatMode, ChatMessage } from '@/types/database'
+import { createClient } from '@/lib/supabase/client'
 
 const modes: { id: ChatMode; label: string; icon: React.ElementType; color: string; description: string; prompts: string[] }[] = [
   {
@@ -30,6 +31,7 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
 interface Message { role: 'user' | 'assistant'; content: string }
 
 export default function ChatClient({ history }: { history: ChatMessage[] }) {
+  const supabase = createClient()
   const [mode, setMode] = useState<ChatMode>('baby')
   const [messages, setMessages] = useState<Message[]>(
     history.map(h => ({ role: h.role, content: h.content }))
@@ -79,6 +81,13 @@ export default function ChatClient({ history }: { history: ChatMessage[] }) {
 
       setMessages([...newMessages, { role: 'assistant', content: full }])
       setStreaming('')
+      // Save assistant message (non-blocking)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        supabase.from('chat_messages').insert({
+          user_id: user.id, role: 'assistant', content: full, mode
+        }).then(() => {})
+      }
     } catch (e) {
       setMessages([...newMessages, { role: 'assistant', content: 'אירעה שגיאה. אנא נסי שוב.' }])
       setStreaming('')

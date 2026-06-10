@@ -37,10 +37,9 @@ export default function LandingPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <a
               href="#pwa-install"
-              className="btn-brand btn-brand-outline text-sm px-4 py-2"
-              style={{ fontSize: '0.8rem', padding: '0.5rem 1rem' }}
+              className="btn-brand btn-brand-outline text-sm px-5 py-2.5"
             >
-              📲 הורדה לטלפון
+              הורדה לטלפון
             </a>
             <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
               כניסה
@@ -267,6 +266,7 @@ export default function LandingPage() {
           <span
             style={{
               fontFamily: 'var(--font-display)',
+              fontSize: '1.3em',
               color: '#7F5268',
               WebkitTextStroke: '0.5px #7F5268',
               paintOrder: 'stroke fill',
@@ -343,7 +343,7 @@ export default function LandingPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="max-w-4xl mx-auto px-6 py-20">
         <h2 className="reveal text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#111' }}>
-          כי את עושה את הכי חשוב בעולם
+          את עושה את הכי טוב שלך וזה הכי טוב לתינוק שלך
         </h2>
         <div className="grid md:grid-cols-3 gap-5">
           {[

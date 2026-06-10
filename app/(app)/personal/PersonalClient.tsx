@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Loader2, Heart, Trash2, Sparkles } from 'lucide-react'
+import { Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check } from 'lucide-react'
 
 export interface PersonalLog {
   id: string
@@ -50,6 +50,26 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
   const [duration, setDuration] = useState('')
   const [saving, setSaving] = useState(false)
   const [dbError, setDbError] = useState(false)
+
+  // Personal note (saved to localStorage)
+  const NOTE_KEY = `personal_note_${userId}`
+  const [noteText, setNoteText] = useState('')
+  const [noteSaved, setNoteSaved] = useState(false)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    setNoteText(localStorage.getItem(NOTE_KEY) || '')
+  }, [NOTE_KEY])
+
+  function handleNoteChange(val: string) {
+    setNoteText(val)
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      localStorage.setItem(NOTE_KEY, val)
+      setNoteSaved(true)
+      setTimeout(() => setNoteSaved(false), 2000)
+    }, 800)
+  }
 
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length]
 
@@ -258,6 +278,29 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
           </div>
         </div>
       )}
+
+      {/* Personal note */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <FileText className="w-4 h-4" style={{ color: '#7F5268' }} />
+            פתק אישי
+          </h2>
+          {noteSaved && (
+            <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
+              <Check className="w-3 h-3" /> נשמר
+            </span>
+          )}
+        </div>
+        <textarea
+          value={noteText}
+          onChange={e => handleNoteChange(e.target.value)}
+          placeholder="כתבי כאן כל מה שעל הלב — חלומות, תוכניות, מחשבות, מה שמתחשק..."
+          rows={5}
+          className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none leading-relaxed"
+          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+        />
+      </div>
 
       {/* Log */}
       <div>
