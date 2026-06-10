@@ -42,6 +42,21 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
     const saved = localStorage.getItem('darkMode')
     if (saved === 'true') { setDark(true); document.documentElement.classList.add('dark') }
 
+    // Migrate old single-item format → new array format
+    const oldRaw = localStorage.getItem('pending_notification')
+    if (oldRaw) {
+      try {
+        const old = JSON.parse(oldRaw) as { text: string; key?: string }
+        const existing = loadNotifications()
+        const legacyId = `legacy_${old.key || 'notif'}`
+        if (!existing.find(n => n.id === legacyId)) {
+          const migrated = [{ id: legacyId, text: old.text, read: false, ts: Date.now() }, ...existing]
+          saveNotifications(migrated)
+        }
+      } catch {}
+      localStorage.removeItem('pending_notification')
+    }
+
     setNotifications(loadNotifications())
 
     function onUpdate() { setNotifications(loadNotifications()) }
