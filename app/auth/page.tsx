@@ -23,8 +23,8 @@ function translateError(msg: string): string {
     return 'כתובת מייל לא תקינה'
   if (m.includes('signup is disabled'))
     return 'ההרשמה מושבתת כרגע'
-  if (m.includes('email rate limit'))
-    return 'נשלחו יותר מדי בקשות — נסי שוב בעוד כמה דקות'
+  if (m.includes('rate limit') || m.includes('too many') || m.includes('over_email') || m.includes('email rate limit'))
+    return 'הגבלת שליחת מיילים — נסי שוב בעוד שעה, או פני לעידית לקבלת קישור כניסה ישיר'
   if (m.includes('provider is not enabled') || m.includes('oauth'))
     return 'כניסה עם Google אינה מוגדרת עדיין — השתמשי בכניסה עם מייל וסיסמא'
   return msg
@@ -74,7 +74,7 @@ export default function AuthPage() {
         return
       } else {
         // Email confirmation required
-        setSuccess('נשלח אליך מייל אישור! לחצי על הקישור בו כדי להפעיל את החשבון, ואז תוכלי להיכנס.')
+        setSuccess('החשבון נוצר! נשלח אליך מייל אישור — לחצי על הקישור שם כדי להפעיל את החשבון. אם לא מגיע, בדקי תיקיית ספאם.')
         switchMode('login')
       }
 
