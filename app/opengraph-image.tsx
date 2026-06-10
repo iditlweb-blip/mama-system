@@ -3,14 +3,16 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 export const runtime = 'nodejs'
-export const alt = 'אמא בסדר'
-export const size = { width: 1200, height: 630 }
+export const alt   = 'אמא בסדר'
+export const size  = { width: 1200, height: 630 }
 export const contentType = 'image/png'
+
+// Full SVG path of the logo (logo-new.svg)
+const LOGO_PATH =
+  'M20.2173 10.0313C27.1622 4.41492 34.4144 -0.941979 43.9741 0.140352C49.8894 0.810207 54.8995 4.42126 58.5923 8.93174C59.8726 10.4961 60.8746 12.3044 62.0809 13.9248C65.2807 17.5471 67.6862 19.2283 66.9571 24.7141C66.2439 30.0962 62.9314 33.7512 59.5186 37.638C60.82 35.0524 61.4276 32.6159 62.5529 30.0164C60.2477 33.2374 56.6394 36.1634 53.0574 37.8358C52.434 39.5387 52.1153 41.1906 51.9955 43.0009C51.7349 46.9628 49.2307 46.6987 46.2018 46.5299C35.9624 53.608 39.163 53.7064 31.9636 43.8829C29.1749 46.2024 27.0555 48.4914 26.692 52.3595C26.2849 56.6932 29.6935 62.1043 32.4217 65.2721C34.9117 68.1631 37.6817 70.7454 40.5349 73.2714C42.1039 74.6613 45.3283 76.7959 46.4254 78.3909C47.0876 79.3711 47.3905 80.5511 47.2795 81.7292C47.1475 83.2661 46.48 84.6137 45.7281 85.9286C47.2021 84.7454 49.5601 83.4814 51.2612 82.5077L59.2333 77.9699C56.2273 76.5276 52.9113 75.5507 51.8018 72.1525L53.1103 70.1086C53.0328 69.6558 52.7598 68.4576 53.0627 68.1857C55.942 65.5939 55.6585 64.0841 56.2414 60.4289C56.8489 56.6245 62.1654 54.4944 65.5219 54.0691C68.9753 53.5786 72.6963 54.4389 75.5738 56.4879C77.599 57.9315 78.5235 61.0494 78.8035 63.4551C79.2666 67.4218 78.0938 71.4057 75.5562 74.4902C73.6103 76.8969 71.0885 78.8378 68.3448 80.2513C69.3803 84.5247 69.0933 87.3349 66.7863 91.154C63.5689 96.4794 56.9264 101.124 51.2418 103.581C59.3742 102.694 65.3335 100.201 70.8455 93.6989C71.4143 93.0286 72.0007 92.1364 72.5536 91.5043C70.9318 86.2633 74.1967 78.9873 78.3545 75.5435C80.6103 73.6739 80.9484 66.1486 82.0966 65.3761C85.5746 64.3952 84.7311 69.8245 84.3313 71.8226C83.4455 74.9553 82.2886 78.1006 81.1721 81.1759C79.7809 85.0077 79.6048 89.9897 77.8033 93.5217C70.731 107.381 54.5279 116.43 40.954 122.685C33.855 125.956 27.5586 127.887 21.2434 132.652C15.6818 136.647 12.4394 140.027 7.96715 145.233C8.04252 144.416 8.176 142.9 8.37482 142.157C9.76109 136.988 14.8712 131.911 18.9351 128.561C22.1139 125.94 29.0565 120.97 32.6948 119.241L32.1387 118.775C26.8093 120.704 21.2475 123.519 15.785 125.565C18.2601 119.222 18.7238 115.8 15.6637 109.398C13.8176 105.537 11.5543 101.526 9.23842 97.9313C1.41071 85.7823 -3.08588 74.2078 2.46748 59.806C3.79494 56.3068 5.61989 53.017 7.88596 50.038C12.0964 44.5404 17.9993 39.3747 20.9932 32.7326C18.6854 34.901 16.4598 36.5864 13.3481 37.4688C9.07429 38.6807 4.37309 37.8989 1.26243 34.5547C0.931006 34.1929 0.62071 33.8123 0.333489 33.4146C4.97764 35.2675 7.03785 34.2082 11.8389 33.3301C5.0553 32.6772 -0.857132 31.4007 1.88988 22.1785C2.54392 19.9827 3.75057 18.7512 3.33303 16.2047C2.9405 9.81548 8.72931 6.94382 14.3873 7.81824C16.2735 8.10115 18.7675 8.62999 20.2173 10.0313Z'
 
 export default async function Image() {
   const fontData = readFileSync(join(process.cwd(), 'public/fonts/Talent_FS-Medium.woff'))
-  const logoData = readFileSync(join(process.cwd(), 'public/icons/logo-192.png'))
-  const logoSrc  = `data:image/png;base64,${logoData.toString('base64')}`
 
   return new ImageResponse(
     (
@@ -19,82 +21,85 @@ export default async function Image() {
           width: '100%',
           height: '100%',
           display: 'flex',
-          flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
           background: '#f7ede2',
-          gap: 64,
-          padding: '0 80px',
-          direction: 'rtl',
-          fontFamily: 'TalentFS',
+          padding: '0 100px',
+          gap: 72,
         }}
       >
-        {/* Decorative blobs */}
+        {/* Soft background blobs */}
         <div style={{
-          position: 'absolute', top: -60, right: -60,
-          width: 300, height: 300, borderRadius: '50%',
-          background: 'rgba(127,82,104,0.12)',
-          display: 'flex',
+          position: 'absolute', top: -100, left: -100,
+          width: 400, height: 400, borderRadius: '50%',
+          background: 'rgba(127,82,104,0.10)', display: 'flex',
         }} />
         <div style={{
-          position: 'absolute', bottom: -80, left: -80,
-          width: 400, height: 400, borderRadius: '50%',
-          background: 'rgba(127,82,104,0.08)',
-          display: 'flex',
+          position: 'absolute', bottom: -80, right: -60,
+          width: 320, height: 320, borderRadius: '50%',
+          background: 'rgba(127,82,104,0.07)', display: 'flex',
         }} />
 
-        {/* Logo circle */}
+        {/* Logo square */}
         <div style={{
-          width: 220, height: 220, borderRadius: 48,
+          width: 220, height: 220, borderRadius: 44,
           background: '#7F5268',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
-          boxShadow: '0 20px 60px rgba(127,82,104,0.35)',
+          boxShadow: '0 24px 64px rgba(127,82,104,0.40)',
         }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={logoSrc} width={140} height={140} alt="logo" style={{ objectFit: 'contain' }} />
+          <svg
+            width="110"
+            height="189"
+            viewBox="0 0 85 146"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path d={LOGO_PATH} fill="#fff" />
+          </svg>
         </div>
 
-        {/* Text block */}
+        {/* Text */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
+          gap: 20,
+          flex: 1,
           alignItems: 'flex-end',
-          gap: 16,
         }}>
+          {/* App name — Hebrew renders correctly without direction:rtl */}
           <div style={{
-            fontSize: 96,
+            fontSize: 100,
             fontWeight: 700,
             color: '#7F5268',
             lineHeight: 1,
-            direction: 'rtl',
+            fontFamily: 'TalentFS',
           }}>
             אמא בסדר
           </div>
+
+          {/* Tagline */}
           <div style={{
-            fontSize: 36,
+            fontSize: 38,
             color: '#9B7A8A',
-            direction: 'rtl',
             lineHeight: 1.4,
+            fontFamily: 'TalentFS',
           }}>
             מערכת ניהול לאמהות עצמאיות
           </div>
-          <div style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 12,
-            marginTop: 8,
-          }}>
-            {['📋 משימות', '👶 מעקב תינוק', '💬 AI', '🌱 התפתחות'].map(tag => (
+
+          {/* Feature pills */}
+          <div style={{ display: 'flex', gap: 14, marginTop: 8 }}>
+            {['👶 מעקב תינוק', '📋 משימות', '💬 AI', '🌱 התפתחות'].map(tag => (
               <div key={tag} style={{
-                fontSize: 22,
+                fontSize: 26,
                 color: '#7F5268',
-                background: 'rgba(127,82,104,0.1)',
-                borderRadius: 20,
-                padding: '6px 18px',
-                direction: 'rtl',
+                background: 'rgba(127,82,104,0.12)',
+                borderRadius: 24,
+                padding: '8px 22px',
+                fontFamily: 'TalentFS',
               }}>
                 {tag}
               </div>
@@ -105,9 +110,7 @@ export default async function Image() {
     ),
     {
       ...size,
-      fonts: [
-        { name: 'TalentFS', data: fontData, style: 'normal', weight: 500 },
-      ],
+      fonts: [{ name: 'TalentFS', data: fontData, style: 'normal', weight: 500 }],
     },
   )
 }
