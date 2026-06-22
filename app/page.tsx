@@ -17,6 +17,18 @@ export default function LandingPage() {
           [data-hero="side"]         { opacity: 0.8 !important; z-index: 5 !important; bottom: 25% !important; }
           [data-hero="side"] img     { mask-image: none !important; -webkit-mask-image: none !important; }
         }
+        @keyframes marquee-scroll {
+          0%   { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .testimonials-track {
+          display: flex;
+          width: max-content;
+          animation: marquee-scroll 32s linear infinite;
+        }
+        .testimonials-track:hover {
+          animation-play-state: paused;
+        }
       `}</style>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -359,6 +371,151 @@ export default function LandingPage() {
               {q}
             </blockquote>
           ))}
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          ABOUT — הסיפור מאחורי המערכת
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="max-w-5xl mx-auto px-6 py-20">
+        <h2
+          className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
+          style={{ color: '#111' }}
+        >
+          הסיפור מאחורי המערכת
+        </h2>
+        <div
+          className="reveal rounded-2xl"
+          style={{
+            background: '#fff',
+            border: '1px solid rgba(127,82,104,0.12)',
+            padding: 'clamp(24px, 5vw, 56px)',
+            display: 'flex',
+            gap: 'clamp(24px, 5vw, 56px)',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          {/* Photo */}
+          <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/eidit.png"
+              alt="עידית לאוב"
+              style={{
+                width: 'clamp(180px, 25vw, 300px)',
+                height: 'clamp(180px, 25vw, 300px)',
+                objectFit: 'cover',
+                borderRadius: '1.25rem',
+                border: '3px solid rgba(127,82,104,0.15)',
+                boxShadow: '0 8px 32px rgba(127,82,104,0.12)',
+              }}
+            />
+          </div>
+
+          {/* Text */}
+          <div style={{ flex: 1, minWidth: '240px' }}>
+            <span
+              aria-hidden="true"
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: 'clamp(5rem, 10vw, 8rem)',
+                lineHeight: 0.7,
+                color: '#7F5268',
+                opacity: 0.25,
+                display: 'block',
+                marginBottom: '-0.5rem',
+                userSelect: 'none',
+              }}
+            >
+              &#8220;
+            </span>
+            <p
+              style={{
+                fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)',
+                lineHeight: 1.85,
+                color: '#333',
+                fontWeight: 300,
+                marginBottom: '1.75rem',
+              }}
+            >
+              אני עידית לאוב, אמא של דור אורי. כשדור נולדה, הרגשתי אבודה לגמרי — רציתי מידע,
+              רציתי סדר ביום, רציתי להבין מה בכלל קורה. לא מצאתי מקום אחד שנותן את כל זה.
+              אז הקמתי אותו.
+              <br /><br />
+              <em>אמא בסדר</em> נולדה מהתחושה שכל אמא, ובמיוחד אמא עצמאית, צריכה כלי שמבין
+              את החיים שלה — לא רק את העסק, לא רק את התינוק, אלא את הכל יחד.
+            </p>
+            <div>
+              <p className="font-bold text-base" style={{ color: '#111' }}>עידית לאוב</p>
+              <p className="text-sm font-light" style={{ color: '#7F5268' }}>מייסדת אמא בסדר</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          TESTIMONIALS — מה אמהות אומרות
+      ═══════════════════════════════════════════════════════════ */}
+      <section style={{ background: 'rgba(127,82,104,0.05)', overflow: 'hidden', padding: '80px 0' }}>
+        <h2
+          className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
+          style={{ color: '#111' }}
+        >
+          מה אמהות אומרות
+        </h2>
+        <div style={{ overflow: 'hidden', width: '100%' }}>
+          <div className="testimonials-track">
+            {[
+              { name: 'נועה כ.', role: 'אמא + מעצבת גרפית',     stars: 5, quote: 'סוף סוף יש לי מקום אחד לכל מה שקשור לתינוק ולעסק. חסכתי כל כך הרבה זמן.' },
+              { name: 'שירלי מ.', role: 'אמא + מנהלת תוכן',      stars: 5, quote: 'ה-AI הסביר לי בשלוש שורות בפשטות על שינה עצמאית. לא ידעתי שיש דבר כזה בעברית.' },
+              { name: 'גלית ר.', role: 'אמא + פרילנסרית',        stars: 5, quote: 'הפומודורו שינה לי את שעות העבודה בזמן הנמנום. עכשיו אני מספיקה פי שניים.' },
+              { name: 'יעל ב.', role: 'אמא לתאומות',             stars: 5, quote: 'רשמתי האכלות שלוש שנים. עכשיו זה לוקח שתי שניות.' },
+              { name: 'מיכל ש.', role: 'אמא + מנהלת פרויקטים',  stars: 5, quote: 'אהבתי שהמערכת מרגישה שנבנתה בשבילי, לא אפליקציה כללית לכולם.' },
+              { name: 'אורית ד.', role: 'אמא + יועצת עסקית',    stars: 5, quote: 'הדשבורד בוקר הוא הדבר הראשון שאני פותחת כל יום.' },
+              /* duplicate set for seamless loop */
+              { name: 'נועה כ.', role: 'אמא + מעצבת גרפית',     stars: 5, quote: 'סוף סוף יש לי מקום אחד לכל מה שקשור לתינוק ולעסק. חסכתי כל כך הרבה זמן.' },
+              { name: 'שירלי מ.', role: 'אמא + מנהלת תוכן',      stars: 5, quote: 'ה-AI הסביר לי בשלוש שורות בפשטות על שינה עצמאית. לא ידעתי שיש דבר כזה בעברית.' },
+              { name: 'גלית ר.', role: 'אמא + פרילנסרית',        stars: 5, quote: 'הפומודורו שינה לי את שעות העבודה בזמן הנמנום. עכשיו אני מספיקה פי שניים.' },
+              { name: 'יעל ב.', role: 'אמא לתאומות',             stars: 5, quote: 'רשמתי האכלות שלוש שנים. עכשיו זה לוקח שתי שניות.' },
+              { name: 'מיכל ש.', role: 'אמא + מנהלת פרויקטים',  stars: 5, quote: 'אהבתי שהמערכת מרגישה שנבנתה בשבילי, לא אפליקציה כללית לכולם.' },
+              { name: 'אורית ד.', role: 'אמא + יועצת עסקית',    stars: 5, quote: 'הדשבורד בוקר הוא הדבר הראשון שאני פותחת כל יום.' },
+            ].map(({ name, role, quote }, idx) => (
+              <div
+                key={idx}
+                style={{
+                  flexShrink: 0,
+                  width: '300px',
+                  marginInlineEnd: '20px',
+                  background: '#fff',
+                  borderRadius: '1rem',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(127,82,104,0.1)',
+                  border: '1px solid rgba(127,82,104,0.1)',
+                }}
+              >
+                <div style={{ color: '#F5A623', fontSize: '1.1rem', marginBottom: '10px', letterSpacing: '2px' }}>
+                  ★★★★★
+                </div>
+                <p
+                  style={{
+                    fontSize: '0.9rem',
+                    lineHeight: 1.7,
+                    color: '#333',
+                    fontWeight: 300,
+                    marginBottom: '16px',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  &ldquo;{quote}&rdquo;
+                </p>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: '#111' }}>{name}</p>
+                  <p className="text-xs font-light" style={{ color: '#7F5268' }}>{role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
