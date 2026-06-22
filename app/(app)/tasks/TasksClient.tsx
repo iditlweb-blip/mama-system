@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, X, Play, Pause, RotateCcw, Timer, ChevronDown, Baby, Home, Briefcase, CheckCircle2, AlertCircle, Circle } from 'lucide-react'
+import { Plus, X, Play, Pause, RotateCcw, Timer, ChevronDown, Baby, Home, Briefcase, CheckCircle2, AlertCircle, Circle, ChevronRight } from 'lucide-react'
 import { Task, TaskCategory, TaskStatus, TaskPriority } from '@/types/database'
+import { useRouter } from 'next/navigation'
 
 interface Props { tasks: Task[]; userId: string }
 
@@ -25,6 +26,7 @@ const prioConfig: Record<TaskPriority, { label: string; color: string }> = {
 }
 
 export default function TasksClient({ tasks: initialTasks, userId }: Props) {
+  const router = useRouter()
   const [tasks, setTasks]       = useState(initialTasks)
   const [showForm, setShowForm] = useState(false)
   const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all')
@@ -116,6 +118,17 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
 
   return (
     <div className="space-y-5 max-w-5xl">
+      {/* Back button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+          חזרה
+        </button>
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>

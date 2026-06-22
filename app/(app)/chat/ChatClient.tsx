@@ -1,9 +1,10 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Baby, Clock, Briefcase, Heart, Loader2, Bot } from 'lucide-react'
+import { Send, Baby, Clock, Briefcase, Heart, Loader2, Bot, ChevronRight } from 'lucide-react'
 import { ChatMode, ChatMessage } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 const modes: { id: ChatMode; label: string; icon: React.ElementType; color: string; description: string; prompts: string[] }[] = [
   {
@@ -26,15 +27,21 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
     description: 'הקשבה, חיזוק, רגשות',
     prompts: ['אני מרגישה אובדת ועייפה', 'מרגישה אשמה שאני עובדת', 'לא מצליחה לאהנות מהתינוק', 'צריכה לשחרר קצת'],
   },
+  {
+    id: 'pregnancy', label: 'הריון', icon: Heart, color: '#C4748C',
+    description: 'שאלות על הריון, בדיקות, תסמינים',
+    prompts: ['אני בשבוע 20 מה אני צריכה לדעת?', 'איך מתמודדים עם בחילות?', 'אילו בדיקות יש לעשות בטרימסטר שני?', 'מה נורמלי ומה לא בהריון?'],
+  },
 ]
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
-export default function ChatClient({ history }: { history: ChatMessage[] }) {
+export default function ChatClient({ historyByMode }: { historyByMode: Partial<Record<ChatMode, ChatMessage[]>> }) {
   const supabase = createClient()
+  const router = useRouter()
   const [mode, setMode] = useState<ChatMode>('baby')
   const [messages, setMessages] = useState<Message[]>(
-    history.map(h => ({ role: h.role, content: h.content }))
+    () => (historyByMode['baby'] || []).map(h => ({ role: h.role, content: h.content }))
   )
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -45,6 +52,13 @@ export default function ChatClient({ history }: { history: ChatMessage[] }) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streaming])
+
+  // When mode changes, load corresponding history and reset state
+  useEffect(() => {
+    setMessages((historyByMode[mode] || []).map(h => ({ role: h.role, content: h.content })))
+    setStreaming('')
+    setInput('')
+  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const currentMode = modes.find(m => m.id === mode)!
 
@@ -101,6 +115,18 @@ export default function ChatClient({ history }: { history: ChatMessage[] }) {
 
   return (
     <div className="flex flex-col h-[calc(100svh-130px)] max-w-3xl">
+      {/* Back button */}
+      <div className="flex justify-end mb-2">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+          חזרה
+        </button>
+      </div>
+
       {/* Mode Selector */}
       <div className="flex gap-2 mb-4 flex-wrap">
         {modes.map(m => {

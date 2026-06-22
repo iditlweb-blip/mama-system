@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check } from 'lucide-react'
+import { Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export interface PersonalLog {
   id: string
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export default function PersonalClient({ userId, initialLogs }: Props) {
+  const router = useRouter()
   const supabase = createClient()
   const [logs, setLogs] = useState<PersonalLog[]>(initialLogs)
   const [adding, setAdding] = useState(false)
@@ -133,6 +135,17 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
 
   return (
     <div className="space-y-6 max-w-2xl">
+      {/* Back button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+          חזרה
+        </button>
+      </div>
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>

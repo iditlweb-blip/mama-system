@@ -5,9 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Milk, BedDouble, Droplets, Plus, X, Clock,
   Trash2, Play, Square, Apple, Syringe, CheckCircle2,
-  Circle, CalendarPlus, ChevronDown, ChevronUp, AlertTriangle
+  Circle, CalendarPlus, ChevronDown, ChevronUp, AlertTriangle, ChevronRight
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
+import { useRouter } from 'next/navigation'
 
 interface HealthEvent {
   id: string
@@ -131,6 +132,7 @@ const VACCINE_SCHEDULE = [
 
 // ─── Main Component ───────────────────────────────────────────
 export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents }: Props) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<'daily' | 'weaning' | 'health'>('daily')
   const [logs, setLogs] = useState(initialLogs)
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>(initialHealthEvents)
@@ -147,6 +149,17 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
 
   return (
     <div className="space-y-5 max-w-2xl">
+      {/* Back button */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+          חזרה
+        </button>
+      </div>
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>

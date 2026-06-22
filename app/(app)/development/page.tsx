@@ -2,9 +2,11 @@
 
 import { useState } from 'react'
 import { stages } from '@/lib/milestones'
-import { CheckCircle2, Circle, ChevronDown, ChevronUp, Info, AlertTriangle, Lightbulb } from 'lucide-react'
+import { CheckCircle2, Circle, ChevronDown, ChevronUp, Info, AlertTriangle, Lightbulb, ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function DevelopmentPage() {
+  const router = useRouter()
   const [activeStage, setActiveStage] = useState(stages[0].id)
   const [checked, setChecked] = useState<Set<string>>(new Set())
   const [expanded, setExpanded] = useState<string | null>(null)
@@ -32,6 +34,16 @@ export default function DevelopmentPage() {
 
   return (
     <div className="space-y-5 max-w-3xl">
+      <div className="flex justify-end">
+        <button
+          onClick={() => router.back()}
+          className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+          חזרה
+        </button>
+      </div>
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>התפתחות התינוק</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>מידע מפורט לפי שלב גיל — 0 עד 12 חודשים</p>

@@ -2,7 +2,7 @@ export type TaskCategory = 'work' | 'home' | 'baby'
 export type TaskStatus = 'todo' | 'inprogress' | 'done'
 export type TaskPriority = 'high' | 'medium' | 'low'
 export type LogType = 'feed' | 'sleep' | 'diaper'
-export type ChatMode = 'baby' | 'time' | 'business' | 'emotional'
+export type ChatMode = 'baby' | 'time' | 'business' | 'emotional' | 'pregnancy'
 export type BabyGender = 'boy' | 'girl'
 
 export interface Profile {
