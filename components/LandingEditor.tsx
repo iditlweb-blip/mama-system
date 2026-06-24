@@ -72,7 +72,7 @@ function applyToDom(id: string, value: string) {
   const el = document.getElementById(id)
   if (!el) return
   if (value.startsWith('data:image')) {
-    el.innerHTML = `<img src="${value}" style="width:1.2em;height:1.2em;object-fit:contain;vertical-align:middle;display:inline-block;" alt="icon" />`
+    el.innerHTML = `<img src="${value}" style="width:1.8em;height:1.8em;object-fit:contain;vertical-align:middle;display:inline-block;" alt="icon" />`
   } else if (value.includes('\n')) {
     el.innerHTML = value.split('\n').map(escHtml).join('<br>')
   } else {
