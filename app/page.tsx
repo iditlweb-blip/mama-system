@@ -72,9 +72,8 @@ export default function LandingPage() {
             <h1
               id="le-hero-h1"
               data-hero="h1"
-              className="md:whitespace-nowrap"
               style={{
-                fontSize: 'clamp(1.85rem, 3.2vw, 3.3rem)',
+                fontSize: 'clamp(1.9rem, 4.2vw, 3.6rem)',
                 fontWeight: 800,
                 lineHeight: 1.2,
                 color: '#111',
@@ -82,15 +81,25 @@ export default function LandingPage() {
                 margin: '0 auto 8px',
               }}
             >
-              כל מה שאמא טרייה צריכה- במקום אחד
+              כל מה שאת צריכה- במקום אחד
             </h1>
             <p
               id="le-hero-sub"
               data-hero="subtitle"
               className="anim-fade-up-2"
-              style={{ fontSize: 'clamp(0.85rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300, maxWidth: '90vw', overflowWrap: 'break-word', wordBreak: 'break-word' }}
+              style={{
+                fontSize: 'clamp(0.95rem, 1.9vw, 1.4rem)',
+                color: '#7F5268',
+                margin: '0.2rem auto 0',
+                fontWeight: 300,
+                lineHeight: 1.5,
+                maxWidth: '90vw',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+              }}
             >
-              מעקב הריון, מעקב תינוק, ניהול יומי, ותמיכת AI בעברית- כי את לא צריכה להסתדר לבד
+              בתוך כל הטירוף, העייפות וים העצות מסביב – אנחנו כאן כדי לעשות לך סדר.<br />
+              מהבדיקה הראשונה ועד גיל שנה, כל מה שאת באמת צריכה לדעת במקום אחד, בלי רעשי רקע. רק את והתינוק שלך, בראש שקט
             </p>
           </div>
 
@@ -589,7 +598,7 @@ export default function LandingPage() {
           מתחילות?
         </h2>
         <p id="le-cta-sub" className="reveal text-base font-light mb-10" style={{ color: 'rgba(247,237,226,0.7)' }}>
-          הצטרפי לאמהות שכבר לא מסתדרות לבד
+          הצטרפי לאמהות שכבר לא מנסות להסתדר לבד
         </p>
         <Link
           href="/auth"
