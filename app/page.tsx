@@ -67,6 +67,11 @@ export default function LandingPage() {
         .testimonials-track:hover {
           animation-play-state: paused;
         }
+        /* About section — photo full-width on mobile */
+        @media (max-width: 640px) {
+          .about-photo-col { width: 100% !important; }
+          .about-photo-col img { height: 280px !important; width: 100% !important; }
+        }
       `}</style>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -409,24 +414,54 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════════════
           QUOTES
       ═══════════════════════════════════════════════════════════ */}
-      <section className="max-w-4xl mx-auto px-6 py-20">
-        <h2 className="reveal text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#111' }}>
-          את עושה את הכי טוב שלך וזה הכי טוב לתינוק שלך
-        </h2>
-        <div className="grid md:grid-cols-3 gap-5">
-          {[
-            '"את עושה יותר ממה שאת חושבת שאת עושה"',
-            '"לא צריך להיות מושלמת- רק נוכחת"',
-            '"הריון ותינוק הם ריצת מרתון- כל צעד קדימה חשוב"',
-          ].map((q, i) => (
-            <blockquote
-              key={q}
-              className={`reveal hover-lift rounded-2xl p-6 italic text-sm leading-relaxed font-light reveal-delay-${i}`}
-              style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.12)', color: '#7F5268' }}
-            >
-              {q}
-            </blockquote>
-          ))}
+      <section style={{ background: '#fff', padding: 'clamp(60px,8vw,90px) 24px' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
+          <h2 className="reveal" style={{
+            fontSize: 'clamp(1.5rem,3vw,2.1rem)', fontWeight: 800,
+            color: '#111', textAlign: 'center', marginBottom: 48,
+          }}>
+            את עושה את הכי טוב שלך וזה הכי טוב לתינוק שלך
+          </h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(260px,1fr))', gap: 20 }}>
+            {[
+              'את עושה יותר ממה שאת חושבת שאת עושה',
+              'לא צריך להיות מושלמת- רק נוכחת',
+              'הריון ותינוק הם ריצת מרתון- כל צעד קדימה חשוב',
+            ].map((q, i) => (
+              <blockquote
+                key={q}
+                className={`reveal hover-lift reveal-delay-${i}`}
+                style={{
+                  background: '#F7EDE2',
+                  borderRadius: 20,
+                  padding: '32px 28px 28px',
+                  margin: 0,
+                  position: 'relative',
+                  overflow: 'hidden',
+                }}
+              >
+                {/* Large decorative opening quote */}
+                <span aria-hidden="true" style={{
+                  position: 'absolute', top: 0, right: 14,
+                  fontFamily: 'Georgia, "Times New Roman", serif',
+                  fontSize: '6rem', lineHeight: 1,
+                  color: '#C4748C', opacity: 0.18,
+                  userSelect: 'none', pointerEvents: 'none',
+                }}>&#8221;</span>
+                <p style={{
+                  fontSize: 'clamp(0.93rem,1.4vw,1.05rem)',
+                  lineHeight: 1.8,
+                  color: '#5a3549',
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  margin: 0,
+                  position: 'relative',
+                }}>
+                  &ldquo;{q}&rdquo;
+                </p>
+              </blockquote>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -434,67 +469,89 @@ export default function LandingPage() {
           ABOUT — הסיפור מאחורי המערכת
       ═══════════════════════════════════════════════════════════ */}
       <section style={{ background: '#F7EDE2', padding: 'clamp(60px,8vw,100px) 24px' }}>
-        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto' }}>
 
-          {/* Decorative ❞ top-left (RTL: visually top-right of text) */}
-          <span aria-hidden="true" style={{
-            position: 'absolute', top: -10, right: -8,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: 'clamp(7rem, 13vw, 11rem)',
-            color: '#C4748C', opacity: 0.15, lineHeight: 1,
-            userSelect: 'none', pointerEvents: 'none',
-          }}>&#8221;</span>
-
-          {/* Photo */}
-          <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'center' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/images/eidit.png"
-              alt="עידית לאוב"
-              style={{
-                width: 'clamp(140px, 18vw, 210px)',
-                height: 'clamp(170px, 22vw, 260px)',
-                objectFit: 'cover',
-                objectPosition: 'center top',
-                borderRadius: '1.5rem',
-              }}
-            />
-          </div>
-
-          {/* Heading */}
+          {/* Section title */}
           <h2 className="reveal" style={{
             fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
             fontWeight: 800, color: '#111',
-            marginBottom: 28, lineHeight: 1.2,
+            marginBottom: 'clamp(32px,5vw,52px)',
+            textAlign: 'center', lineHeight: 1.2,
           }}>
             הסיפור שמאחורי המערכת
           </h2>
 
-          {/* Story */}
-          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#444', fontWeight: 300, marginBottom: '1rem' }}>
-            כשדור נולדה, הייתי אמא בפעם הראשונה- ורציתי לדעת מה נורמלי, רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום אחד שנותן את כל זה.
-          </p>
-          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#111', fontWeight: 700, marginBottom: '1rem' }}>
-            אז הקמתי אותו.
-          </p>
-          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#444', fontWeight: 300, marginBottom: '2.5rem' }}>
-            אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא עוד אפליקציה, אלא כלי שמבין אותך- את ההריון שלך, את התינוק שלך, ואת הכאוס היפה הזה שנקרא ימים ראשונים.
-          </p>
+          {/* Two-column: Photo (RTL → right side) + Text */}
+          <div style={{
+            display: 'flex',
+            gap: 'clamp(28px,5vw,60px)',
+            alignItems: 'flex-start',
+            flexWrap: 'wrap',
+          }}>
 
-          {/* Signature */}
-          <div>
-            <p style={{ fontWeight: 700, fontSize: '1rem', color: '#7F5268', marginBottom: 3 }}>עידית לאוב</p>
-            <p style={{ color: '#888', fontSize: '0.875rem', fontWeight: 300 }}>מייסדת אמא בסדר ואמא של דור אורי</p>
+            {/* ── Photo column ── */}
+            <div className="about-photo-col" style={{ flexShrink: 0, width: 'clamp(180px,24vw,260px)' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/eidit.png"
+                alt="עידית לאוב"
+                style={{
+                  width: '100%',
+                  height: 'clamp(260px,34vw,400px)',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  borderRadius: '1.5rem',
+                  display: 'block',
+                }}
+              />
+            </div>
+
+            {/* ── Text column ── */}
+            <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
+
+              {/* Decorative ❞ top-right of text block */}
+              <span aria-hidden="true" style={{
+                position: 'absolute', top: -22, right: -12,
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontSize: 'clamp(5rem, 10vw, 8rem)',
+                color: '#C4748C', opacity: 0.22, lineHeight: 1,
+                userSelect: 'none', pointerEvents: 'none',
+              }}>&#8221;</span>
+
+              {/* Story */}
+              <p style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.08rem)', lineHeight: 2, color: '#444', fontWeight: 300, marginBottom: '1.1rem', position: 'relative' }}>
+                כשדור נולדה, הייתי אמא בפעם הראשונה- ורציתי לדעת מה נורמלי, רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום אחד שנותן את כל זה.
+              </p>
+              <p style={{ fontSize: 'clamp(1rem, 1.6vw, 1.15rem)', lineHeight: 1.9, color: '#111', fontWeight: 700, marginBottom: '1.1rem' }}>
+                אז הקמתי אותו.
+              </p>
+              <p style={{ fontSize: 'clamp(0.95rem, 1.5vw, 1.08rem)', lineHeight: 2, color: '#444', fontWeight: 300, marginBottom: '2.5rem' }}>
+                אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא עוד אפליקציה, אלא כלי שמבין אותך- את ההריון שלך, את התינוק שלך, ואת הכאוס היפה הזה שנקרא ימים ראשונים.
+              </p>
+
+              {/* Signature */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{
+                  width: 40, height: 3,
+                  background: 'linear-gradient(90deg,#C4748C,#7F5268)',
+                  borderRadius: 2, flexShrink: 0,
+                }} />
+                <div>
+                  <p style={{ fontWeight: 700, fontSize: '1rem', color: '#7F5268', margin: 0 }}>עידית לאוב</p>
+                  <p style={{ color: '#999', fontSize: '0.85rem', fontWeight: 300, margin: '3px 0 0' }}>מייסדת אמא בסדר ואמא של דור אורי</p>
+                </div>
+              </div>
+
+              {/* Decorative ❝ bottom-left of text block */}
+              <span aria-hidden="true" style={{
+                position: 'absolute', bottom: -22, left: -12,
+                fontFamily: 'Georgia, "Times New Roman", serif',
+                fontSize: 'clamp(5rem, 10vw, 8rem)',
+                color: '#C4748C', opacity: 0.22, lineHeight: 1,
+                userSelect: 'none', pointerEvents: 'none',
+              }}>&#8220;</span>
+            </div>
           </div>
-
-          {/* Decorative ❝ bottom-right (RTL: visually bottom-left of text) */}
-          <span aria-hidden="true" style={{
-            position: 'absolute', bottom: -10, left: -8,
-            fontFamily: 'Georgia, "Times New Roman", serif',
-            fontSize: 'clamp(7rem, 13vw, 11rem)',
-            color: '#C4748C', opacity: 0.15, lineHeight: 1,
-            userSelect: 'none', pointerEvents: 'none',
-          }}>&#8220;</span>
         </div>
       </section>
 
