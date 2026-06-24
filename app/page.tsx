@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import HeroEditor from '@/components/HeroEditor'
+import LandingEditor from '@/components/LandingEditor'
 import PwaInstallTabs from '@/components/PwaInstallTabs'
 
 export default function LandingPage() {
@@ -54,7 +55,7 @@ export default function LandingPage() {
               הורדה לטלפון
             </a>
             <Link href="/auth" className="btn-brand text-sm px-5 py-2.5">
-              כניסה
+              התחילי עכשיו
               <ArrowIcon />
             </Link>
           </div>
@@ -69,6 +70,7 @@ export default function LandingPage() {
             style={{ textAlign: 'center', padding: '10px 16px 0', flexShrink: 0, position: 'relative', zIndex: 10 }}
           >
             <h1
+              id="le-hero-h1"
               data-hero="h1"
               className="md:whitespace-nowrap"
               style={{
@@ -80,14 +82,15 @@ export default function LandingPage() {
                 margin: '0 auto 8px',
               }}
             >
-              אמא אחת. אלף משימות. מערכת אחת.
+              כל מה שאמא טרייה צריכה- במקום אחד
             </h1>
             <p
+              id="le-hero-sub"
               data-hero="subtitle"
               className="anim-fade-up-2 md:whitespace-nowrap"
               style={{ fontSize: 'clamp(0.85rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300 }}
             >
-              המערכת שמסדרת לך את החיים — לא רק את העסק
+              מעקב הריון, מעקב תינוק, ניהול יומי, ותמיכת AI בעברית- כי את לא צריכה להסתדר לבד
             </p>
           </div>
 
@@ -241,11 +244,11 @@ export default function LandingPage() {
       >
         <div className="max-w-5xl mx-auto px-6 py-16 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {[
-            { icon: '/icons/baby.svg',  w: 44, h: 40, label: 'מעקב תינוק',    sub: 'האכלות, שינה, חיתולים' },
-            { icon: '/icons/task.svg',  w: 40, h: 37, label: 'ניהול משימות',  sub: 'Kanban + Pomodoro'     },
-            { icon: '/icons/work.svg',  w: 40, h: 40, label: 'ניהול עבודה',   sub: 'לוז, משימות עסקיות'   },
-            { icon: '/icons/chat.svg',  w: 42, h: 42, label: 'AI בעברית',     sub: 'ייעוץ, תמיכה, טיפים'  },
-          ].map(({ icon, w, h, label, sub }, i) => (
+            { icon: '/icons/baby.svg',  w: 44, h: 40, label: 'מעקב הריון',   sub: 'שבועות, גדלים, בדיקות',   labelId: 'le-feat-0-label', subId: 'le-feat-0-sub' },
+            { icon: '/icons/task.svg',  w: 40, h: 37, label: 'מעקב תינוק',   sub: 'האכלות, שינה, חיתולים',   labelId: 'le-feat-1-label', subId: 'le-feat-1-sub' },
+            { icon: '/icons/work.svg',  w: 40, h: 40, label: 'AI בעברית',    sub: 'שאלות, ייעוץ, תמיכה',     labelId: 'le-feat-2-label', subId: 'le-feat-2-sub' },
+            { icon: '/icons/chat.svg',  w: 42, h: 42, label: 'ניהול יומי',   sub: 'משימות, תזכורות, סדר',    labelId: 'le-feat-3-label', subId: 'le-feat-3-sub' },
+          ].map(({ icon, w, h, label, sub, labelId, subId }, i) => (
             <div
               key={label}
               className={`reveal hover-lift flex flex-col items-center gap-3 reveal-delay-${i}`}
@@ -258,8 +261,8 @@ export default function LandingPage() {
                 <img src={icon} alt="" width={w} height={h} />
               </div>
               <div>
-                <p className="font-semibold text-base" style={{ color: '#111' }}>{label}</p>
-                <p className="text-xs font-light mt-0.5" style={{ color: '#7F5268' }}>{sub}</p>
+                <p id={labelId} className="font-semibold text-base" style={{ color: '#111' }}>{label}</p>
+                <p id={subId} className="text-xs font-light mt-0.5" style={{ color: '#7F5268' }}>{sub}</p>
               </div>
             </div>
           ))}
@@ -291,36 +294,39 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-3 gap-6">
           {[
             {
-              icon: '🎯',
-              title: 'בנוי לחיים האמיתיים שלך',
-              body: 'לא אפליקציה כללית. מערכת שהוקמה ספציפית לאמא שגם עובדת — מאחדת עסק, תינוק ובית במקום אחד.',
+              icon: '🌱',
+              title: 'נבנה בשביל אמהות בלבד',
+              body: 'לא אפליקציה כללית עם עוד פיצ\'ר לתינוק. כל מה שיש כאן- תוכנן עבור אמא שנמצאת בתחילת הדרך, הריון ואחריה.',
+              iconId: 'le-why-0-icon', titleId: 'le-why-0-title', bodyId: 'le-why-0-body',
             },
             {
-              icon: '⚡',
-              title: 'מהיר, פשוט, בדרייב',
-              body: 'כפתורי רישום מהיר, טיימר שינה חי, ולוח משימות שמבין שהיום יש לך 20 דקות בין נמנום לנמנום.',
+              icon: '🔗',
+              title: 'הכל במקום אחד',
+              body: 'הריון, תינוק, יומן ומשימות- בלי לקפוץ בין 5 אפליקציות. רואים הכל בבת אחת, מנהלים בבת אחת.',
+              iconId: 'le-why-1-icon', titleId: 'le-why-1-title', bodyId: 'le-why-1-body',
             },
             {
               icon: '🧠',
-              title: 'AI שמבין אמא',
-              body: '4 מצבי ייעוץ בעברית: עצות לתינוק, ניהול זמן, עסק מהבית, ותמיכה רגשית — בלי שיפוטיות.',
+              title: 'AI שמבין אמא בעברית',
+              body: 'שאלות על הריון, עצות לתינוק, עזרה ביומן, תמיכה רגשית- 24/7, בלי שיפוטיות, בשפה שלנו.',
+              iconId: 'le-why-2-icon', titleId: 'le-why-2-title', bodyId: 'le-why-2-body',
             },
-          ].map(({ icon, title, body }, i) => (
+          ].map(({ icon, title, body, iconId, titleId, bodyId }, i) => (
             <div
               key={title}
               className={`reveal hover-lift rounded-2xl p-7 reveal-delay-${i}`}
               style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.12)' }}
             >
-              <span className="text-3xl block mb-4">{icon}</span>
-              <h3 className="text-lg font-bold mb-2" style={{ color: '#111' }}>{title}</h3>
-              <p className="text-sm leading-relaxed font-light" style={{ color: '#7F5268' }}>{body}</p>
+              <span id={iconId} className="text-3xl block mb-4">{icon}</span>
+              <h3 id={titleId} className="text-lg font-bold mb-2" style={{ color: '#111' }}>{title}</h3>
+              <p id={bodyId} className="text-sm leading-relaxed font-light" style={{ color: '#7F5268' }}>{body}</p>
             </div>
           ))}
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
-          HOW IT HELPS
+          HOW IT HELPS — daily scenarios
       ═══════════════════════════════════════════════════════════ */}
       <section style={{ background: 'rgba(127,82,104,0.05)' }}>
         <div className="max-w-5xl mx-auto px-6 py-20">
@@ -329,20 +335,24 @@ export default function LandingPage() {
           </h2>
           <div className="grid md:grid-cols-2 gap-5">
             {[
-              { emoji: '🌅', title: 'בוקר שלישי 06:00', body: 'בדקי מה שלום התינוק בדשבורד, רשמי האכלה בלחיצה, וראי את 3 המשימות הדחופות של היום.' },
-              { emoji: '💤', title: 'נמנום קצר',          body: 'לחצי Start בטיימר השינה. כשהתינוק קם — לחצי Stop. הנמנום נרשם אוטומטית.' },
-              { emoji: '💻', title: 'שעת עבודה',          body: 'פתחי Pomodoro, סמני משימות שהושלמו, ושאלי את ה-AI על הצעד הבא בפרויקט.' },
-              { emoji: '🌙', title: 'סוף יום',            body: 'קבלי סיכום: כמה ישן, כמה אכל, מה הושלם. מחר מתחיל יום חדש — את מוכנה.' },
-            ].map(({ emoji, title, body }, i) => (
+              { emoji: '🤰', title: 'בשבוע 28 להריון',   body: 'בדקי מה גודל התינוק השבוע, מה הבדיקות הקרובות שלך, ושאלי את ה-AI על כל מה שמדאיג אותך.',
+                emojiId: 'le-daily-0-emoji', titleId: 'le-daily-0-title', bodyId: 'le-daily-0-body' },
+              { emoji: '🌅', title: 'יום אחרי לידה',      body: 'תבצעי רישומים של האכלות, שינה, חיתולים רטובים וכל מה שאת צריכה כדי להיות רגועה.',
+                emojiId: 'le-daily-1-emoji', titleId: 'le-daily-1-title', bodyId: 'le-daily-1-body' },
+              { emoji: '💤', title: 'נמנום קצר',           body: 'לחצי Start, התינוק קם- לחצי Stop. הנמנום נרשם אוטומטית. את פנויה לנשום.',
+                emojiId: 'le-daily-2-emoji', titleId: 'le-daily-2-title', bodyId: 'le-daily-2-body' },
+              { emoji: '💜', title: 'רגע של ספק',          body: 'שאלי את ה-AI- "האם זה נורמלי?", "כמה אמורה לאכול?", "מרגישה אבודה"- היא תקשיב.',
+                emojiId: 'le-daily-3-emoji', titleId: 'le-daily-3-title', bodyId: 'le-daily-3-body' },
+            ].map(({ emoji, title, body, emojiId, titleId, bodyId }, i) => (
               <div
                 key={title}
                 className={`reveal hover-lift flex gap-4 rounded-2xl p-6 reveal-delay-${i % 2}`}
                 style={{ background: '#fff', border: '1px solid rgba(127,82,104,0.1)' }}
               >
-                <span className="text-3xl flex-shrink-0">{emoji}</span>
+                <span id={emojiId} className="text-3xl flex-shrink-0">{emoji}</span>
                 <div>
-                  <h3 className="font-semibold text-base mb-1" style={{ color: '#111' }}>{title}</h3>
-                  <p className="text-sm font-light leading-relaxed" style={{ color: '#7F5268' }}>{body}</p>
+                  <h3 id={titleId} className="font-semibold text-base mb-1" style={{ color: '#111' }}>{title}</h3>
+                  <p id={bodyId} className="text-sm font-light leading-relaxed" style={{ color: '#7F5268' }}>{body}</p>
                 </div>
               </div>
             ))}
@@ -360,8 +370,8 @@ export default function LandingPage() {
         <div className="grid md:grid-cols-3 gap-5">
           {[
             '"את עושה יותר ממה שאת חושבת שאת עושה"',
-            '"לא צריך להיות מושלמת — רק נוכחת"',
-            '"עסק מהבית עם תינוק זה כפול מאמץ, כפול גאווה"',
+            '"לא צריך להיות מושלמת- רק נוכחת"',
+            '"הריון ותינוק הם ריצת מרתון- כל צעד קדימה חשוב"',
           ].map((q, i) => (
             <blockquote
               key={q}
@@ -382,7 +392,7 @@ export default function LandingPage() {
           className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
           style={{ color: '#111' }}
         >
-          הסיפור מאחורי המערכת
+          הסיפור שמאחורי המערכת
         </h2>
         <div
           className="reveal rounded-2xl"
@@ -439,16 +449,15 @@ export default function LandingPage() {
                 marginBottom: '1.75rem',
               }}
             >
-              אני עידית לאוב, אמא של דור אורי. כשדור נולדה, הרגשתי אבודה לגמרי — רציתי מידע,
-              רציתי סדר ביום, רציתי להבין מה בכלל קורה. לא מצאתי מקום אחד שנותן את כל זה.
-              אז הקמתי אותו.
-              <br /><br />
-              <em>אמא בסדר</em> נולדה מהתחושה שכל אמא, ובמיוחד אמא עצמאית, צריכה כלי שמבין
-              את החיים שלה — לא רק את העסק, לא רק את התינוק, אלא את הכל יחד.
+              כשדור נולדה, הייתי אמא בפעם הראשונה- ומרגישה אבודה לגמרי. רציתי לדעת מה נורמלי,
+              רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום
+              אחד שנותן את כל זה- אז הקמתי אותו. אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא
+              עוד אפליקציה, אלא כלי שמבין אותך- את ההריון שלך, את התינוק שלך, ואת הכאוס היפה
+              הזה שנקרא ימים ראשונים.
             </p>
             <div>
               <p className="font-bold text-base" style={{ color: '#111' }}>עידית לאוב</p>
-              <p className="text-sm font-light" style={{ color: '#7F5268' }}>מייסדת אמא בסדר</p>
+              <p className="text-sm font-light" style={{ color: '#7F5268' }}>מייסדת אמא בסדר ואמא של דור אורי</p>
             </div>
           </div>
         </div>
@@ -466,23 +475,67 @@ export default function LandingPage() {
         </h2>
         <div style={{ overflow: 'hidden', width: '100%' }}>
           <div className="testimonials-track">
+            {/* First set — has IDs for editor */}
             {[
-              { name: 'נועה כ.', role: 'אמא + מעצבת גרפית',     stars: 5, quote: 'סוף סוף יש לי מקום אחד לכל מה שקשור לתינוק ולעסק. חסכתי כל כך הרבה זמן.' },
-              { name: 'שירלי מ.', role: 'אמא + מנהלת תוכן',      stars: 5, quote: 'ה-AI הסביר לי בשלוש שורות בפשטות על שינה עצמאית. לא ידעתי שיש דבר כזה בעברית.' },
-              { name: 'גלית ר.', role: 'אמא + פרילנסרית',        stars: 5, quote: 'הפומודורו שינה לי את שעות העבודה בזמן הנמנום. עכשיו אני מספיקה פי שניים.' },
-              { name: 'יעל ב.', role: 'אמא לתאומות',             stars: 5, quote: 'רשמתי האכלות שלוש שנים. עכשיו זה לוקח שתי שניות.' },
-              { name: 'מיכל ש.', role: 'אמא + מנהלת פרויקטים',  stars: 5, quote: 'אהבתי שהמערכת מרגישה שנבנתה בשבילי, לא אפליקציה כללית לכולם.' },
-              { name: 'אורית ד.', role: 'אמא + יועצת עסקית',    stars: 5, quote: 'הדשבורד בוקר הוא הדבר הראשון שאני פותחת כל יום.' },
-              /* duplicate set for seamless loop */
-              { name: 'נועה כ.', role: 'אמא + מעצבת גרפית',     stars: 5, quote: 'סוף סוף יש לי מקום אחד לכל מה שקשור לתינוק ולעסק. חסכתי כל כך הרבה זמן.' },
-              { name: 'שירלי מ.', role: 'אמא + מנהלת תוכן',      stars: 5, quote: 'ה-AI הסביר לי בשלוש שורות בפשטות על שינה עצמאית. לא ידעתי שיש דבר כזה בעברית.' },
-              { name: 'גלית ר.', role: 'אמא + פרילנסרית',        stars: 5, quote: 'הפומודורו שינה לי את שעות העבודה בזמן הנמנום. עכשיו אני מספיקה פי שניים.' },
-              { name: 'יעל ב.', role: 'אמא לתאומות',             stars: 5, quote: 'רשמתי האכלות שלוש שנים. עכשיו זה לוקח שתי שניות.' },
-              { name: 'מיכל ש.', role: 'אמא + מנהלת פרויקטים',  stars: 5, quote: 'אהבתי שהמערכת מרגישה שנבנתה בשבילי, לא אפליקציה כללית לכולם.' },
-              { name: 'אורית ד.', role: 'אמא + יועצת עסקית',    stars: 5, quote: 'הדשבורד בוקר הוא הדבר הראשון שאני פותחת כל יום.' },
+              { name: 'נועה כ.',   role: 'אמא טרייה',               stars: 5, quote: '"סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי"',
+                nameId: 'le-test-0-name', roleId: 'le-test-0-role', quoteId: 'le-test-0-quote' },
+              { name: 'שירלי מ.', role: 'בהריון 32 שבועות',         stars: 5, quote: '"הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט"',
+                nameId: 'le-test-1-name', roleId: 'le-test-1-role', quoteId: 'le-test-1-quote' },
+              { name: 'גלית ר.',   role: 'אמא + עצמאית',             stars: 5, quote: '"ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת"',
+                nameId: 'le-test-2-name', roleId: 'le-test-2-role', quoteId: 'le-test-2-quote' },
+              { name: 'יעל ב.',   role: 'אמא לתאומות',               stars: 5, quote: '"רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים"',
+                nameId: 'le-test-3-name', roleId: 'le-test-3-role', quoteId: 'le-test-3-quote' },
+              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',          stars: 5, quote: '"הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל"',
+                nameId: 'le-test-4-name', roleId: 'le-test-4-role', quoteId: 'le-test-4-quote' },
+              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',        stars: 5, quote: '"הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום"',
+                nameId: 'le-test-5-name', roleId: 'le-test-5-role', quoteId: 'le-test-5-quote' },
+            ].map(({ name, role, quote, nameId, roleId, quoteId }, idx) => (
+              <div
+                key={`a-${idx}`}
+                style={{
+                  flexShrink: 0,
+                  width: '300px',
+                  marginInlineEnd: '20px',
+                  background: '#fff',
+                  borderRadius: '1rem',
+                  padding: '24px',
+                  boxShadow: '0 4px 20px rgba(127,82,104,0.1)',
+                  border: '1px solid rgba(127,82,104,0.1)',
+                }}
+              >
+                <div style={{ color: '#F5A623', fontSize: '1.1rem', marginBottom: '10px', letterSpacing: '2px' }}>
+                  ★★★★★
+                </div>
+                <p
+                  id={quoteId}
+                  style={{
+                    fontSize: '0.9rem',
+                    lineHeight: 1.7,
+                    color: '#333',
+                    fontWeight: 300,
+                    marginBottom: '16px',
+                    fontStyle: 'italic',
+                  }}
+                >
+                  {quote}
+                </p>
+                <div>
+                  <p id={nameId} className="font-semibold text-sm" style={{ color: '#111' }}>{name}</p>
+                  <p id={roleId} className="text-xs font-light" style={{ color: '#7F5268' }}>{role}</p>
+                </div>
+              </div>
+            ))}
+            {/* Duplicate set for seamless loop — no IDs */}
+            {[
+              { name: 'נועה כ.',   role: 'אמא טרייה',               stars: 5, quote: '"סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי"' },
+              { name: 'שירלי מ.', role: 'בהריון 32 שבועות',         stars: 5, quote: '"הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט"' },
+              { name: 'גלית ר.',   role: 'אמא + עצמאית',             stars: 5, quote: '"ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת"' },
+              { name: 'יעל ב.',   role: 'אמא לתאומות',               stars: 5, quote: '"רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים"' },
+              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',          stars: 5, quote: '"הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל"' },
+              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',        stars: 5, quote: '"הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום"' },
             ].map(({ name, role, quote }, idx) => (
               <div
-                key={idx}
+                key={`b-${idx}`}
                 style={{
                   flexShrink: 0,
                   width: '300px',
@@ -507,7 +560,7 @@ export default function LandingPage() {
                     fontStyle: 'italic',
                   }}
                 >
-                  &ldquo;{quote}&rdquo;
+                  {quote}
                 </p>
                 <div>
                   <p className="font-semibold text-sm" style={{ color: '#111' }}>{name}</p>
@@ -524,6 +577,7 @@ export default function LandingPage() {
       ═══════════════════════════════════════════════════════════ */}
       <section className="w-full text-center py-20 px-6" style={{ background: '#7F5268' }}>
         <h2
+          id="le-cta-heading"
           className="reveal font-display mb-4"
           style={{
             fontSize: 'clamp(3rem, 9vw, 6.5rem)',
@@ -532,10 +586,10 @@ export default function LandingPage() {
             lineHeight: 1.1,
           }}
         >
-          מתחילים?
+          מתחילות?
         </h2>
-        <p className="reveal text-base font-light mb-10" style={{ color: 'rgba(247,237,226,0.7)' }}>
-          הצטרפי לאמהות שכבר מנהלות חיים שלמים מממשק אחד
+        <p id="le-cta-sub" className="reveal text-base font-light mb-10" style={{ color: 'rgba(247,237,226,0.7)' }}>
+          הצטרפי לאמהות שכבר לא מסתדרות לבד
         </p>
         <Link
           href="/auth"
@@ -578,6 +632,7 @@ export default function LandingPage() {
       </section>
 
       <HeroEditor />
+      <LandingEditor />
 
       {/* ── Footer ── */}
       <footer className="w-full text-center py-7 px-6" style={{ background: '#F7EDE2', borderTop: '1px solid rgba(127,82,104,0.1)' }}>
