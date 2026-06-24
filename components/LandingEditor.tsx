@@ -429,7 +429,7 @@ function Divider() {
   return <div style={{ height:1, background:'rgba(255,255,255,0.07)', margin:'4px 0 8px' }} />
 }
 
-// ── FieldRow — text input + 🎨 expandable style controls ─────────────────────
+// ── FieldRow — text input + always-visible size bar + 🎨 advanced controls ────
 function FieldRow({
   label, id, value, onChange, rows = 1, elStyle, onStyleChange,
 }: {
@@ -439,8 +439,9 @@ function FieldRow({
   elStyle: ElStyle
   onStyleChange: (id: string, patch: ElStyle) => void
 }) {
-  const [showStyle, setShowStyle] = useState(false)
-  const hasStyle = Object.keys(elStyle).length > 0
+  const [showAdvanced, setShowAdvanced] = useState(false)
+  const hasAdvanced = Object.keys(elStyle).some(k => k !== 'fontSize')
+  const fsVal = elStyle.fontSize ? parseFloat(elStyle.fontSize) : NaN
 
   const inputBase: React.CSSProperties = {
     width:'100%', background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.11)',
@@ -449,40 +450,62 @@ function FieldRow({
   }
 
   return (
-    <div style={{ marginBottom:7 }}>
+    <div style={{ marginBottom:8 }}>
+      {/* Label row */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:3 }}>
         <div style={{ opacity:0.55, fontSize:10 }}>{label}</div>
-        <button
-          onClick={() => setShowStyle(s => !s)}
-          title="עיצוב: צבע, גודל, ריווח..."
-          style={{
-            padding:'2px 6px', borderRadius:5,
-            border: `1px solid ${showStyle ? 'rgba(125,211,252,0.35)' : hasStyle ? 'rgba(167,139,250,0.4)' : 'rgba(255,255,255,0.1)'}`,
-            background: showStyle ? 'rgba(125,211,252,0.12)' : hasStyle ? 'rgba(167,139,250,0.1)' : 'transparent',
-            color: showStyle ? '#7dd3fc' : hasStyle ? '#a78bfa' : 'rgba(255,255,255,0.35)',
-            cursor:'pointer', fontSize:10, lineHeight:1,
-          }}
-        >
-          {hasStyle ? '🎨✓' : '🎨'}
-        </button>
+        {rows > 1 && (
+          <span style={{ opacity:0.3, fontSize:9, color:'#aaa' }}>↵ Enter לשבירת שורה</span>
+        )}
       </div>
 
+      {/* Input */}
       {rows > 1 ? (
         <textarea
           value={value} rows={rows}
           onChange={e => onChange(id, e.target.value)}
-          placeholder="Enter / ↵ לשבירת שורה"
           style={{ ...inputBase, resize:'vertical', lineHeight:1.5 }}
         />
       ) : (
-        <input
-          type="text" value={value}
+        <input type="text" value={value}
           onChange={e => onChange(id, e.target.value)}
           style={inputBase}
         />
       )}
 
-      {showStyle && (
+      {/* ── Always-visible size bar ── */}
+      <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:4 }}>
+        <span style={{ opacity:0.4, fontSize:9, flexShrink:0 }}>Aa</span>
+        <input
+          type="range" min={0.6} max={5} step={0.05}
+          value={isNaN(fsVal) ? 1.0 : fsVal}
+          onChange={e => onStyleChange(id, { fontSize: e.target.value + 'rem' })}
+          style={{ flex:1, accentColor:'#7dd3fc', cursor:'pointer' }}
+        />
+        <span style={{ color: elStyle.fontSize ? '#7dd3fc' : 'rgba(255,255,255,0.3)', fontSize:9, minWidth:30, textAlign:'center' }}>
+          {elStyle.fontSize || 'auto'}
+        </span>
+        {elStyle.fontSize && (
+          <XBtn onClick={() => onStyleChange(id, { fontSize:'' })} />
+        )}
+        {/* Advanced style toggle */}
+        <button
+          onClick={() => setShowAdvanced(s => !s)}
+          title="צבע, יישור, ריווח..."
+          style={{
+            padding:'2px 5px', borderRadius:5, flexShrink:0,
+            border: `1px solid ${showAdvanced ? 'rgba(125,211,252,0.4)' : hasAdvanced ? 'rgba(167,139,250,0.5)' : 'rgba(255,255,255,0.12)'}`,
+            background: showAdvanced ? 'rgba(125,211,252,0.12)' : hasAdvanced ? 'rgba(167,139,250,0.12)' : 'rgba(255,255,255,0.04)',
+            color: showAdvanced ? '#7dd3fc' : hasAdvanced ? '#a78bfa' : 'rgba(255,255,255,0.4)',
+            cursor:'pointer', fontSize:11, lineHeight:1,
+          }}
+        >
+          {hasAdvanced ? '🎨✓' : '🎨'}
+        </button>
+      </div>
+
+      {/* Advanced style panel */}
+      {showAdvanced && (
         <StyleControls id={id} style={elStyle} onStyleChange={onStyleChange} />
       )}
     </div>
@@ -537,16 +560,6 @@ function StyleControls({
           ))}
         </div>
         {s.color && <XBtn onClick={() => set({ color:'' })} />}
-      </Row>
-
-      {/* ── Font size ── */}
-      <Row label="גודל">
-        <input type="range" min={0.6} max={5} step={0.05}
-          value={isNaN(fsVal) ? 1.0 : fsVal}
-          onChange={e => set({ fontSize: e.target.value + 'rem' })}
-          style={{ flex:1, accentColor:'#7dd3fc' }} />
-        <Val color="#7dd3fc">{s.fontSize || 'auto'}</Val>
-        {s.fontSize && <XBtn onClick={() => set({ fontSize:'' })} />}
       </Row>
 
       {/* ── Style toggles + Alignment ── */}

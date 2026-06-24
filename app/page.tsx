@@ -87,8 +87,8 @@ export default function LandingPage() {
             <p
               id="le-hero-sub"
               data-hero="subtitle"
-              className="anim-fade-up-2 md:whitespace-nowrap"
-              style={{ fontSize: 'clamp(0.85rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300 }}
+              className="anim-fade-up-2"
+              style={{ fontSize: 'clamp(0.85rem, 1.7vw, 1.5rem)', color: '#7F5268', margin: '0 auto', fontWeight: 300, maxWidth: '90vw', overflowWrap: 'break-word', wordBreak: 'break-word' }}
             >
               מעקב הריון, מעקב תינוק, ניהול יומי, ותמיכת AI בעברית- כי את לא צריכה להסתדר לבד
             </p>
