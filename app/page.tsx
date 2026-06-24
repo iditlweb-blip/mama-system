@@ -1,8 +1,43 @@
 import Link from 'next/link'
 import Image from 'next/image'
+import type { CSSProperties } from 'react'
 import HeroEditor from '@/components/HeroEditor'
 import LandingEditor from '@/components/LandingEditor'
 import PwaInstallTabs from '@/components/PwaInstallTabs'
+
+// ── Testimonial card styles (shared between both sets) ───────────────────────
+const cardWrap: CSSProperties = {
+  flexShrink: 0, width: 265,
+  marginRight: 20,             // each slot = 285px; 8×285 = 2280px per set → -50% loops perfectly
+  background: '#fff',
+  borderRadius: 14,
+  overflow: 'hidden',
+  boxShadow: '0 2px 18px rgba(0,0,0,0.07)',
+  display: 'flex', flexDirection: 'column',
+  direction: 'rtl',
+}
+const cardBody: CSSProperties = {
+  padding: '20px 20px 14px', flex: 1, display: 'flex', flexDirection: 'column',
+}
+const stars: CSSProperties = {
+  color: '#F5A623', fontSize: '0.95rem', letterSpacing: 3, marginBottom: 10,
+}
+const cardQuote: CSSProperties = {
+  fontSize: '0.875rem', lineHeight: 1.7, color: '#555',
+  fontStyle: 'italic', fontWeight: 300, flex: 1, margin: 0,
+}
+const cardFooter: CSSProperties = {
+  background: '#7F5268', padding: '11px 20px',
+}
+const cardName: CSSProperties  = { color: '#fff', fontWeight: 700, fontSize: '0.875rem', margin: 0 }
+const cardRole: CSSProperties  = { color: 'rgba(255,255,255,0.6)', fontSize: '0.775rem', margin: '2px 0 0', fontWeight: 300 }
+const arrowBtn: CSSProperties  = {
+  width: 46, height: 46, borderRadius: '50%',
+  border: '1.5px solid rgba(127,82,104,0.25)',
+  background: '#F7EDE2',
+  display: 'flex', alignItems: 'center', justifyContent: 'center',
+  cursor: 'pointer',
+}
 
 export default function LandingPage() {
   return (
@@ -25,7 +60,9 @@ export default function LandingPage() {
         .testimonials-track {
           display: flex;
           width: max-content;
-          animation: marquee-scroll 32s linear infinite;
+          direction: ltr;
+          animation: marquee-scroll 42s linear infinite;
+          will-change: transform;
         }
         .testimonials-track:hover {
           animation-play-state: paused;
@@ -396,188 +433,142 @@ export default function LandingPage() {
       {/* ═══════════════════════════════════════════════════════════
           ABOUT — הסיפור מאחורי המערכת
       ═══════════════════════════════════════════════════════════ */}
-      <section className="max-w-5xl mx-auto px-6 py-20">
-        <h2
-          className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
-          style={{ color: '#111' }}
-        >
-          הסיפור שמאחורי המערכת
-        </h2>
-        <div
-          className="reveal rounded-2xl"
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(127,82,104,0.12)',
-            padding: 'clamp(24px, 5vw, 56px)',
-            display: 'flex',
-            gap: 'clamp(24px, 5vw, 56px)',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
+      <section style={{ background: '#F7EDE2', padding: 'clamp(60px,8vw,100px) 24px' }}>
+        <div style={{ maxWidth: 640, margin: '0 auto', textAlign: 'center', position: 'relative' }}>
+
+          {/* Decorative ❞ top-left (RTL: visually top-right of text) */}
+          <span aria-hidden="true" style={{
+            position: 'absolute', top: -10, right: -8,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 'clamp(7rem, 13vw, 11rem)',
+            color: '#C4748C', opacity: 0.15, lineHeight: 1,
+            userSelect: 'none', pointerEvents: 'none',
+          }}>&#8221;</span>
+
           {/* Photo */}
-          <div style={{ flexShrink: 0, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ marginBottom: 32, display: 'flex', justifyContent: 'center' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/eidit.png"
               alt="עידית לאוב"
               style={{
-                width: 'clamp(180px, 25vw, 300px)',
-                height: 'clamp(180px, 25vw, 300px)',
+                width: 'clamp(140px, 18vw, 210px)',
+                height: 'clamp(170px, 22vw, 260px)',
                 objectFit: 'cover',
-                borderRadius: '1.25rem',
-                border: '3px solid rgba(127,82,104,0.15)',
-                boxShadow: '0 8px 32px rgba(127,82,104,0.12)',
+                objectPosition: 'center top',
+                borderRadius: '1.5rem',
               }}
             />
           </div>
 
-          {/* Text */}
-          <div style={{ flex: 1, minWidth: '240px' }}>
-            <span
-              aria-hidden="true"
-              style={{
-                fontFamily: 'Georgia, serif',
-                fontSize: 'clamp(5rem, 10vw, 8rem)',
-                lineHeight: 0.7,
-                color: '#7F5268',
-                opacity: 0.25,
-                display: 'block',
-                marginBottom: '-0.5rem',
-                userSelect: 'none',
-              }}
-            >
-              &#8220;
-            </span>
-            <p
-              style={{
-                fontSize: 'clamp(0.95rem, 1.6vw, 1.15rem)',
-                lineHeight: 1.85,
-                color: '#333',
-                fontWeight: 300,
-                marginBottom: '1.75rem',
-              }}
-            >
-              כשדור נולדה, הייתי אמא בפעם הראשונה- ומרגישה אבודה לגמרי. רציתי לדעת מה נורמלי,
-              רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום
-              אחד שנותן את כל זה- אז הקמתי אותו. אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא
-              עוד אפליקציה, אלא כלי שמבין אותך- את ההריון שלך, את התינוק שלך, ואת הכאוס היפה
-              הזה שנקרא ימים ראשונים.
-            </p>
-            <div>
-              <p className="font-bold text-base" style={{ color: '#111' }}>עידית לאוב</p>
-              <p className="text-sm font-light" style={{ color: '#7F5268' }}>מייסדת אמא בסדר ואמא של דור אורי</p>
-            </div>
+          {/* Heading */}
+          <h2 className="reveal" style={{
+            fontSize: 'clamp(1.75rem, 3.5vw, 2.5rem)',
+            fontWeight: 800, color: '#111',
+            marginBottom: 28, lineHeight: 1.2,
+          }}>
+            הסיפור שמאחורי המערכת
+          </h2>
+
+          {/* Story */}
+          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#444', fontWeight: 300, marginBottom: '1rem' }}>
+            כשדור נולדה, הייתי אמא בפעם הראשונה- ורציתי לדעת מה נורמלי, רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום אחד שנותן את כל זה.
+          </p>
+          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#111', fontWeight: 700, marginBottom: '1rem' }}>
+            אז הקמתי אותו.
+          </p>
+          <p style={{ fontSize: 'clamp(0.93rem, 1.5vw, 1.07rem)', lineHeight: 1.9, color: '#444', fontWeight: 300, marginBottom: '2.5rem' }}>
+            אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא עוד אפליקציה, אלא כלי שמבין אותך- את ההריון שלך, את התינוק שלך, ואת הכאוס היפה הזה שנקרא ימים ראשונים.
+          </p>
+
+          {/* Signature */}
+          <div>
+            <p style={{ fontWeight: 700, fontSize: '1rem', color: '#7F5268', marginBottom: 3 }}>עידית לאוב</p>
+            <p style={{ color: '#888', fontSize: '0.875rem', fontWeight: 300 }}>מייסדת אמא בסדר ואמא של דור אורי</p>
           </div>
+
+          {/* Decorative ❝ bottom-right (RTL: visually bottom-left of text) */}
+          <span aria-hidden="true" style={{
+            position: 'absolute', bottom: -10, left: -8,
+            fontFamily: 'Georgia, "Times New Roman", serif',
+            fontSize: 'clamp(7rem, 13vw, 11rem)',
+            color: '#C4748C', opacity: 0.15, lineHeight: 1,
+            userSelect: 'none', pointerEvents: 'none',
+          }}>&#8220;</span>
         </div>
       </section>
 
       {/* ═══════════════════════════════════════════════════════════
           TESTIMONIALS — מה אמהות אומרות
       ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: 'rgba(127,82,104,0.05)', overflow: 'hidden', padding: '80px 0' }}>
-        <h2
-          className="reveal text-3xl md:text-4xl font-bold text-center mb-12"
-          style={{ color: '#111' }}
-        >
+      <section style={{ background: '#fff', padding: 'clamp(60px,8vw,90px) 0' }}>
+        <h2 className="reveal text-3xl md:text-4xl font-bold text-center mb-12" style={{ color: '#111' }}>
           מה אמהות אומרות
         </h2>
-        <div style={{ overflow: 'hidden', width: '100%' }}>
+
+        {/* Track wrapper — LTR so translateX(-50%) is predictable */}
+        <div style={{ overflow: 'hidden', width: '100%', direction: 'ltr' }}>
           <div className="testimonials-track">
-            {/* First set — has IDs for editor */}
+            {/* ── Set A: with IDs for content editor ── */}
+            {([
+              { name: 'נועה כ.',   role: 'אמא טרייה',           quote: 'סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי', nId:'le-test-0-name', rId:'le-test-0-role', qId:'le-test-0-quote' },
+              { name: 'שירלי מ.',  role: 'בהריון 32 שבועות',    quote: 'הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט',  nId:'le-test-1-name', rId:'le-test-1-role', qId:'le-test-1-quote' },
+              { name: 'גלית ה.',   role: 'אמא + עצמאית',         quote: 'ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת',               nId:'le-test-2-name', rId:'le-test-2-role', qId:'le-test-2-quote' },
+              { name: 'יעל ב.',   role: 'אמא לתאומות',           quote: 'רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים ממש',         nId:'le-test-3-name', rId:'le-test-3-role', qId:'le-test-3-quote' },
+              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',     quote: 'הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל',               nId:'le-test-4-name', rId:'le-test-4-role', qId:'le-test-4-quote' },
+              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',   quote: 'הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום',                   nId:'le-test-5-name', rId:'le-test-5-role', qId:'le-test-5-quote' },
+              { name: 'ריקי ל.',  role: 'שבועיים אחרי לידה',    quote: 'איזה כלי מטורף. הכל במקום אחד ובעברית. לא האמנתי שיש כזה דבר'                                                         },
+              { name: 'דנה מ.',   role: 'בהריון 36 שבועות',     quote: 'מסדרת לי את הראש כל בוקר. כל הבדיקות, כל השאלות- הכל שם'                                                              },
+            ] as Array<{ name:string; role:string; quote:string; nId?:string; rId?:string; qId?:string }>)
+              .map((t, i) => (
+                <div key={`a-${i}`} style={cardWrap}>
+                  <div style={cardBody}>
+                    <div style={stars}>★★★★★</div>
+                    <p id={t.qId} style={cardQuote}>&ldquo;{t.quote}&rdquo;</p>
+                  </div>
+                  <div style={cardFooter}>
+                    <p id={t.nId} style={cardName}>{t.name}</p>
+                    <p id={t.rId} style={cardRole}>{t.role}</p>
+                  </div>
+                </div>
+              ))}
+            {/* ── Set B: identical duplicate for seamless loop ── */}
             {[
-              { name: 'נועה כ.',   role: 'אמא טרייה',               stars: 5, quote: '"סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי"',
-                nameId: 'le-test-0-name', roleId: 'le-test-0-role', quoteId: 'le-test-0-quote' },
-              { name: 'שירלי מ.', role: 'בהריון 32 שבועות',         stars: 5, quote: '"הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט"',
-                nameId: 'le-test-1-name', roleId: 'le-test-1-role', quoteId: 'le-test-1-quote' },
-              { name: 'גלית ר.',   role: 'אמא + עצמאית',             stars: 5, quote: '"ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת"',
-                nameId: 'le-test-2-name', roleId: 'le-test-2-role', quoteId: 'le-test-2-quote' },
-              { name: 'יעל ב.',   role: 'אמא לתאומות',               stars: 5, quote: '"רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים"',
-                nameId: 'le-test-3-name', roleId: 'le-test-3-role', quoteId: 'le-test-3-quote' },
-              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',          stars: 5, quote: '"הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל"',
-                nameId: 'le-test-4-name', roleId: 'le-test-4-role', quoteId: 'le-test-4-quote' },
-              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',        stars: 5, quote: '"הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום"',
-                nameId: 'le-test-5-name', roleId: 'le-test-5-role', quoteId: 'le-test-5-quote' },
-            ].map(({ name, role, quote, nameId, roleId, quoteId }, idx) => (
-              <div
-                key={`a-${idx}`}
-                style={{
-                  flexShrink: 0,
-                  width: '300px',
-                  marginInlineEnd: '20px',
-                  background: '#fff',
-                  borderRadius: '1rem',
-                  padding: '24px',
-                  boxShadow: '0 4px 20px rgba(127,82,104,0.1)',
-                  border: '1px solid rgba(127,82,104,0.1)',
-                }}
-              >
-                <div style={{ color: '#F5A623', fontSize: '1.1rem', marginBottom: '10px', letterSpacing: '2px' }}>
-                  ★★★★★
+              { name: 'נועה כ.',   role: 'אמא טרייה',           quote: 'סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי' },
+              { name: 'שירלי מ.',  role: 'בהריון 32 שבועות',    quote: 'הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט'  },
+              { name: 'גלית ה.',   role: 'אמא + עצמאית',         quote: 'ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת'               },
+              { name: 'יעל ב.',   role: 'אמא לתאומות',           quote: 'רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים ממש'         },
+              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',     quote: 'הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל'               },
+              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',   quote: 'הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום'                   },
+              { name: 'ריקי ל.',  role: 'שבועיים אחרי לידה',    quote: 'איזה כלי מטורף. הכל במקום אחד ובעברית. לא האמנתי שיש כזה דבר'      },
+              { name: 'דנה מ.',   role: 'בהריון 36 שבועות',     quote: 'מסדרת לי את הראש כל בוקר. כל הבדיקות, כל השאלות- הכל שם'           },
+            ].map((t, i) => (
+              <div key={`b-${i}`} style={cardWrap}>
+                <div style={cardBody}>
+                  <div style={stars}>★★★★★</div>
+                  <p style={cardQuote}>&ldquo;{t.quote}&rdquo;</p>
                 </div>
-                <p
-                  id={quoteId}
-                  style={{
-                    fontSize: '0.9rem',
-                    lineHeight: 1.7,
-                    color: '#333',
-                    fontWeight: 300,
-                    marginBottom: '16px',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  {quote}
-                </p>
-                <div>
-                  <p id={nameId} className="font-semibold text-sm" style={{ color: '#111' }}>{name}</p>
-                  <p id={roleId} className="text-xs font-light" style={{ color: '#7F5268' }}>{role}</p>
-                </div>
-              </div>
-            ))}
-            {/* Duplicate set for seamless loop — no IDs */}
-            {[
-              { name: 'נועה כ.',   role: 'אמא טרייה',               stars: 5, quote: '"סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי"' },
-              { name: 'שירלי מ.', role: 'בהריון 32 שבועות',         stars: 5, quote: '"הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט"' },
-              { name: 'גלית ר.',   role: 'אמא + עצמאית',             stars: 5, quote: '"ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת"' },
-              { name: 'יעל ב.',   role: 'אמא לתאומות',               stars: 5, quote: '"רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים"' },
-              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',          stars: 5, quote: '"הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל"' },
-              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',        stars: 5, quote: '"הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום"' },
-            ].map(({ name, role, quote }, idx) => (
-              <div
-                key={`b-${idx}`}
-                style={{
-                  flexShrink: 0,
-                  width: '300px',
-                  marginInlineEnd: '20px',
-                  background: '#fff',
-                  borderRadius: '1rem',
-                  padding: '24px',
-                  boxShadow: '0 4px 20px rgba(127,82,104,0.1)',
-                  border: '1px solid rgba(127,82,104,0.1)',
-                }}
-              >
-                <div style={{ color: '#F5A623', fontSize: '1.1rem', marginBottom: '10px', letterSpacing: '2px' }}>
-                  ★★★★★
-                </div>
-                <p
-                  style={{
-                    fontSize: '0.9rem',
-                    lineHeight: 1.7,
-                    color: '#333',
-                    fontWeight: 300,
-                    marginBottom: '16px',
-                    fontStyle: 'italic',
-                  }}
-                >
-                  {quote}
-                </p>
-                <div>
-                  <p className="font-semibold text-sm" style={{ color: '#111' }}>{name}</p>
-                  <p className="text-xs font-light" style={{ color: '#7F5268' }}>{role}</p>
+                <div style={cardFooter}>
+                  <p style={cardName}>{t.name}</p>
+                  <p style={cardRole}>{t.role}</p>
                 </div>
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Navigation arrows */}
+        <div style={{ display:'flex', justifyContent:'center', gap:14, marginTop:36 }}>
+          {/* Right arrow = "previous" in RTL */}
+          <button aria-label="הקודם" style={arrowBtn}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/arrow.svg" alt="" style={{ width:20, transform:'scaleX(-1)', filter:'invert(40%) sepia(20%) saturate(500%) hue-rotate(280deg)' }} />
+          </button>
+          {/* Left arrow = "next" in RTL */}
+          <button aria-label="הבא" style={arrowBtn}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/arrow.svg" alt="" style={{ width:20, filter:'invert(40%) sepia(20%) saturate(500%) hue-rotate(280deg)' }} />
+          </button>
         </div>
       </section>
 
