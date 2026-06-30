@@ -72,3 +72,89 @@ export async function createUserByAdmin(
     return { ok: false, error: (e as Error).message }
   }
 }
+
+// ─── Professionals CRUD ────────────────────────────────────────────────────────
+export async function upsertProfessional(data: {
+  id?: string
+  name: string
+  title?: string
+  phone?: string
+  region?: string
+  sort_order?: number
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      title: data.title ?? null,
+      phone: data.phone ?? null,
+      region: data.region ?? null,
+      sort_order: data.sort_order ?? null,
+    }
+    if (data.id) payload.id = data.id
+
+    const { error } = await admin.from('professionals').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/products')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteProfessional(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('professionals').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/products')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// ─── Products CRUD ─────────────────────────────────────────────────────────────
+export async function upsertProduct(data: {
+  id?: string
+  name: string
+  description?: string
+  coupon_code?: string
+  buy_link?: string
+  sort_order?: number
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      description: data.description ?? null,
+      coupon_code: data.coupon_code ?? null,
+      buy_link: data.buy_link ?? null,
+      sort_order: data.sort_order ?? null,
+    }
+    if (data.id) payload.id = data.id
+
+    const { error } = await admin.from('products').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/products')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteProduct(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('products').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/products')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}

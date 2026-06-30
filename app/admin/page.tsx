@@ -27,21 +27,35 @@ export default async function AdminPage() {
   }
   const users = authData.users
 
-  // 3. Fetch app stats + PWA data
+  // 3. Fetch app stats + PWA data + analytics
   const [
     { count: taskCount },
     { count: logCount },
     { data: pwaProfiles },
+    { data: professionals },
+    { data: products },
+    { data: analyticsData },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
     admin.from('profiles').select('id, pwa_installed_at').not('pwa_installed_at', 'is', null),
+    admin.from('professionals').select('*').order('sort_order').limit(100),
+    admin.from('products').select('*').order('sort_order').limit(100),
+    admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
   ])
 
   // Build PWA lookup map
   const pwaMap: Record<string, string> = {}
   for (const p of (pwaProfiles ?? [])) {
     if (p.pwa_installed_at) pwaMap[p.id] = p.pwa_installed_at
+  }
+
+  // Per-user analytics summary (last 7 days)
+  const userAnalytics: Record<string, { totalSeconds: number; pages: Record<string, number> }> = {}
+  for (const row of (analyticsData ?? [])) {
+    if (!userAnalytics[row.user_id]) userAnalytics[row.user_id] = { totalSeconds: 0, pages: {} }
+    userAnalytics[row.user_id].totalSeconds += row.duration_seconds ?? 0
+    userAnalytics[row.user_id].pages[row.page] = (userAnalytics[row.user_id].pages[row.page] ?? 0) + (row.duration_seconds ?? 0)
   }
 
   // 4. Build user summaries
@@ -54,6 +68,10 @@ export default async function AdminPage() {
     last_sign_in: u.last_sign_in_at ?? null,
     confirmed: !!u.email_confirmed_at,
     pwa_installed_at: pwaMap[u.id] ?? null,
+    weeklySeconds: userAnalytics[u.id]?.totalSeconds ?? 0,
+    topPage: userAnalytics[u.id]
+      ? Object.entries(userAnalytics[u.id].pages).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
+      : null,
   }))
 
   const now = Date.now()
@@ -70,5 +88,12 @@ export default async function AdminPage() {
     pwaCount:     Object.keys(pwaMap).length,
   }
 
-  return <AdminClient users={userList} stats={stats} />
+  return (
+    <AdminClient
+      users={userList}
+      stats={stats}
+      professionals={professionals ?? []}
+      products={products ?? []}
+    />
+  )
 }

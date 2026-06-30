@@ -4,9 +4,14 @@ import { useState, useTransition } from 'react'
 import {
   Users, Activity, Baby, CheckSquare, Shield,
   Search, TrendingUp, UserCheck, Clock, Trash2,
-  KeyRound, UserPlus, X, Loader2, Smartphone, Eye, EyeOff
+  KeyRound, UserPlus, X, Loader2, Smartphone, Eye, EyeOff,
+  Briefcase, ShoppingBag, Plus, Edit2, BarChart2,
 } from 'lucide-react'
-import { deleteUser, sendPasswordReset, createUserByAdmin } from './actions'
+import {
+  deleteUser, sendPasswordReset, createUserByAdmin,
+  upsertProfessional, deleteProfessional,
+  upsertProduct, deleteProduct,
+} from './actions'
 
 interface UserRow {
   id: string
@@ -17,6 +22,28 @@ interface UserRow {
   last_sign_in: string | null
   confirmed: boolean
   pwa_installed_at: string | null
+  weeklySeconds: number
+  topPage: string | null
+}
+
+interface Professional {
+  id: string
+  name: string
+  title: string | null
+  phone: string | null
+  region: string | null
+  image_url: string | null
+  sort_order: number | null
+}
+
+interface Product {
+  id: string
+  name: string
+  description: string | null
+  image_url: string | null
+  coupon_code: string | null
+  buy_link: string | null
+  sort_order: number | null
 }
 
 interface Stats {
@@ -29,26 +56,46 @@ interface Stats {
   pwaCount: number
 }
 
-interface Props { users: UserRow[]; stats: Stats }
+interface Props {
+  users: UserRow[]
+  stats: Stats
+  professionals: Professional[]
+  products: Product[]
+}
 
-type ModalType = 'delete' | 'reset' | 'create' | null
+type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
+type ManageTab = 'professionals' | 'products'
 
-export default function AdminClient({ users: initialUsers, stats }: Props) {
-  const [users, setUsers]       = useState(initialUsers)
-  const [search, setSearch]     = useState('')
-  const [sort, setSort]         = useState<'newest' | 'active' | 'name'>('newest')
-  const [modal, setModal]       = useState<ModalType>(null)
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts }: Props) {
+  const [users, setUsers]   = useState(initialUsers)
+  const [pros, setPros]     = useState(initPros)
+  const [products, setProducts] = useState(initProducts)
+  const [search, setSearch] = useState('')
+  const [sort, setSort]     = useState<'newest' | 'active' | 'name'>('newest')
+  const [modal, setModal]   = useState<ModalType>(null)
   const [selected, setSelected] = useState<UserRow | null>(null)
-  const [toast, setToast]       = useState<{ msg: string; ok: boolean } | null>(null)
+  const [toast, setToast]   = useState<{ msg: string; ok: boolean } | null>(null)
   const [isPending, startTransition] = useTransition()
+  const [manageTab, setManageTab] = useState<ManageTab>('professionals')
 
-  // Create form state
-  const [newEmail, setNewEmail]       = useState('')
-  const [newPass, setNewPass]         = useState('')
-  const [newName, setNewName]         = useState('')
-  const [showPass, setShowPass]       = useState(false)
-  const [formError, setFormError]     = useState('')
+  // Pro form
+  const emptyPro = { id: '', name: '', title: '', phone: '', region: '', sort_order: '' }
+  const [proForm, setProForm]       = useState(emptyPro)
+  const [showProForm, setShowProForm] = useState(false)
 
+  // Product form
+  const emptyProduct = { id: '', name: '', description: '', coupon_code: '', buy_link: '', sort_order: '' }
+  const [productForm, setProductForm]       = useState(emptyProduct)
+  const [showProductForm, setShowProductForm] = useState(false)
+
+  // Create-user form
+  const [newEmail, setNewEmail] = useState('')
+  const [newPass,  setNewPass]  = useState('')
+  const [newName,  setNewName]  = useState('')
+  const [showPass, setShowPass] = useState(false)
+  const [formError, setFormError] = useState('')
+
+  // ── Filtering / sorting ────────────────────────────────────────────────────────
   const filtered = users
     .filter(u =>
       u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -64,6 +111,7 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
       return a.name.localeCompare(b.name, 'he')
     })
 
+  // ── Helpers ────────────────────────────────────────────────────────────────────
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 3500)
@@ -72,6 +120,7 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
   function openDelete(u: UserRow) { setSelected(u); setModal('delete') }
   function openReset(u: UserRow)  { setSelected(u); setModal('reset') }
   function openCreate()           { setModal('create'); setFormError('') }
+  function openDetail(u: UserRow) { setSelected(u); setModal('user-detail') }
   function closeModal()           { setModal(null); setSelected(null); setFormError('') }
 
   function fmt(dateStr: string | null) {
@@ -100,10 +149,31 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
     return `${Math.floor(days / 365)} שנים`
   }
 
+  function fmtHours(seconds: number): string {
+    if (seconds < 60)  return '<1 דק׳'
+    const mins = Math.floor(seconds / 60)
+    if (mins < 60)     return `${mins} דק׳`
+    const hrs = (seconds / 3600).toFixed(1)
+    return `${hrs} ש׳`
+  }
+
+  function fmtPage(page: string | null): string {
+    if (!page) return '—'
+    const map: Record<string, string> = {
+      '/dashboard':  '🏠 בית',
+      '/tracker':    '👶 מעקב',
+      '/pregnancy':  '🤰 הריון',
+      '/chat':       '💬 צ׳אט',
+      '/products':   '🛒 מוצרים',
+      '/development':'📚 פיתוח',
+      '/personal':   '👤 אישי',
+    }
+    return map[page] ?? page
+  }
+
   const providerEmoji = (p: string) => p === 'google' ? '🔵' : '📧'
 
-  // ─── Actions ────────────────────────────────────────────────────────────────
-
+  // ── User actions ───────────────────────────────────────────────────────────────
   function handleDelete() {
     if (!selected) return
     startTransition(async () => {
@@ -136,7 +206,6 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
     setFormError('')
     if (!newEmail || !newPass || !newName) { setFormError('יש למלא את כל השדות'); return }
     if (newPass.length < 6) { setFormError('הסיסמא חייבת להכיל לפחות 6 תווים'); return }
-
     startTransition(async () => {
       const res = await createUserByAdmin(newEmail, newPass, newName)
       if (res.ok) {
@@ -149,13 +218,98 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
     })
   }
 
-  // ─── Shared input styles ────────────────────────────────────────────────────
+  // ── Professional actions ───────────────────────────────────────────────────────
+  function editPro(p: Professional) {
+    setProForm({ id: p.id, name: p.name, title: p.title ?? '', phone: p.phone ?? '', region: p.region ?? '', sort_order: p.sort_order?.toString() ?? '' })
+    setShowProForm(true)
+  }
+
+  function handleSavePro(e: React.FormEvent) {
+    e.preventDefault()
+    if (!proForm.name.trim()) return
+    startTransition(async () => {
+      const res = await upsertProfessional({
+        id: proForm.id || undefined,
+        name: proForm.name,
+        title: proForm.title || undefined,
+        phone: proForm.phone || undefined,
+        region: proForm.region || undefined,
+        sort_order: proForm.sort_order ? parseInt(proForm.sort_order) : undefined,
+      })
+      if (res.ok) {
+        showToast(proForm.id ? 'בעל/ת מקצוע עודכן/ה' : 'בעל/ת מקצוע נוסף/ה')
+        setShowProForm(false)
+        setProForm(emptyPro)
+        window.location.reload()
+      } else {
+        showToast(res.error ?? 'שגיאה בשמירה', false)
+      }
+    })
+  }
+
+  function handleDeletePro(id: string, name: string) {
+    if (!confirm(`למחוק את ${name}?`)) return
+    startTransition(async () => {
+      const res = await deleteProfessional(id)
+      if (res.ok) {
+        setPros(prev => prev.filter(p => p.id !== id))
+        showToast(`${name} נמחק/ה`)
+      } else {
+        showToast(res.error ?? 'שגיאה במחיקה', false)
+      }
+    })
+  }
+
+  // ── Product actions ────────────────────────────────────────────────────────────
+  function editProduct(p: Product) {
+    setProductForm({ id: p.id, name: p.name, description: p.description ?? '', coupon_code: p.coupon_code ?? '', buy_link: p.buy_link ?? '', sort_order: p.sort_order?.toString() ?? '' })
+    setShowProductForm(true)
+  }
+
+  function handleSaveProduct(e: React.FormEvent) {
+    e.preventDefault()
+    if (!productForm.name.trim()) return
+    startTransition(async () => {
+      const res = await upsertProduct({
+        id: productForm.id || undefined,
+        name: productForm.name,
+        description: productForm.description || undefined,
+        coupon_code: productForm.coupon_code || undefined,
+        buy_link: productForm.buy_link || undefined,
+        sort_order: productForm.sort_order ? parseInt(productForm.sort_order) : undefined,
+      })
+      if (res.ok) {
+        showToast(productForm.id ? 'מוצר עודכן' : 'מוצר נוסף')
+        setShowProductForm(false)
+        setProductForm(emptyProduct)
+        window.location.reload()
+      } else {
+        showToast(res.error ?? 'שגיאה בשמירה', false)
+      }
+    })
+  }
+
+  function handleDeleteProduct(id: string, name: string) {
+    if (!confirm(`למחוק את ${name}?`)) return
+    startTransition(async () => {
+      const res = await deleteProduct(id)
+      if (res.ok) {
+        setProducts(prev => prev.filter(p => p.id !== id))
+        showToast(`${name} נמחק`)
+      } else {
+        showToast(res.error ?? 'שגיאה במחיקה', false)
+      }
+    })
+  }
+
+  // ── Styles ─────────────────────────────────────────────────────────────────────
   const inputSty: React.CSSProperties = {
     borderColor: 'var(--border)',
     background: 'var(--bg)',
     color: 'var(--text)',
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen p-6 md:p-10" style={{ background: 'var(--bg)', direction: 'rtl' }}>
       <div className="max-w-6xl mx-auto">
@@ -187,15 +341,15 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
           <StatCard icon={Activity}   color="#5C7A8A" label="מאושרות"        value={stats.confirmed}   />
         </div>
 
-        {/* App usage (no chat) */}
+        {/* App usage */}
         <div className="grid grid-cols-3 gap-4 mb-8">
           <UsageCard icon={CheckSquare} color="#7F5268" label="משימות במערכת" value={stats.taskCount} />
           <UsageCard icon={Baby}        color="#5C7A6A" label="רישומי תינוק"  value={stats.logCount}  />
           <UsageCard icon={Smartphone}  color="#5C6BA0" label="התקנות PWA"    value={stats.pwaCount}  />
         </div>
 
-        {/* Users table */}
-        <div className="card">
+        {/* ── Users table ────────────────────────────────────────────────────────── */}
+        <div className="card mb-8">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
             <h2 className="font-bold text-lg" style={{ color: 'var(--text)' }}>
               כל המשתמשות ({users.length})
@@ -218,13 +372,14 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
             </div>
           </div>
 
-          {/* Table header */}
-          <div className="hidden md:grid grid-cols-6 gap-3 px-3 pb-2 border-b text-xs font-semibold uppercase"
+          {/* Table header — 7 cols */}
+          <div className="hidden md:grid grid-cols-7 gap-3 px-3 pb-2 border-b text-xs font-semibold uppercase"
             style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
             <span>משתמשת</span>
             <span>מייל</span>
             <span>כניסה אחרונה</span>
-            <span>זמן במערכת</span>
+            <span>במערכת</span>
+            <span className="flex items-center gap-1"><BarChart2 className="w-3 h-3" /> שבועי</span>
             <span>סטטוס</span>
             <span>פעולות</span>
           </div>
@@ -235,7 +390,8 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
               <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>אין תוצאות</p>
             ) : filtered.map(u => (
               <div key={u.id}
-                className="grid grid-cols-1 md:grid-cols-6 gap-2 md:gap-3 px-3 py-3 items-center hover:opacity-80 transition-opacity">
+                className="grid grid-cols-1 md:grid-cols-7 gap-2 md:gap-3 px-3 py-3 items-center hover:opacity-80 transition-opacity cursor-pointer"
+                onClick={() => openDetail(u)}>
 
                 {/* Name + avatar */}
                 <div className="flex items-center gap-2">
@@ -248,12 +404,12 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
                   </span>
                 </div>
 
-                {/* Email + provider + PWA */}
+                {/* Email + badges */}
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</span>
                   <span title={u.provider}>{providerEmoji(u.provider)}</span>
                   {u.pwa_installed_at && (
-                    <span title={`התקינה PWA: ${new Date(u.pwa_installed_at).toLocaleDateString('he-IL')}`}>📱</span>
+                    <span title={`PWA: ${new Date(u.pwa_installed_at).toLocaleDateString('he-IL')}`}>📱</span>
                   )}
                 </div>
 
@@ -263,16 +419,31 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
                   <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmt(u.last_sign_in)}</span>
                 </div>
 
-                {/* Member duration */}
-                <div className="flex items-center gap-1">
+                {/* Membership duration */}
+                <div>
                   <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>
                     {memberDuration(u.created_at)}
                   </span>
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>במערכת</span>
+                </div>
+
+                {/* Weekly analytics */}
+                <div>
+                  {u.weeklySeconds > 0 ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-xs font-semibold" style={{ color: '#7F5268' }}>
+                        ⏱ {fmtHours(u.weeklySeconds)}
+                      </span>
+                      {u.topPage && (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmtPage(u.topPage)}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                  )}
                 </div>
 
                 {/* Status */}
-                <div>
+                <div onClick={e => e.stopPropagation()}>
                   <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                     style={u.confirmed
                       ? { background: 'rgba(74,124,89,0.12)', color: '#4A7C59' }
@@ -283,7 +454,7 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
                   <button onClick={() => openReset(u)} title="שליחת מייל איפוס סיסמא"
                     className="p-1.5 rounded-lg hover:opacity-80 transition-opacity"
                     style={{ background: 'rgba(92,122,138,0.12)', color: '#5C7A8A' }}>
@@ -300,12 +471,192 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
           </div>
         </div>
 
+        {/* ── Manage content ─────────────────────────────────────────────────────── */}
+        <div className="card">
+          <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
+            <h2 className="font-bold text-lg" style={{ color: 'var(--text)' }}>ניהול תוכן</h2>
+            {/* Tabs */}
+            <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
+              {(['professionals', 'products'] as ManageTab[]).map(tab => (
+                <button key={tab}
+                  onClick={() => { setManageTab(tab); setShowProForm(false); setShowProductForm(false) }}
+                  className="px-4 py-2 text-sm font-medium flex items-center gap-2 transition-colors"
+                  style={manageTab === tab
+                    ? { background: '#7F5268', color: '#fff' }
+                    : { background: 'transparent', color: 'var(--text-muted)' }}>
+                  {tab === 'professionals'
+                    ? <><Briefcase className="w-3.5 h-3.5" />אנשי מקצוע</>
+                    : <><ShoppingBag className="w-3.5 h-3.5" />מוצרים</>}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Professionals ─────────────────────────────────────────────────────── */}
+          {manageTab === 'professionals' && (
+            <div>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => { setProForm(emptyPro); setShowProForm(true) }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: '#7F5268' }}>
+                  <Plus className="w-4 h-4" />הוספת איש/ת מקצוע
+                </button>
+              </div>
+
+              {showProForm && (
+                <form onSubmit={handleSavePro}
+                  className="p-4 rounded-xl mb-4 border space-y-3"
+                  style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
+                    {proForm.id ? 'עריכת' : 'הוספת'} איש/ת מקצוע
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input value={proForm.name} onChange={e => setProForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="שם *" required
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={proForm.title} onChange={e => setProForm(f => ({ ...f, title: e.target.value }))}
+                      placeholder="תפקיד (עובדת סוציאלית, מטפלת...)"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={proForm.phone} onChange={e => setProForm(f => ({ ...f, phone: e.target.value }))}
+                      placeholder="טלפון"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={proForm.region} onChange={e => setProForm(f => ({ ...f, region: e.target.value }))}
+                      placeholder="אזור (מרכז, צפון, דרום...)"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input type="number" value={proForm.sort_order}
+                      onChange={e => setProForm(f => ({ ...f, sort_order: e.target.value }))}
+                      placeholder="סדר תצוגה"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={isPending}
+                      className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+                      style={{ background: '#7F5268' }}>
+                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
+                    </button>
+                    <button type="button" onClick={() => setShowProForm(false)}
+                      className="px-5 py-2 rounded-xl text-sm border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>ביטול</button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                {pros.length === 0 ? (
+                  <p className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>אין אנשי מקצוע עדיין</p>
+                ) : pros.map(p => (
+                  <div key={p.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                    style={{ borderColor: 'var(--border)' }}>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {[p.title, p.region, p.phone].filter(Boolean).join(' · ')}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => editPro(p)}
+                        className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDeletePro(p.id, p.name)}
+                        className="p-1.5 rounded-lg" style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* ── Products ───────────────────────────────────────────────────────────── */}
+          {manageTab === 'products' && (
+            <div>
+              <div className="flex justify-end mb-4">
+                <button
+                  onClick={() => { setProductForm(emptyProduct); setShowProductForm(true) }}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                  style={{ background: '#7F5268' }}>
+                  <Plus className="w-4 h-4" />הוספת מוצר
+                </button>
+              </div>
+
+              {showProductForm && (
+                <form onSubmit={handleSaveProduct}
+                  className="p-4 rounded-xl mb-4 border space-y-3"
+                  style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
+                    {productForm.id ? 'עריכת' : 'הוספת'} מוצר
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <input value={productForm.name} onChange={e => setProductForm(f => ({ ...f, name: e.target.value }))}
+                      placeholder="שם מוצר *" required
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={productForm.coupon_code} onChange={e => setProductForm(f => ({ ...f, coupon_code: e.target.value }))}
+                      placeholder="קוד קופון"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={productForm.buy_link} onChange={e => setProductForm(f => ({ ...f, buy_link: e.target.value }))}
+                      placeholder="קישור לרכישה"
+                      className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <textarea value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))}
+                      placeholder="תיאור קצר" rows={2}
+                      className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none resize-none"
+                      style={inputSty} />
+                    <input type="number" value={productForm.sort_order}
+                      onChange={e => setProductForm(f => ({ ...f, sort_order: e.target.value }))}
+                      placeholder="סדר תצוגה"
+                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                  </div>
+                  <div className="flex gap-2">
+                    <button type="submit" disabled={isPending}
+                      className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+                      style={{ background: '#7F5268' }}>
+                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
+                    </button>
+                    <button type="button" onClick={() => setShowProductForm(false)}
+                      className="px-5 py-2 rounded-xl text-sm border"
+                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>ביטול</button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                {products.length === 0 ? (
+                  <p className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>אין מוצרים עדיין</p>
+                ) : products.map(p => (
+                  <div key={p.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                    style={{ borderColor: 'var(--border)' }}>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        {p.description ? p.description.slice(0, 60) + (p.description.length > 60 ? '...' : '') : ''}
+                        {p.coupon_code ? ` · קוד: ${p.coupon_code}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={() => editProduct(p)}
+                        className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => handleDeleteProduct(p.id, p.name)}
+                        className="p-1.5 rounded-lg" style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
           🔒 דף זה נגיש רק לך · אמא בסדר Admin
         </p>
       </div>
 
-      {/* ─── Delete Modal ──────────────────────────────────────────────────────── */}
+      {/* ── Delete User Modal ──────────────────────────────────────────────────── */}
       {modal === 'delete' && selected && (
         <ModalOverlay onClose={closeModal}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -333,7 +684,7 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
         </ModalOverlay>
       )}
 
-      {/* ─── Reset Password Modal ──────────────────────────────────────────────── */}
+      {/* ── Reset Password Modal ───────────────────────────────────────────────── */}
       {modal === 'reset' && selected && (
         <ModalOverlay onClose={closeModal}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -361,7 +712,53 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
         </ModalOverlay>
       )}
 
-      {/* ─── Create User Modal ─────────────────────────────────────────────────── */}
+      {/* ── User Detail Modal ──────────────────────────────────────────────────── */}
+      {modal === 'user-detail' && selected && (
+        <ModalOverlay onClose={closeModal}>
+          <div className="flex items-center gap-3 mb-5">
+            <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-bold text-white flex-shrink-0"
+              style={{ background: stringToColor(selected.email) }}>
+              {(selected.name || selected.email).charAt(0).toUpperCase()}
+            </div>
+            <div>
+              <p className="font-bold text-base" style={{ color: 'var(--text)' }}>{selected.name || '—'}</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{selected.email}</p>
+            </div>
+          </div>
+
+          <div className="space-y-2.5 mb-5 text-sm">
+            <DetailRow label="ספק"         value={selected.provider === 'google' ? '🔵 Google' : '📧 Email'} />
+            <DetailRow label="הצטרף/ה"     value={fmt(selected.created_at)} />
+            <DetailRow label="כניסה אחרונה" value={fmt(selected.last_sign_in)} />
+            <DetailRow label="ותק"          value={memberDuration(selected.created_at) + ' במערכת'} />
+            <DetailRow label="PWA"          value={selected.pwa_installed_at ? `📱 ${new Date(selected.pwa_installed_at).toLocaleDateString('he-IL')}` : '—'} />
+            <DetailRow label="סטטוס"        value={selected.confirmed ? '✓ מאושרת' : '⏳ ממתינה'} />
+            {selected.weeklySeconds > 0 && (
+              <DetailRow label="⏱ זמן השבוע" value={fmtHours(selected.weeklySeconds)} highlight />
+            )}
+            {selected.topPage && (
+              <DetailRow label="📊 עמוד מוביל" value={fmtPage(selected.topPage)} />
+            )}
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={() => { const u = selected; closeModal(); setTimeout(() => openReset(u), 50) }}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{ background: 'rgba(92,122,138,0.12)', color: '#5C7A8A' }}>
+              <KeyRound className="w-3.5 h-3.5" />איפוס סיסמא
+            </button>
+            <button
+              onClick={() => { const u = selected; closeModal(); setTimeout(() => openDelete(u), 50) }}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold flex items-center justify-center gap-2"
+              style={{ background: 'rgba(192,57,43,0.10)', color: '#C0392B' }}>
+              <Trash2 className="w-3.5 h-3.5" />מחיקה
+            </button>
+          </div>
+        </ModalOverlay>
+      )}
+
+      {/* ── Create User Modal ──────────────────────────────────────────────────── */}
       {modal === 'create' && (
         <ModalOverlay onClose={closeModal}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-4"
@@ -380,20 +777,20 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
               style={inputSty} />
             <div className="relative">
               <input type={showPass ? 'text' : 'password'} value={newPass} onChange={e => setNewPass(e.target.value)}
-                placeholder="סיסמא (לפחות 6 תווים)" className="w-full pr-3 pl-10 py-2.5 rounded-xl border text-sm outline-none"
+                placeholder="סיסמא (לפחות 6 תווים)"
+                className="w-full pr-3 pl-10 py-2.5 rounded-xl border text-sm outline-none"
                 style={inputSty} />
               <button type="button" onClick={() => setShowPass(!showPass)}
                 className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)' }}>
                 {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
-
             {formError && (
-              <p className="text-xs px-3 py-2 rounded-xl" style={{ background: '#FEF2F2', color: '#C0392B', border: '1px solid #FECACA' }}>
+              <p className="text-xs px-3 py-2 rounded-xl"
+                style={{ background: '#FEF2F2', color: '#C0392B', border: '1px solid #FECACA' }}>
                 {formError}
               </p>
             )}
-
             <div className="flex gap-2 pt-1">
               <button type="submit" disabled={isPending}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
@@ -411,14 +808,10 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
         </ModalOverlay>
       )}
 
-      {/* ─── Toast ─────────────────────────────────────────────────────────────── */}
+      {/* ── Toast ─────────────────────────────────────────────────────────────────── */}
       {toast && (
         <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-medium flex items-center gap-2"
-          style={{
-            background: toast.ok ? '#4A7C59' : '#C0392B',
-            color: '#fff',
-            direction: 'rtl',
-          }}>
+          style={{ background: toast.ok ? '#4A7C59' : '#C0392B', color: '#fff', direction: 'rtl' }}>
           {toast.ok ? '✓' : '✗'} {toast.msg}
         </div>
       )}
@@ -426,7 +819,7 @@ export default function AdminClient({ users: initialUsers, stats }: Props) {
   )
 }
 
-// ─── Modal wrapper ─────────────────────────────────────────────────────────────
+// ── Modal wrapper ──────────────────────────────────────────────────────────────
 function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4"
@@ -445,7 +838,16 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
   )
 }
 
-// ─── Stat cards ────────────────────────────────────────────────────────────────
+function DetailRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div className="flex justify-between items-center">
+      <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color: highlight ? '#7F5268' : 'var(--text)' }}>{value}</span>
+    </div>
+  )
+}
+
+// ── Stat & Usage cards ─────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, color, label, value }: {
   icon: React.ElementType; color: string; label: string; value: number
 }) {

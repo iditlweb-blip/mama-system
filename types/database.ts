@@ -21,6 +21,17 @@ export interface Profile {
   google_calendar_url: string | null
   avatar_url: string | null
   created_at: string
+  // New fields (migration 005)
+  tracking_type: 'pregnancy' | 'baby' | null
+  has_given_birth: boolean | null
+  due_date: string | null
+  birth_date: string | null
+  birth_baby_name: string | null
+  birth_baby_gender: BabyGender | null
+  setup_complete: boolean | null
+  setup_step: number | null
+  user_goal: string | null
+  pwa_installed_at: string | null
 }
 
 export interface Task {

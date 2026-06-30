@@ -11,12 +11,31 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
-const navItems = [
+function ShoppingBagIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/>
+      <line x1="3" y1="6" x2="21" y2="6"/>
+      <path d="M16 10a4 4 0 01-8 0"/>
+    </svg>
+  )
+}
+
+type NavItem = {
+  href: string
+  label: string
+} & (
+  | { icon: React.ComponentType<{ className?: string }>; customIcon?: never }
+  | { customIcon: React.ReactNode; icon?: never }
+)
+
+const navItems: NavItem[] = [
   { href: '/dashboard',   icon: LayoutDashboard, label: 'דשבורד' },
   { href: '/tracker',     icon: Activity,        label: 'מעקב תינוק' },
   { href: '/tasks',       icon: CheckSquare,     label: 'משימות' },
   { href: '/business',    icon: Briefcase,       label: 'ניהול עבודה' },
   { href: '/development', icon: Baby,            label: 'התפתחות' },
+  { href: '/products',    customIcon: <ShoppingBagIcon />, label: 'מוצרים ובעלי מקצוע' },
   { href: '/personal',    icon: Heart,           label: 'לעצמי' },
   { href: '/chat',        icon: MessageCircle,   label: "צ׳אט AI" },
   { href: '/settings',    icon: Settings,        label: 'הגדרות' },
@@ -50,12 +69,12 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
 
       {/* Nav */}
       <nav className="flex-1 space-y-0.5">
-        {navItems.map(({ href, icon: Icon, label }) => {
-          const active = pathname === href
+        {navItems.map((item) => {
+          const active = pathname === item.href
           return (
             <Link
-              key={href}
-              href={href}
+              key={item.href}
+              href={item.href}
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-all"
               style={active
@@ -63,8 +82,11 @@ export default function Sidebar({ userName }: { userName?: string | null }) {
                 : { color: 'var(--text-muted)', fontWeight: 400 }
               }
             >
-              <Icon className="w-4 h-4 flex-shrink-0" />
-              {label}
+              {item.icon
+                ? <item.icon className="w-4 h-4 flex-shrink-0" />
+                : <span className="w-4 h-4 flex-shrink-0 flex items-center justify-center">{item.customIcon}</span>
+              }
+              {item.label}
             </Link>
           )
         })}

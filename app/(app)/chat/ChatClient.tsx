@@ -6,6 +6,16 @@ import { ChatMode, ChatMessage } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+// Inline pregnancy belly SVG icon component
+function PregnancyIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg className={className} style={style} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M12 3 C8 3 6 6 6 10 C6 15 8 19 12 21 C16 19 18 15 18 10 C18 6 16 3 12 3Z" />
+      <circle cx="12" cy="11" r="2.5" fill="currentColor" stroke="none" opacity="0.4" />
+    </svg>
+  )
+}
+
 const modes: { id: ChatMode; label: string; icon: React.ElementType; color: string; description: string; prompts: string[] }[] = [
   {
     id: 'baby', label: 'תינוק', icon: Baby, color: '#7F5268',
@@ -28,8 +38,8 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
     prompts: ['אני מרגישה אובדת ועייפה', 'מרגישה אשמה שאני עובדת', 'לא מצליחה לאהנות מהתינוק', 'צריכה לשחרר קצת'],
   },
   {
-    id: 'pregnancy', label: 'הריון', icon: Heart, color: '#C4748C',
-    description: 'שאלות על הריון, בדיקות, תסמינים',
+    id: 'pregnancy', label: 'הריון 🤰', icon: PregnancyIcon, color: '#C4748C',
+    description: 'תסמינים, שבועות, בדיקות, הכנה ללידה',
     prompts: ['אני בשבוע 20 מה אני צריכה לדעת?', 'איך מתמודדים עם בחילות?', 'אילו בדיקות יש לעשות בטרימסטר שני?', 'מה נורמלי ומה לא בהריון?'],
   },
 ]

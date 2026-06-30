@@ -3,10 +3,11 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil } from 'lucide-react'
 import { Task, BabyLog, Profile } from '@/types/database'
 import SelfCarePopup from './SelfCarePopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
+import GaveBirthModal from '@/components/GaveBirthModal'
 
 interface Props {
   profile: Profile | null
@@ -31,29 +32,86 @@ const TRACK = [
 ]
 
 export default function DashboardClient({
-  profile, tasks, motivation, babyWeeks, babyAgeLabel,
-  nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs,
+  profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
+  nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
 }: Props) {
   const supabase = createClient()
 
-  const [feedCount,   setFeedCount]   = useState(todayLogs.filter(l => l.type === 'feed').length)
-  const [sleepCount,  setSleepCount]  = useState(todayLogs.filter(l => l.type === 'sleep').length)
-  const [diaperCount, setDiaperCount] = useState(todayLogs.filter(l => l.type === 'diaper').length)
+  // Local mutable lists for optimistic deletion / editing
+  const [localLogs,  setLocalLogs]  = useState<BabyLog[]>(initialLogs)
+  const [localTasks, setLocalTasks] = useState<Task[]>(initialTasks)
 
+  const [feedCount,   setFeedCount]   = useState(initialLogs.filter(l => l.type === 'feed').length)
+  const [sleepCount,  setSleepCount]  = useState(initialLogs.filter(l => l.type === 'sleep').length)
+  const [diaperCount, setDiaperCount] = useState(initialLogs.filter(l => l.type === 'diaper').length)
+
+  const [showGaveBirth, setShowGaveBirth] = useState(false)
   const [quickOpen,    setQuickOpen]    = useState(false)
   const [selectedType, setSelectedType] = useState<'feed'|'sleep'|'diaper'|null>(null)
   const [saving,       setSaving]       = useState(false)
   const [savedFlash,   setSavedFlash]   = useState(false)
 
+  // Edit state for tasks
+  const [editingTaskId,    setEditingTaskId]    = useState<string | null>(null)
+  const [editingTaskTitle, setEditingTaskTitle] = useState('')
+  const [savingTask,       setSavingTask]       = useState(false)
+
+  async function deleteLog(id: string) {
+    // Optimistic remove
+    const removed = localLogs.find(l => l.id === id)
+    setLocalLogs(prev => prev.filter(l => l.id !== id))
+    if (removed) {
+      if (removed.type === 'feed')   setFeedCount(c => Math.max(0, c - 1))
+      if (removed.type === 'sleep')  setSleepCount(c => Math.max(0, c - 1))
+      if (removed.type === 'diaper') setDiaperCount(c => Math.max(0, c - 1))
+    }
+    await supabase.from('baby_logs').delete().eq('id', id)
+  }
+
+  async function deleteTask(id: string) {
+    setLocalTasks(prev => prev.filter(t => t.id !== id))
+    await supabase.from('tasks').delete().eq('id', id)
+  }
+
+  function startEditTask(task: Task) {
+    setEditingTaskId(task.id)
+    setEditingTaskTitle(task.title)
+  }
+
+  function cancelEditTask() {
+    setEditingTaskId(null)
+    setEditingTaskTitle('')
+  }
+
+  async function saveEditTask(id: string) {
+    const newTitle = editingTaskTitle.trim()
+    if (!newTitle) return
+    setSavingTask(true)
+    setLocalTasks(prev => prev.map(t => t.id === id ? { ...t, title: newTitle } : t))
+    await supabase.from('tasks').update({ title: newTitle }).eq('id', id)
+    setSavingTask(false)
+    setEditingTaskId(null)
+    setEditingTaskTitle('')
+  }
+
   async function saveLog() {
     if (!selectedType) return
     setSaving(true)
     const { data: { user } } = await supabase.auth.getUser()
-    await supabase.from('baby_logs').insert({ user_id: user!.id, type: selectedType, start_time: new Date().toISOString() })
+    const now = new Date().toISOString()
+    const { data: inserted } = await supabase
+      .from('baby_logs')
+      .insert({ user_id: user!.id, type: selectedType, start_time: now })
+      .select()
+      .single()
     // Optimistic counter update — no reload
     if (selectedType === 'feed')   setFeedCount(c => c + 1)
     if (selectedType === 'sleep')  setSleepCount(c => c + 1)
     if (selectedType === 'diaper') setDiaperCount(c => c + 1)
+    // Prepend new log to localLogs for immediate display
+    if (inserted) {
+      setLocalLogs(prev => [inserted as BabyLog, ...prev])
+    }
     setSaving(false)
     setSelectedType(null)
     setQuickOpen(false)
@@ -78,10 +136,13 @@ export default function DashboardClient({
         />
       )}
 
+      {/* GaveBirth modal */}
+      {showGaveBirth && <GaveBirthModal onClose={() => setShowGaveBirth(false)} />}
+
       {/* ── Greeting card ─────────────────────────── */}
       <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)' }}>
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <h1 className="text-lg font-semibold mb-1" style={{ color: 'var(--text)' }}>
               שלום {profile?.name?.split(' ')[0] || 'אמא'} 👋
             </h1>
@@ -91,6 +152,17 @@ export default function DashboardClient({
                 {motivation}
               </p>
             </div>
+
+            {/* ילדתי button — only for pregnancy tracking */}
+            {(profile?.tracking_type === 'pregnancy' || (!profile?.tracking_type && !profile?.baby_birthdate)) && (
+              <button
+                onClick={() => setShowGaveBirth(true)}
+                className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+                style={{ background: 'rgba(127,82,104,0.12)', color: '#7F5268', border: '1.5px solid rgba(127,82,104,0.25)' }}
+              >
+                🎉 ילדתי!
+              </button>
+            )}
           </div>
           <div
             className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
@@ -165,6 +237,58 @@ export default function DashboardClient({
                   </div>
                 ))}
               </div>
+
+              {/* Today's log list with delete buttons */}
+              {localLogs.length > 0 && (
+                <div className="space-y-1.5 mb-3">
+                  {localLogs.slice(0, 6).map(log => {
+                    const track = TRACK.find(t => t.type === log.type)
+                    if (!track) return null
+                    const Icon = track.icon
+                    const time = log.start_time
+                      ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                      : ''
+                    return (
+                      <div
+                        key={log.id}
+                        className="flex items-center justify-between px-3 py-1.5 rounded-lg"
+                        style={{ background: `${track.color}0d`, position: 'relative' }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
+                          <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
+                          {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
+                        </div>
+                        <button
+                          onClick={() => deleteLog(log.id)}
+                          title="מחק רישום"
+                          style={{
+                            position: 'absolute',
+                            top: 6,
+                            right: 6,
+                            width: 20,
+                            height: 20,
+                            borderRadius: '50%',
+                            background: 'rgba(200,50,50,0.1)',
+                            color: '#cc3333',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: 12,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
               <button
                 onClick={() => setQuickOpen(true)}
                 className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
@@ -258,24 +382,96 @@ export default function DashboardClient({
             כל המשימות
           </Link>
         </div>
-        {tasks.length === 0 ? (
+        {localTasks.length === 0 ? (
           <div className="text-center py-6">
             <p className="text-sm mb-2 font-light" style={{ color: 'var(--text-muted)' }}>אין משימות פתוחות 🎉</p>
             <Link href="/tasks" className="text-sm font-medium" style={{ color: 'var(--primary)' }}>הוסיפי משימה</Link>
           </div>
         ) : (
           <div className="space-y-2">
-            {tasks.slice(0, 5).map(task => (
+            {localTasks.slice(0, 5).map(task => (
               <div
                 key={task.id}
                 className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: 'var(--surface-2, #FAF4ED)' }}
+                style={{ background: 'var(--surface-2, #FAF4ED)', position: 'relative' }}
               >
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priorityColors[task.priority] }} />
-                <span className="flex-1 text-sm font-light" style={{ color: 'var(--text)' }}>{task.title}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryClass[task.category]}`}>
-                  {categoryLabels[task.category]}
-                </span>
+
+                {/* Title — normal or edit mode */}
+                {editingTaskId === task.id ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editingTaskTitle}
+                      onChange={e => setEditingTaskTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') saveEditTask(task.id)
+                        if (e.key === 'Escape') cancelEditTask()
+                      }}
+                      autoFocus
+                      className="flex-1 text-sm px-2 py-1 rounded-lg outline-none border"
+                      style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
+                    />
+                    <button
+                      onClick={() => saveEditTask(task.id)}
+                      disabled={savingTask}
+                      className="text-xs px-2 py-1 rounded-lg font-medium text-white"
+                      style={{ background: '#4A7C59', flexShrink: 0 }}
+                    >
+                      {savingTask ? '...' : 'שמור'}
+                    </button>
+                    <button
+                      onClick={cancelEditTask}
+                      className="text-xs px-2 py-1 rounded-lg font-medium"
+                      style={{ background: 'var(--border)', color: 'var(--text-muted)', flexShrink: 0 }}
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className="flex-1 text-sm font-light cursor-pointer hover:opacity-70 flex items-center gap-1.5 group"
+                      style={{ color: 'var(--text)' }}
+                      onClick={() => startEditTask(task)}
+                      title="לחצי לעריכה"
+                    >
+                      {task.title}
+                      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    </span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryClass[task.category]}`}>
+                      {categoryLabels[task.category]}
+                    </span>
+                  </>
+                )}
+
+                {/* Delete × button */}
+                {editingTaskId !== task.id && (
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    title="מחק משימה"
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: 'rgba(200,50,50,0.1)',
+                      color: '#cc3333',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                  >
+                    ×
+                  </button>
+                )}
               </div>
             ))}
           </div>

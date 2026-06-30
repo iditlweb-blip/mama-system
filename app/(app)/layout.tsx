@@ -4,6 +4,8 @@ import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
 import PwaTracker from '@/components/PwaTracker'
 import PreloaderLottie from '@/components/PreloaderLottie'
+import BottomNav from '@/components/layout/BottomNav'
+import PageTimeTracker from '@/components/PageTimeTracker'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -12,7 +14,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('name, baby_name, baby_gender, profile_picture_url')
+    .select('name, baby_name, baby_gender, profile_picture_url, tracking_type')
     .eq('id', user.id)
     .single()
 
@@ -30,7 +32,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </main>
         <PwaTracker />
+        <PageTimeTracker />
       </div>
+      <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )
 }
