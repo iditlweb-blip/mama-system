@@ -1,403 +1,349 @@
 import Link from 'next/link'
-import Image from 'next/image'
 import type { CSSProperties } from 'react'
 import LandingEditor from '@/components/LandingEditor'
 import PwaInstallTabs from '@/components/PwaInstallTabs'
 import CounterUp from '@/components/CounterUp'
+import MockupScrollSection from '@/components/MockupScrollSection'
+import HowItWorksSection from '@/components/HowItWorksSection'
 
-// ─── Arrow SVG component (for CTA buttons) ─────────────────────────────────
-function BtnArrow() {
+// ─── Arrow SVG — natural direction points LEFT ← (correct for Hebrew RTL) ──
+function Arrow({ size = 21, color = 'currentColor' }: { size?: number; color?: string }) {
   return (
-    <svg width="20" height="12" viewBox="0 0 36 21" fill="none" style={{ transform: 'scaleX(-1)', flexShrink: 0 }}>
-      <path d="M12 0C12 1.113 10.9005 2.775 9.7875 4.17C8.3565 5.97 6.6465 7.5405 4.686 8.739C3.216 9.6375 1.434 10.5 0 10.5M0 10.5C1.434 10.5 3.2175 11.3625 4.686 12.261C6.6465 13.461 8.3565 15.0315 9.7875 16.8285C10.9005 18.225 12 19.89 12 21M0 10.5H36" stroke="currentColor" strokeWidth="1.5"/>
+    <svg width={size} height={Math.round(size * 21 / 36)} viewBox="0 0 36 21" fill="none"
+      style={{ flexShrink: 0 }}>
+      <path d="M12 0C12 1.113 10.9005 2.775 9.7875 4.17C8.3565 5.97 6.6465 7.5405 4.686 8.739C3.216 9.6375 1.434 10.5 0 10.5M0 10.5C1.434 10.5 3.2175 11.3625 4.686 12.261C6.6465 13.461 8.3565 15.0315 9.7875 16.8285C10.9005 18.225 12 19.89 12 21M0 10.5H36"
+        stroke={color} strokeWidth="1.5" />
     </svg>
   )
 }
 
-// ─── Testimonial card style constants ─────────────────────────────────────
-const cardWrap: CSSProperties = {
-  flexShrink: 0,
-  width: 290,
-  marginRight: 20,
-  background: '#fff',
-  borderRadius: 16,
-  overflow: 'hidden',
-  boxShadow: '0 4px 24px rgba(127,82,104,0.10)',
-  display: 'flex',
-  flexDirection: 'column',
-  direction: 'rtl',
+// ─── Btn styles ─────────────────────────────────────────────────────────────
+const btnFilled: CSSProperties = {
+  display: 'inline-flex', alignItems: 'center', gap: 12,
+  background: '#7F5268', color: '#fff',
+  fontFamily: 'var(--font-body)', fontWeight: 300,
+  fontSize: 'clamp(1rem, 1.042vw, 1.25rem)', letterSpacing: '0.05em',
+  padding: '10px 30px', minHeight: 60,
+  borderRadius: 30, border: 'none', cursor: 'pointer',
+  textDecoration: 'none', whiteSpace: 'nowrap',
+  transition: 'opacity 0.2s',
 }
-const cardBody: CSSProperties = {
-  padding: '22px 22px 16px',
-  flex: 1,
-  display: 'flex',
-  flexDirection: 'column',
-}
-const cardStars: CSSProperties = {
-  color: '#F5A623',
-  fontSize: '0.85rem',
-  letterSpacing: 2,
-  marginBottom: 10,
-}
-const cardQuote: CSSProperties = {
-  fontSize: '0.875rem',
-  lineHeight: 1.75,
-  color: '#555',
-  fontStyle: 'italic',
-  fontWeight: 300,
-  flex: 1,
-  margin: 0,
-}
-const cardFooter: CSSProperties = {
-  background: '#7F5268',
-  padding: '12px 22px',
-}
-const cardName: CSSProperties  = { color: '#fff', fontWeight: 700, fontSize: '0.875rem', margin: 0 }
-const cardRole: CSSProperties  = { color: 'rgba(255,255,255,0.65)', fontSize: '0.775rem', margin: '2px 0 0', fontWeight: 300 }
-
-// ─── Feature card (section 2, 2×2 grid) ────────────────────────────────────
-const featCard: CSSProperties = {
-  background: '#fff',
-  borderRadius: 18,
-  padding: '24px 20px',
-  display: 'flex',
-  flexDirection: 'column',
-  gap: 12,
-  boxShadow: '0 2px 16px rgba(127,82,104,0.07)',
-  border: '1px solid rgba(127,82,104,0.10)',
-  transition: 'transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease',
-  cursor: 'default',
+const btnOutline: CSSProperties = {
+  ...btnFilled,
+  background: 'transparent', color: '#7F5268',
+  border: '1.5px solid #7F5268',
 }
 
 export default function LandingPage() {
   return (
-    <main style={{ background: '#F7EDE2', fontFamily: 'var(--font-body)', overflowX: 'hidden', direction: 'rtl' }}>
+    <main dir="rtl" style={{ fontFamily: 'var(--font-body)', overflowX: 'hidden', background: '#F7EDE2' }}>
 
-      {/* ── Global styles for this page ── */}
+      {/* ── Global keyframes & helpers ── */}
       <style>{`
-        /* ── Marquee animation (testimonials) ── */
-        @keyframes marquee {
-          0%   { transform: translateX(0); }
-          100% { transform: translateX(-50%); }
-        }
-        .testimonials-track {
-          display: flex;
-          width: max-content;
-          direction: ltr;
-          animation: marquee 44s linear infinite;
-          will-change: transform;
-        }
-        .testimonials-track:hover { animation-play-state: paused; }
-
-        /* ── Rotating circle ── */
         @keyframes spin-slow {
           from { transform: rotate(0deg); }
           to   { transform: rotate(360deg); }
         }
         .spin-slow { animation: spin-slow 12s linear infinite; }
 
-        /* ── Scroll-reveal (overrides globals) ── */
-        .reveal-up {
-          opacity: 0;
-          transform: translateY(36px);
-          animation: revealUp 0.7s cubic-bezier(0.16,1,0.3,1) forwards;
-          animation-timeline: view();
-          animation-range: entry 0% entry 45%;
-        }
         @keyframes revealUp {
-          to { opacity:1; transform: translateY(0); }
+          from { opacity:0; transform:translateY(32px); }
+          to   { opacity:1; transform:translateY(0); }
         }
-        .delay-1 { animation-delay: 0.07s; }
-        .delay-2 { animation-delay: 0.14s; }
-        .delay-3 { animation-delay: 0.21s; }
-
-        /* ── Card hover lift ── */
-        .feat-card:hover {
-          transform: translateY(-6px);
-          box-shadow: 0 18px 40px rgba(127,82,104,0.14) !important;
+        .reveal-up {
+          opacity:0;
+          animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) forwards;
+          animation-timeline: view();
+          animation-range: entry 0% entry 40%;
         }
-        .feat-card:hover .feat-icon-box {
-          background: rgba(127,82,104,0.16) !important;
+        .delay-1 { animation-delay: 0.08s; }
+        .delay-2 { animation-delay: 0.16s; }
+        .delay-3 { animation-delay: 0.24s; }
+
+        .feat-card:hover { transform: translateY(-5px) !important; }
+        .scenario-card:hover { transform: translateY(-5px) !important; }
+        .btn-hover:hover { opacity: 0.88; }
+
+        @media (max-width: 900px) {
+          .feat-section-inner { flex-direction: column !important; }
+          .why-grid { grid-template-columns: 1fr !important; }
+          .daily-grid { grid-template-columns: 1fr !important; }
+          .testimonials-grid { grid-template-columns: 1fr 1fr !important; gap: 16px !important; }
+          .about-inner { flex-direction: column !important; align-items: center !important; }
         }
-
-        /* ── Scenario card hover ── */
-        .scenario-card:hover {
-          transform: translateY(-5px);
-          box-shadow: 0 16px 36px rgba(127,82,104,0.13) !important;
-        }
-
-        /* ── Photo mosaic hover ── */
-        .photo-mosaic-img { transition: transform 0.3s ease; }
-        .photo-mosaic-img:hover { transform: scale(1.03); }
-
-        /* ── Mobile adjustments ── */
-        @media (max-width: 768px) {
-          .hero-row   { flex-direction: column-reverse !important; }
-          .hero-photo { width: 100% !important; max-height: 380px !important; }
-          .features-row { flex-direction: column !important; }
-          .about-row  { flex-direction: column !important; }
-          .about-photo-col { width: 100% !important; }
+        @media (max-width: 600px) {
+          .testimonials-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 1 — HERO
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#F7EDE2', minHeight: '100svh', display: 'flex', flexDirection: 'column' }}>
+      {/* ══════════════════════════════════════════════════════
+          §1 HERO  (matches Figma Desktop-4, 1920×1003)
+      ══════════════════════════════════════════════════════ */}
+      <section style={{
+        background: '#F7EDE2',
+        position: 'relative',
+        width: '100%',
+        minHeight: '100svh',
+        overflow: 'hidden',
+      }}>
 
         {/* ── Nav ── */}
         <nav style={{
-          flexShrink: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          padding: '18px 32px',
+          padding: '20px clamp(24px,4vw,80px)',
+          position: 'relative', zIndex: 10,
         }}>
-          {/* Logo icon (RTL: first child = right side) */}
-          <Image src="/icons/landing/logo-new.svg" alt="אמא בסדר" width={36} height={62} priority />
-
-          {/* Nav buttons (RTL: second child = left side) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <a href="#pwa-install" className="btn-brand btn-brand-outline" style={{ fontSize: '0.875rem', padding: '9px 22px' }}>
-              הורדה לטלפון
-            </a>
-            <Link href="/auth" className="btn-brand" style={{ fontSize: '0.875rem', padding: '9px 22px' }}>
-              התחילי עכשיו
-              <BtnArrow />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icons/landing/logo-new.svg" alt="אמא בסדר" width={44} height={76} style={{ width: 44, height: 'auto' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Link href="/auth" className="btn-hover" style={btnFilled}>
+              תתחילי לנסות
+              <Arrow />
             </Link>
+            <a href="#pwa-install" className="btn-hover" style={btnOutline}>
+              הורדה לטלפון
+              <Arrow color="#7F5268" />
+            </a>
           </div>
         </nav>
 
-        {/* ── Hero body ── */}
-        <div
-          className="hero-row"
-          style={{
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 'clamp(20px,4vw,60px)',
-            padding: 'clamp(20px,5vh,60px) clamp(20px,5vw,64px) clamp(30px,6vh,70px)',
-          }}
-        >
-          {/* ── Left: text content (RTL → physically right side of screen) ── */}
-          <div style={{ flex: '0 0 auto', maxWidth: 540, width: '100%' }}>
+        {/* ── Hero canvas (everything below nav) ── */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: 'calc(100svh - 92px)',   /* full screen minus nav */
+          minHeight: 640,
+        }}>
 
-            {/* Brand tag line */}
-            <p style={{ fontSize: '0.8rem', fontWeight: 500, color: '#7F5268', letterSpacing: '0.08em', marginBottom: 10, opacity: 0.75 }}>
-              המערכת שמסדרת לך את החיים
-            </p>
-
-            {/* Hero heading */}
-            <h1
-              id="le-hero-h1"
-              style={{
-                fontFamily: 'var(--font-body)',
-                fontWeight: 500,
-                fontSize: 'clamp(3.8rem, 10vw, 7.5rem)',
-                color: '#7F5268',
-                lineHeight: 1.05,
-                letterSpacing: '-0.02em',
-                margin: '0 0 clamp(14px,2.5vh,24px)',
-              }}
-            >
-              אמא בסדר
-            </h1>
-
-            {/* Sub text */}
-            <p
-              id="le-hero-sub"
-              style={{
-                fontSize: 'clamp(0.9rem, 1.6vw, 1.1rem)',
-                color: '#5a3549',
-                fontWeight: 300,
-                lineHeight: 1.7,
-                marginBottom: 'clamp(20px,3.5vh,36px)',
-                maxWidth: 460,
-              }}
-            >
-              בתוך כל הטירוף, העייפות וים העצות מסביב — אנחנו כאן כדי לעשות לך סדר.
-              <br />מהבדיקה הראשונה ועד גיל שנה, כל מה שאת באמת צריכה לדעת במקום אחד.
-            </p>
-
-            {/* CTA */}
-            <Link
-              href="/auth"
-              className="btn-brand"
-              style={{ fontSize: '1rem', padding: '13px 32px', marginBottom: 'clamp(24px,4vh,40px)', display: 'inline-flex' }}
-            >
-              התחילי עכשיו — בחינם
-              <BtnArrow />
-            </Link>
-
-            {/* 300+ Counter + avatars */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              {/* Avatars */}
-              <div style={{ display: 'flex', direction: 'ltr' }}>
-                {[1,2,3,4,5,6,7,8].map(n => (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
-                    key={n}
-                    src={`/images/avatar-${n}.png`}
-                    alt=""
-                    width={34}
-                    height={34}
-                    style={{
-                      width: 34, height: 34,
-                      borderRadius: '50%',
-                      border: '2px solid #F7EDE2',
-                      objectFit: 'cover',
-                      marginLeft: n === 1 ? 0 : -10,
-                    }}
-                  />
-                ))}
-              </div>
-              {/* Counter text */}
-              <div>
-                <p style={{ fontWeight: 700, fontSize: '1.2rem', color: '#111', margin: 0, lineHeight: 1.1 }}>
-                  <CounterUp target={300} suffix="+" />
-                </p>
-                <p style={{ fontSize: '0.78rem', color: '#7F5268', margin: 0, fontWeight: 300 }}>
-                  אמהות מרוצות
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Right: photo (RTL → physically left side of screen) ── */}
-          <div
-            className="hero-photo"
+          {/* ── Toys background image — physical LEFT, 20% opacity (Figma: 0 to ~820px of 1920) ── */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/images/toys-left.png"
+            alt=""
+            aria-hidden="true"
             style={{
-              flex: '1 1 0',
-              maxWidth: 480,
-              minWidth: 200,
-              alignSelf: 'flex-end',
-              position: 'relative',
+              position: 'absolute',
+              left: 0, top: 0,
+              width: '52%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'right top',
+              opacity: 0.10,
+              zIndex: 0,
+              pointerEvents: 'none',
+              userSelect: 'none',
             }}
-          >
+          />
+
+          {/* ── Big "אמא בסדר" title — centered, y≈17% from top of hero body ── */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            id="le-hero-h1"
+            src="/icons/landing/hero-title.svg"
+            alt="אמא בסדר"
+            style={{
+              position: 'absolute',
+              top: '14%',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: 'clamp(280px, 81.875vw, 1572px)',
+              height: 'auto',
+              zIndex: 1,
+              pointerEvents: 'none',
+              userSelect: 'none',
+              display: 'block',
+            }}
+          />
+
+          {/* ── Center photo — sits on top of title, Figma: x=585, y=316 in 1920×1003 ── */}
+          <div style={{
+            position: 'absolute',
+            /* Figma center-x = (585+346)/1920 = 48.5% → ≈ center */
+            left: '50%',
+            transform: 'translateX(-50%)',
+            /* Figma top = 316/1003 = 31.5% of hero body */
+            top: '28%',
+            /* Figma width = 693/1920 = 36% of viewport */
+            width: 'clamp(260px, 36vw, 693px)',
+            /* Figma height = 742; keep aspect */
+            height: 'clamp(320px, 44vw, 742px)',
+            zIndex: 2,
+          }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/images/hero-mom-baby.png"
               alt="אמא ותינוק"
               style={{
-                width: '100%',
-                height: 'auto',
+                width: '100%', height: '100%',
+                objectFit: 'cover',
+                objectPosition: 'center top',
                 display: 'block',
-                objectFit: 'contain',
-                objectPosition: 'center bottom',
-                filter: 'drop-shadow(0 16px 40px rgba(127,82,104,0.18))',
               }}
             />
           </div>
+
+          {/* ── Stats block — physical LEFT, Figma x=190, y=729 (≈9.9% L, 72.7% T) ── */}
+          <div style={{
+            position: 'absolute',
+            left: 'clamp(16px, 9.9vw, 190px)',
+            top: '68%',
+            zIndex: 3,
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontWeight: 700,
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              color: '#7F5268',
+              margin: 0,
+              lineHeight: 1,
+            }}>
+              <CounterUp target={300} suffix="+" />
+            </p>
+            <p style={{
+              fontSize: 'clamp(1rem, 1.042vw, 1.25rem)',
+              letterSpacing: '0.05em',
+              color: '#7F5268',
+              fontWeight: 300,
+              margin: '4px 0 14px',
+              lineHeight: 1.4,
+            }}>
+              הורדות לטלפון של<br />אימהות מרוצות
+            </p>
+            <div style={{ display: 'flex', direction: 'ltr', gap: 0 }}>
+              {[1,2,3,4,5,6,7,8].map(n => (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img key={n} src={`/images/avatar-${n}.png`} alt=""
+                  style={{
+                    width: 38, height: 38,
+                    borderRadius: '50%',
+                    border: '2.5px solid #F7EDE2',
+                    objectFit: 'cover',
+                    marginLeft: n === 1 ? 0 : -10,
+                    boxSizing: 'border-box',
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* ── Subtitle — physical RIGHT, Figma x=1213 (63.2% from L = 36.8% from R), y=476 (47.5% T) ── */}
+          <div style={{
+            position: 'absolute',
+            right: 'clamp(16px, 10.833vw, 208px)',
+            top: '44%',
+            zIndex: 3,
+            maxWidth: 'clamp(220px, 26vw, 499px)',
+            textAlign: 'right',
+          }}>
+            <p
+              id="le-hero-sub"
+              style={{
+                fontSize: 'clamp(1.0625rem, 1.302vw, 1.5625rem)',
+                letterSpacing: '0.05em',
+                color: '#7F5268',
+                fontWeight: 300,
+                lineHeight: 1.78,
+                margin: 0,
+              }}
+            >
+              בתוך כל הטירוף, העייפות וים העצות מסביב — אנחנו כאן כדי לעשות לך סדר.
+              מהבדיקה הראשונה ועד גיל שנה, כל מה שאת באמת צריכה לדעת במקום אחד.
+            </p>
+          </div>
+
+          {/* ── CTA — physical RIGHT, Figma x=1476 (76.9% from L = 23.1% from R), y=815 (81.3% T) ── */}
+          <div style={{
+            position: 'absolute',
+            right: 'clamp(16px, 10.833vw, 208px)',
+            top: '78%',
+            zIndex: 3,
+          }}>
+            <Link href="/auth" className="btn-hover" style={{ ...btnFilled }}>
+              כניסה למערכת
+              <Arrow />
+            </Link>
+            <p style={{ marginTop: 10, fontSize: '0.78rem', color: '#7F5268', fontWeight: 300, textAlign: 'right' }}>
+              עדין אין לך חשבון?{' '}
+              <Link href="/auth" style={{ color: '#7F5268', fontWeight: 500, textDecoration: 'underline' }}>
+                הירשמי עכשיו
+              </Link>
+            </p>
+          </div>
+
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 2 — FEATURES GRID  (2×2 cards + photo mosaic)
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: 'clamp(60px,8vw,100px) clamp(20px,5vw,64px)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-          <div
-            className="features-row"
-            style={{ display: 'flex', gap: 'clamp(28px,5vw,64px)', alignItems: 'center' }}
-          >
+      {/* ══════════════════════════════════════════════════════
+          §2 FEATURES  (4 cards + photo collage)
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ background: '#F7EDE2', padding: 'clamp(50px,6vh,90px) clamp(24px,4vw,80px)' }}>
+        <div
+          className="feat-section-inner"
+          style={{ display: 'flex', gap: 'clamp(28px, 7.552vw, 145px)', alignItems: 'center', maxWidth: 1760, margin: '0 auto' }}
+        >
 
-            {/* ── Feature cards 2×2 (RTL: right side) ── */}
-            <div style={{ flex: '0 0 auto', width: 'clamp(280px,46%,520px)' }}>
-              <p style={{ fontSize: '0.8rem', fontWeight: 500, color: '#7F5268', letterSpacing: '0.08em', marginBottom: 10, opacity: 0.7 }}>
-                מה יש לנו
-              </p>
-              <h2 className="reveal" style={{ fontSize: 'clamp(1.6rem,3.5vw,2.4rem)', fontWeight: 700, color: '#111', marginBottom: 28, lineHeight: 1.25 }}>
-                כל מה שצריכה
-                <br />במקום אחד
-              </h2>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
-                {([
-                  { icon: '/icons/landing/pregnancy.svg', iw: 38, ih: 38, label: 'מעקב הריון',   sub: 'שבועות, גדלים, בדיקות', labelId: 'le-feat-0-label', subId: 'le-feat-0-sub' },
-                  { icon: '/icons/landing/baby.svg',       iw: 36, ih: 34, label: 'מעקב תינוק',   sub: 'האכלות, שינה, חיתולים', labelId: 'le-feat-1-label', subId: 'le-feat-1-sub' },
-                  { icon: '/icons/landing/chat.svg',        iw: 34, ih: 34, label: 'AI בעברית',    sub: 'שאלות, ייעוץ, תמיכה',   labelId: 'le-feat-2-label', subId: 'le-feat-2-sub' },
-                  { icon: '/icons/landing/task.svg',        iw: 28, ih: 28, label: 'ניהול יומי',   sub: 'משימות, תזכורות, סדר',  labelId: 'le-feat-3-label', subId: 'le-feat-3-sub' },
-                ] as { icon: string; iw: number; ih: number; label: string; sub: string; labelId: string; subId: string }[]).map(({ icon, iw, ih, label, sub, labelId, subId }, i) => (
-                  <div
-                    key={label}
-                    className={`feat-card reveal-up delay-${i}`}
-                    style={featCard}
-                  >
-                    <div
-                      className="feat-icon-box"
-                      style={{
-                        width: 52, height: 52,
-                        borderRadius: 14,
-                        background: 'rgba(127,82,104,0.09)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'background 0.18s ease',
-                      }}
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={icon} alt="" width={iw} height={ih} style={{ width: iw, height: ih }} />
-                    </div>
-                    <div>
-                      <p id={labelId} style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111', margin: '0 0 4px' }}>{label}</p>
-                      <p id={subId} style={{ fontWeight: 300, fontSize: '0.82rem', color: '#7F5268', margin: 0 }}>{sub}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ── Photo mosaic with rotating circle (RTL: left side) ── */}
-            <div style={{ flex: 1, position: 'relative', minHeight: 420 }}>
-              {/* Background (woman with phone) */}
+          {/* ── Photo collage — first child → visual RIGHT in RTL ── */}
+          <div style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 22,
+            height: 'clamp(380px, 50vw, 635px)',
+            minWidth: 260,
+            position: 'relative',
+          }}>
+            {/* Left narrow column: 2 stacked portrait images */}
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 22,
+              width: 206,
+              flexShrink: 0,
+            }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/images/woman-phone.png"
+                src="/images/img27.png"
                 alt=""
-                className="photo-mosaic-img"
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  borderRadius: 18,
+                  display: 'block',
+                }}
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/img26.png"
+                alt=""
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  objectFit: 'cover',
+                  objectPosition: 'center top',
+                  borderRadius: 18,
+                  display: 'block',
+                }}
+              />
+            </div>
+
+            {/* Right wide column: one large main photo */}
+            <div style={{ flex: 1, position: 'relative' }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/images/img25.png"
+                alt=""
                 style={{
                   width: '100%',
-                  height: 'clamp(280px,36vw,440px)',
+                  height: '100%',
                   objectFit: 'cover',
                   objectPosition: 'center top',
                   borderRadius: 24,
                   display: 'block',
                 }}
               />
-
-              {/* Phone mockup (bottom-right of mosaic, RTL=bottom-left) */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/phone-mockup.png"
-                alt=""
-                className="photo-mosaic-img"
-                style={{
-                  position: 'absolute',
-                  bottom: -28,
-                  left: 'clamp(-10px,-4%,-24px)',
-                  width: 'clamp(110px,18%,155px)',
-                  height: 'auto',
-                  borderRadius: 18,
-                  boxShadow: '0 12px 40px rgba(0,0,0,0.18)',
-                }}
-              />
-
-              {/* Baby photo (top-right, overlapping) */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/baby-playing.png"
-                alt=""
-                className="photo-mosaic-img"
-                style={{
-                  position: 'absolute',
-                  top: -20,
-                  right: 'clamp(-8px,-3%,-20px)',
-                  width: 'clamp(100px,16%,140px)',
-                  height: 'clamp(130px,20%,175px)',
-                  objectFit: 'cover',
-                  objectPosition: 'center top',
-                  borderRadius: 18,
-                  boxShadow: '0 8px 28px rgba(0,0,0,0.14)',
-                }}
-              />
-
-              {/* Rotating circle — decorative badge */}
+              {/* Rotating circle badge — overlaps the gap between columns */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/icons/landing/rotating-circle.svg"
@@ -405,378 +351,691 @@ export default function LandingPage() {
                 className="spin-slow"
                 style={{
                   position: 'absolute',
-                  bottom: 'clamp(30px,10%,70px)',
-                  right: 'clamp(-10px,-3%,-24px)',
-                  width: 88,
-                  height: 88,
+                  left: 'calc(-1 * clamp(44px, 4vw, 56px))',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  width: 'clamp(80px, 8vw, 104px)',
+                  height: 'clamp(80px, 8vw, 104px)',
+                  zIndex: 2,
                   pointerEvents: 'none',
                 }}
               />
             </div>
-
           </div>
-        </div>
-      </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 3 — WHY ("למה דווקא אמא בסדר?")
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#F7EDE2', padding: 'clamp(60px,8vw,100px) clamp(20px,5vw,64px)' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2
-            className="reveal"
-            style={{ fontSize: 'clamp(1.7rem,3.8vw,2.5rem)', fontWeight: 800, color: '#111', textAlign: 'center', marginBottom: 'clamp(40px,6vw,64px)' }}
-          >
-            למה דווקא אמא בסדר?
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 24 }}>
-            {([
-              {
-                icon: '/icons/landing/chat.svg',         iw: 48, ih: 48,
-                title: 'AI שמבין אמא בעברית',
-                body:  'שאלות על הריון, עצות לתינוק, עזרה ביומן, תמיכה רגשית — 24/7, בלי שיפוטיות, בשפה שלנו.',
-                titleId: 'le-why-2-title', bodyId: 'le-why-2-body',
-              },
-              {
-                icon: '/icons/landing/all-in-one.svg',  iw: 52, ih: 52,
-                title: 'הכל במקום אחד',
-                body:  'הריון, תינוק, יומן ומשימות — בלי לקפוץ בין 5 אפליקציות. רואות הכל בבת אחת.',
-                titleId: 'le-why-1-title', bodyId: 'le-why-1-body',
-              },
-              {
-                icon: '/icons/landing/built-for-moms.svg', iw: 44, ih: 60,
-                title: 'נבנה בשביל אמהות בלבד',
-                body:  'לא אפליקציה כללית עם עוד פיצ\'ר לתינוק. כל מה שיש כאן — תוכנן עבור אמא שנמצאת בתחילת הדרך.',
-                titleId: 'le-why-0-title', bodyId: 'le-why-0-body',
-              },
-            ] as { icon: string; iw: number; ih: number; title: string; body: string; titleId: string; bodyId: string }[]).map(({ icon, iw, ih, title, body, titleId, bodyId }, i) => (
-              <div
-                key={title}
-                className={`reveal-up delay-${i} feat-card`}
-                style={{
-                  background: '#fff',
-                  borderRadius: 20,
-                  padding: '32px 26px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 14,
-                  boxShadow: '0 2px 20px rgba(127,82,104,0.07)',
-                  border: '1px solid rgba(127,82,104,0.09)',
-                  transition: 'transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease',
-                  cursor: 'default',
-                }}
-              >
+          {/* ── 2×2 Feature cards — second child → visual LEFT in RTL ── */}
+          <div style={{ flex: '0 0 auto', width: 'clamp(280px, 42.5%, 748px)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '35px 38px' }}>
+              {([
+                { icon: '/icons/landing/chat.svg',      iw: 90, label: 'מעקב תינוק בכל שלב',   sub: 'כולל מידע התפתחותי',        id: 0 },
+                { icon: '/icons/landing/task.svg',      iw: 70, label: 'ניהול יומי',            sub: 'משימות ותזכורות',            id: 1 },
+                { icon: '/icons/landing/baby.svg',      iw: 80, label: 'שיטת מעקב תינוק',       sub: 'כולל מידע התפתחותי',        id: 2 },
+                { icon: '/icons/landing/pregnancy.svg', iw: 76, label: 'מעקב הריון',            sub: 'גודל התינוק, בדיקות ועוד',  id: 3 },
+              ] as {icon:string;iw:number;label:string;sub:string;id:number}[]).map(({ icon, iw, label, sub, id }, i) => (
                 <div
-                  className="feat-icon-box"
+                  key={label}
+                  className={`feat-card reveal-up delay-${i}`}
                   style={{
-                    width: 64, height: 64,
-                    borderRadius: 18,
-                    background: 'rgba(127,82,104,0.08)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    transition: 'background 0.18s ease',
+                    background: 'rgba(255,255,255,0.5)',
+                    borderRadius: 30,
+                    padding: '50px 20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    textAlign: 'center',
+                    height: 300,
+                    minHeight: 300,
+                    backdropFilter: 'blur(4px)',
+                    transition: 'transform 0.22s cubic-bezier(.34,1.56,.64,1)',
+                    cursor: 'default',
                   }}
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={icon} alt="" width={iw} height={ih} style={{ width: iw, height: ih }} />
+                  <img src={icon} alt="" style={{ width: iw, height: iw, objectFit: 'contain', marginBottom: 16, flexShrink: 0 }} />
+                  <p id={`le-feat-${id}-label`}
+                    style={{ fontWeight: 500, fontSize: 'clamp(1rem, 1.042vw, 1.25rem)', letterSpacing: '0.05em', color: '#000000', margin: 0, lineHeight: 1.45 }}>
+                    {label}
+                  </p>
+                  <p id={`le-feat-${id}-sub`}
+                    style={{ fontWeight: 300, fontSize: 'clamp(0.72rem,0.95vw,0.84rem)', color: '#7F5268', margin: '4px 0 0' }}>
+                    {sub}
+                  </p>
                 </div>
-                <h3 id={titleId} style={{ fontWeight: 700, fontSize: '1rem', color: '#111', margin: 0 }}>{title}</h3>
-                <p id={bodyId} style={{ fontWeight: 300, fontSize: '0.88rem', lineHeight: 1.7, color: '#555', margin: 0 }}>{body}</p>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          §2.5 MOCKUP SCROLL  (phone zoom + annotations)
+      ══════════════════════════════════════════════════════ */}
+      <MockupScrollSection />
+
+      {/* ══════════════════════════════════════════════════════
+          §2.7 HOW IT WORKS  ("איך זה עובד?")
+      ══════════════════════════════════════════════════════ */}
+      <HowItWorksSection />
+
+      {/* ══════════════════════════════════════════════════════
+          §3 WHY  ("למה דווקא אמא בסדר?")
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ background: '#fff', padding: 'clamp(50px,7vh,90px) clamp(24px,4vw,80px)' }}>
+        <div style={{ maxWidth: 1760, margin: '0 auto' }}>
+          <h2
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              letterSpacing: '0.05em',
+              fontWeight: 500,
+              color: '#7F5268',
+              textAlign: 'center',
+              margin: '0 0 clamp(40px,5vh,60px)',
+            }}
+          >
+            למה דווקא אמא בסדר?
+          </h2>
+
+          <div
+            className="why-grid reveal-up"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 'clamp(20px,3vw,56px)' }}
+          >
+            {/* RTL grid: first item → visual RIGHT, last → visual LEFT */}
+            {([
+              {
+                icon: '/icons/landing/built-for-moms.svg', iw: 72,
+                title: 'נבנה בשביל אמהות בלבד',
+                body: "לא אפליקציה כללית עם עוד פיצ'ר לתינוק. כל מה שיש כאן — תוכנן עבור אמא שנמצאת בתחילת הדרך, הריון ואחריה.",
+                ti: 'le-why-2-title', bi: 'le-why-2-body',
+              },
+              {
+                icon: '/icons/landing/all-in-one.svg', iw: 100,
+                title: 'הכל במקום אחד',
+                body: 'הריון, תינוק, יומן ומשימות — בלי לקפוץ בין 5 אפליקציות. רואים הכל בבת אחת, מנהלים בבת אחת.',
+                ti: 'le-why-1-title', bi: 'le-why-1-body',
+              },
+              {
+                icon: '/icons/landing/chat.svg', iw: 100,
+                title: 'AI שמבין אמא בעברית',
+                body: 'שאלות על הריון, עצות לתינוק, עזרה ביומן, תמיכה רגשית — 24/7, בלי שיפוטיות, בשפה שלנו.',
+                ti: 'le-why-0-title', bi: 'le-why-0-body',
+              },
+            ] as {icon:string;iw:number;title:string;body:string;ti:string;bi:string}[]).map(({ icon, iw, title, body, ti, bi }, i) => (
+              <div key={title} style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+                {/* Icon — right aligned */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 20 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={icon} alt="" width={iw} height={iw} style={{ width: iw, height: iw, objectFit: 'contain' }} />
+                </div>
+                <h3
+                  id={ti}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontWeight: 500,
+                    fontSize: 'clamp(1.25rem, 1.5625vw, 1.875rem)',
+                    letterSpacing: '0.05em',
+                    color: '#000000',
+                    margin: '0 0 12px',
+                    textAlign: 'right',
+                    width: '100%',
+                  }}
+                >
+                  {title}
+                </h3>
+                <p
+                  id={bi}
+                  style={{
+                    fontWeight: 300,
+                    fontSize: 'clamp(0.9375rem, 0.9375vw, 1.125rem)',
+                    letterSpacing: '0.05em',
+                    lineHeight: 1.8,
+                    color: '#7F5268',
+                    margin: 0,
+                    textAlign: 'right',
+                    width: '100%',
+                  }}
+                >
+                  {body}
+                </p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 4 — DAILY SCENARIOS ("איך זה עוזר ביום יום?")
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: 'clamp(60px,8vw,100px) clamp(20px,5vw,64px)' }}>
-        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+      {/* ══════════════════════════════════════════════════════
+          §3.5 GALLERY  ("תעזרי לנו, לעזור לך")
+          4 photos arranged in a half-circle / arch
+      ══════════════════════════════════════════════════════ */}
+      <section style={{
+        background: '#F7EDE2',
+        overflow: 'hidden',
+        padding: 'clamp(50px,7vh,80px) 0 clamp(60px,9vh,110px)',
+      }}>
+        <h2 style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+          letterSpacing: '0.05em',
+          fontWeight: 500,
+          color: '#7F5268',
+          textAlign: 'center',
+          margin: '0 0 clamp(36px,5vh,64px)',
+        }}>
+          בכל מקום, כל הזמן
+        </h2>
+
+        {/*
+          Half-circle arc layout (4 photos):
+          The "circle" center is BELOW the container so only the upper arc is visible.
+          Photos get progressively higher toward the center.
+
+             [img2] [img3]        ← top center, small gap
+           [img1]       [img4]    ← lower, wider
+        */}
+        <div style={{
+          position: 'relative',
+          height: 'clamp(360px, 42vw, 600px)',
+          maxWidth: 1400,
+          margin: '0 auto',
+        }}>
+
+          {/* img1 — far left, lowest */}
+          <div style={{
+            position: 'absolute',
+            left: 'clamp(20px, 5vw, 100px)',
+            bottom: 'clamp(20px, 5%, 60px)',
+            width: 'clamp(140px, 14vw, 210px)',
+            height: 'clamp(185px, 19vw, 280px)',
+            borderRadius: 20,
+            overflow: 'hidden',
+            transform: 'rotate(-25.23deg)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.14)',
+            zIndex: 2,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/gallery-1.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+          </div>
+
+          {/* img2 — center-left, highest */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            marginLeft: 'clamp(-320px, -16vw, -150px)',
+            top: 0,
+            width: 'clamp(150px, 15vw, 220px)',
+            height: 'clamp(200px, 20vw, 295px)',
+            borderRadius: 20,
+            overflow: 'hidden',
+            transform: 'rotate(-7.7deg)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.14)',
+            zIndex: 3,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/gallery-2.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+          </div>
+
+          {/* img3 — center-right, highest */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            marginLeft: 'clamp(30px, 2vw, 60px)',
+            top: 0,
+            width: 'clamp(150px, 15vw, 220px)',
+            height: 'clamp(200px, 20vw, 295px)',
+            borderRadius: 20,
+            overflow: 'hidden',
+            transform: 'rotate(7.7deg)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.14)',
+            zIndex: 3,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/gallery-3.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+          </div>
+
+          {/* img4 — far right, lowest */}
+          <div style={{
+            position: 'absolute',
+            right: 'clamp(20px, 5vw, 100px)',
+            bottom: 'clamp(20px, 5%, 60px)',
+            width: 'clamp(140px, 14vw, 210px)',
+            height: 'clamp(185px, 19vw, 280px)',
+            borderRadius: 20,
+            overflow: 'hidden',
+            transform: 'rotate(25.23deg)',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.14)',
+            zIndex: 2,
+          }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/gallery-4.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center top', display: 'block' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.2)', pointerEvents: 'none' }} />
+          </div>
+
+          {/* CTA — floats at center of the arc */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            bottom: 'clamp(10px, 4%, 40px)',
+            transform: 'translateX(-50%)',
+            zIndex: 10,
+          }}>
+            <Link href="/auth" className="btn-hover" style={btnFilled}>
+              תתחילי לנסות
+              <Arrow />
+            </Link>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          §4 DAILY SCENARIOS  ("איך זה עוזר ביום יום?")
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ background: '#F7EDE2', padding: 'clamp(50px,7vh,90px) clamp(24px,4vw,80px)' }}>
+        <div style={{ maxWidth: 1466, margin: '0 auto' }}>
           <h2
-            className="reveal"
-            style={{ fontSize: 'clamp(1.7rem,3.8vw,2.5rem)', fontWeight: 800, color: '#111', textAlign: 'center', marginBottom: 'clamp(36px,5vw,56px)' }}
+            id="le-daily-title"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              letterSpacing: '0.05em',
+              fontWeight: 500,
+              color: '#7F5268',
+              textAlign: 'center',
+              margin: '0 0 clamp(36px,5vh,52px)',
+            }}
           >
             איך זה עוזר ביום יום?
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(240px,1fr))', gap: 18 }}>
+
+          <div
+            className="daily-grid"
+            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '29px 28px' }}
+          >
+            {/* RTL 2-col grid: [0]=top-right, [1]=top-left, [2]=bottom-right, [3]=bottom-left */}
             {([
               {
-                icon: '/icons/landing/week28.svg', iw: 44, ih: 44,
-                title: 'שבוע 28 להריון',
+                icon: '/icons/landing/week28.svg', iw: 80,
+                title: 'בשבוע 28 להריון',
                 body: 'בדקי מה גודל התינוק השבוע, מה הבדיקות הקרובות שלך, ושאלי את ה-AI על כל מה שמדאיג אותך.',
-                titleId: 'le-daily-0-title', bodyId: 'le-daily-0-body',
+                dark: true, ti: 'le-daily-1-title', bi: 'le-daily-1-body',
               },
               {
-                icon: '/icons/landing/post-birth.svg', iw: 42, ih: 42,
+                icon: '/icons/landing/post-birth.svg', iw: 80,
                 title: 'יום אחרי לידה',
-                body: 'תבצעי רישומים של האכלות, שינה וחיתולים — וכל מה שאת צריכה כדי להיות רגועה.',
-                titleId: 'le-daily-1-title', bodyId: 'le-daily-1-body',
+                body: 'תבצעי רישומים של האכלות, שינה, חיתולים רטובים וכל מה שאת צריכה כדי להיות רגועה.',
+                dark: false, ti: 'le-daily-0-title', bi: 'le-daily-0-body',
               },
               {
-                icon: '/icons/landing/nap.svg', iw: 44, ih: 44,
+                icon: '/icons/landing/nap.svg', iw: 76,
                 title: 'נמנום קצר',
                 body: 'לחצי Start, התינוק קם — לחצי Stop. הנמנום נרשם אוטומטית. את פנויה לנשום.',
-                titleId: 'le-daily-2-title', bodyId: 'le-daily-2-body',
+                dark: false, ti: 'le-daily-3-title', bi: 'le-daily-3-body',
               },
               {
-                icon: '/icons/landing/doubt.svg', iw: 42, ih: 42,
+                icon: '/icons/landing/doubt.svg', iw: 76,
                 title: 'רגע של ספק',
                 body: 'שאלי את ה-AI: "האם זה נורמלי?", "כמה אמורה לאכול?", "מרגישה אבודה" — היא תקשיב.',
-                titleId: 'le-daily-3-title', bodyId: 'le-daily-3-body',
+                dark: false, ti: 'le-daily-2-title', bi: 'le-daily-2-body',
               },
-            ] as { icon: string; iw: number; ih: number; title: string; body: string; titleId: string; bodyId: string }[]).map(({ icon, iw, ih, title, body, titleId, bodyId }, i) => (
+            ] as {icon:string;iw:number;title:string;body:string;dark:boolean;ti:string;bi:string}[]).map(({ icon, iw, title, body, dark, ti, bi }) => (
               <div
                 key={title}
-                className={`scenario-card reveal-up delay-${i % 2}`}
+                className="scenario-card reveal-up"
                 style={{
-                  background: '#F7EDE2',
-                  borderRadius: 20,
-                  padding: '28px 22px',
+                  background: dark ? '#7F5268' : '#fff',
+                  borderRadius: 30,
+                  padding: '0 clamp(12px,1.042vw,20px)',
                   display: 'flex',
-                  flexDirection: 'column',
-                  gap: 12,
-                  boxShadow: '0 2px 16px rgba(127,82,104,0.07)',
-                  transition: 'transform 0.22s cubic-bezier(.34,1.56,.64,1), box-shadow 0.22s ease',
+                  alignItems: 'center',
+                  minHeight: 218,
+                  /* Explicit LTR so first child = physical LEFT, last = physical RIGHT */
+                  direction: 'ltr',
+                  gap: 'clamp(16px,1.198vw,23px)',
+                  transition: 'transform 0.22s cubic-bezier(.34,1.56,.64,1)',
                   cursor: 'default',
                 }}
               >
-                <div style={{
-                  width: 56, height: 56,
-                  borderRadius: 16,
-                  background: 'rgba(127,82,104,0.10)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={icon} alt="" width={iw} height={ih} style={{ width: iw, height: iw }} />
+                {/* Text — first child → physical LEFT in LTR */}
+                <div style={{ flex: 1, direction: 'rtl' }}>
+                  <h3
+                    id={ti}
+                    style={{
+                      fontFamily: 'var(--font-body)',
+                      fontWeight: 500,
+                      fontSize: 'clamp(1.25rem, 1.5625vw, 1.875rem)',
+                      letterSpacing: '0.05em',
+                      color: dark ? '#fff' : '#3a1e2d',
+                      margin: '0 0 10px',
+                      textAlign: 'right',
+                    }}
+                  >
+                    {title}
+                  </h3>
+                  <p
+                    id={bi}
+                    style={{
+                      fontWeight: 300,
+                      fontSize: 'clamp(0.9375rem, 0.9375vw, 1.125rem)',
+                      letterSpacing: '0.05em',
+                      lineHeight: 1.75,
+                      color: dark ? 'rgba(255,255,255,0.82)' : '#7F5268',
+                      margin: 0,
+                      textAlign: 'right',
+                    }}
+                  >
+                    {body}
+                  </p>
                 </div>
-                <h3 id={titleId} style={{ fontWeight: 700, fontSize: '0.975rem', color: '#111', margin: 0 }}>{title}</h3>
-                <p id={bodyId} style={{ fontWeight: 300, fontSize: '0.85rem', lineHeight: 1.7, color: '#5a3549', margin: 0 }}>{body}</p>
+                {/* Icon — last child → physical RIGHT in LTR (matches Figma: icon on right) */}
+                <div style={{ flexShrink: 0 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={icon} alt=""
+                    style={{
+                      width: iw, height: iw,
+                      objectFit: 'contain',
+                      opacity: dark ? 0.9 : 1,
+                      filter: dark ? 'brightness(10)' : 'none',
+                    }}
+                  />
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 5 — ABOUT ("הסיפור שמאחורי המערכת")
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#F7EDE2', padding: 'clamp(60px,8vw,100px) clamp(20px,5vw,64px)' }}>
-        <div style={{ maxWidth: 1000, margin: '0 auto' }}>
+      {/* ══════════════════════════════════════════════════════
+          §5 ABOUT  ("הסיפור שמאחורי המערכת")
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ background: '#F7EDE2', padding: 'clamp(50px,7vh,90px) clamp(24px,4vw,80px)' }}>
+        <div style={{ maxWidth: 1024, margin: '0 auto' }}>
+
+          {/* Photo centered */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 'clamp(24px,3vh,40px)' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/about-eidit.png"
+              alt="עידית לאוב"
+              style={{
+                width: 'clamp(220px,25vw,391px)',
+                height: 'clamp(280px,32vw,478px)',
+                objectFit: 'cover',
+                objectPosition: 'center top',
+                borderRadius: '1.5rem',
+                display: 'block',
+              }}
+            />
+          </div>
+
+          {/* Title centered */}
           <h2
-            className="reveal"
-            style={{ fontSize: 'clamp(1.7rem,3.5vw,2.4rem)', fontWeight: 800, color: '#111', textAlign: 'center', marginBottom: 'clamp(36px,5vw,52px)' }}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              letterSpacing: '0.05em',
+              fontWeight: 500,
+              color: '#7F5268',
+              textAlign: 'center',
+              margin: '0 0 clamp(24px,3vh,36px)',
+            }}
           >
             הסיפור שמאחורי המערכת
           </h2>
 
-          <div
-            className="about-row"
-            style={{ display: 'flex', gap: 'clamp(28px,5vw,64px)', alignItems: 'flex-start' }}
-          >
-            {/* Photo col (RTL: right side = first child) */}
-            <div className="about-photo-col" style={{ flexShrink: 0, width: 'clamp(180px,22vw,240px)' }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src="/images/about-eidit.png"
-                alt="עידית לאוב"
-                style={{
-                  width: '100%',
-                  height: 'clamp(260px,30vw,380px)',
-                  objectFit: 'cover',
-                  objectPosition: 'center top',
-                  borderRadius: '1.5rem',
-                  display: 'block',
-                }}
-              />
-            </div>
+          {/* Story text */}
+          <div style={{ position: 'relative' }}>
+            {/* Opening quote */}
+            <span aria-hidden="true" style={{
+              position: 'absolute', top: -20, right: 0,
+              fontFamily: 'Georgia, serif',
+              fontSize: 'clamp(5rem,9vw,8rem)',
+              color: '#7F5268', opacity: 0.18, lineHeight: 1,
+              pointerEvents: 'none', userSelect: 'none',
+            }}>&ldquo;</span>
+            {/* Closing quote */}
+            <span aria-hidden="true" style={{
+              position: 'absolute', bottom: -20, left: 0,
+              fontFamily: 'Georgia, serif',
+              fontSize: 'clamp(5rem,9vw,8rem)',
+              color: '#7F5268', opacity: 0.18, lineHeight: 1,
+              pointerEvents: 'none', userSelect: 'none',
+            }}>&rdquo;</span>
 
-            {/* Text col */}
-            <div style={{ flex: 1, minWidth: 260, position: 'relative', paddingTop: 8 }}>
-              {/* Decorative opening quote */}
-              <span aria-hidden="true" style={{
-                position: 'absolute',
-                top: -28, right: -16,
-                fontFamily: 'Georgia, serif',
-                fontSize: 'clamp(5rem,10vw,8.5rem)',
-                color: '#C4748C', opacity: 0.22, lineHeight: 1,
-                userSelect: 'none', pointerEvents: 'none',
-              }}>&#8221;</span>
-
-              <p style={{ fontSize: 'clamp(0.93rem,1.5vw,1.06rem)', lineHeight: 2, color: '#444', fontWeight: 300, marginBottom: '1rem', position: 'relative' }}>
-                כשדור נולדה, הייתי אמא בפעם הראשונה — ורציתי לדעת מה נורמלי, רציתי לזכור מתי האכלתי, רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום אחד שנותן את כל זה.
-              </p>
-              <p style={{ fontSize: 'clamp(1rem,1.6vw,1.12rem)', lineHeight: 1.9, color: '#111', fontWeight: 700, marginBottom: '1rem' }}>
-                אז הקמתי אותו.
-              </p>
-              <p style={{ fontSize: 'clamp(0.93rem,1.5vw,1.06rem)', lineHeight: 2, color: '#444', fontWeight: 300, marginBottom: '2.5rem' }}>
-                אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא עוד אפליקציה, אלא כלי שמבין אותך — את ההריון שלך, את התינוק שלך, ואת הכאוס היפה הזה שנקרא ימים ראשונים.
-              </p>
-
-              {/* Signature */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 40, height: 3, background: 'linear-gradient(90deg,#C4748C,#7F5268)', borderRadius: 2, flexShrink: 0 }} />
-                <div>
-                  <p style={{ fontWeight: 700, fontSize: '1rem', color: '#7F5268', margin: 0 }}>עידית לאוב</p>
-                  <p style={{ color: '#999', fontSize: '0.83rem', fontWeight: 300, margin: '3px 0 0' }}>מייסדת אמא בסדר ואמא של דור אורי</p>
-                </div>
-              </div>
-
-              {/* Decorative closing quote */}
-              <span aria-hidden="true" style={{
-                position: 'absolute',
-                bottom: -24, left: -16,
-                fontFamily: 'Georgia, serif',
-                fontSize: 'clamp(5rem,10vw,8.5rem)',
-                color: '#C4748C', opacity: 0.22, lineHeight: 1,
-                userSelect: 'none', pointerEvents: 'none',
-              }}>&#8220;</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 6 — TESTIMONIALS ("מה אמהות אומרות")
-      ═══════════════════════════════════════════════════════════ */}
-      <section style={{ background: '#fff', padding: 'clamp(60px,8vw,90px) 0' }}>
-        <h2
-          className="reveal"
-          style={{ fontSize: 'clamp(1.7rem,3.8vw,2.5rem)', fontWeight: 800, color: '#111', textAlign: 'center', marginBottom: 'clamp(36px,5vw,52px)' }}
-        >
-          מה אמהות אומרות
-        </h2>
-
-        {/* Carousel — LTR wrapper so translateX(-50%) is predictable */}
-        <div style={{ overflow: 'hidden', width: '100%', direction: 'ltr' }}>
-          <div className="testimonials-track">
-
-            {/* Set A — with IDs for editor */}
-            {([
-              { name: 'נועה כ.',   role: 'אמא טרייה',           quote: 'סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי',  nId:'le-test-0-name', rId:'le-test-0-role', qId:'le-test-0-quote' },
-              { name: 'שירלי מ.',  role: 'בהריון 32 שבועות',    quote: 'הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט',        nId:'le-test-1-name', rId:'le-test-1-role', qId:'le-test-1-quote' },
-              { name: 'גלית ה.',   role: 'אמא + עצמאית',         quote: 'ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת',                   nId:'le-test-2-name', rId:'le-test-2-role', qId:'le-test-2-quote' },
-              { name: 'יעל ב.',   role: 'אמא לתאומות',           quote: 'רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים ממש',             nId:'le-test-3-name', rId:'le-test-3-role', qId:'le-test-3-quote' },
-              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',     quote: 'הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל',                   nId:'le-test-4-name', rId:'le-test-4-role', qId:'le-test-4-quote' },
-              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',   quote: 'הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום',                       nId:'le-test-5-name', rId:'le-test-5-role', qId:'le-test-5-quote' },
-              { name: 'ריקי ל.',  role: 'שבועיים אחרי לידה',    quote: 'איזה כלי מטורף. הכל במקום אחד ובעברית. לא האמנתי שיש כזה דבר' },
-              { name: 'דנה מ.',   role: 'בהריון 36 שבועות',     quote: 'מסדרת לי את הראש כל בוקר. כל הבדיקות, כל השאלות — הכל שם' },
-            ] as Array<{ name: string; role: string; quote: string; nId?: string; rId?: string; qId?: string }>).map((t, i) => (
-              <div key={`a-${i}`} style={cardWrap}>
-                <div style={cardBody}>
-                  <div style={cardStars}>★★★★★</div>
-                  <p id={t.qId} style={cardQuote}>&ldquo;{t.quote}&rdquo;</p>
-                </div>
-                <div style={cardFooter}>
-                  <p id={t.nId} style={cardName}>{t.name}</p>
-                  <p id={t.rId} style={cardRole}>{t.role}</p>
-                </div>
-              </div>
-            ))}
-
-            {/* Set B — duplicated for seamless loop */}
-            {([
-              { name: 'נועה כ.',   role: 'אמא טרייה',           quote: 'סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי' },
-              { name: 'שירלי מ.',  role: 'בהריון 32 שבועות',    quote: 'הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט' },
-              { name: 'גלית ה.',   role: 'אמא + עצמאית',         quote: 'ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת' },
-              { name: 'יעל ב.',   role: 'אמא לתאומות',           quote: 'רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים ממש' },
-              { name: 'מיכל ש.',  role: 'אחרי לידה ראשונה',     quote: 'הרגשתי שמישהי בנתה את זה בשבילי בדיוק. לא גנרי בכלל' },
-              { name: 'אורית ד.', role: '4 חודשים אחרי לידה',   quote: 'הדשבורד הבוקר הוא הדבר הראשון שאני פותחת. כל יום' },
-              { name: 'ריקי ל.',  role: 'שבועיים אחרי לידה',    quote: 'איזה כלי מטורף. הכל במקום אחד ובעברית. לא האמנתי שיש כזה דבר' },
-              { name: 'דנה מ.',   role: 'בהריון 36 שבועות',     quote: 'מסדרת לי את הראש כל בוקר. כל הבדיקות, כל השאלות — הכל שם' },
-            ]).map((t, i) => (
-              <div key={`b-${i}`} style={cardWrap}>
-                <div style={cardBody}>
-                  <div style={cardStars}>★★★★★</div>
-                  <p style={cardQuote}>&ldquo;{t.quote}&rdquo;</p>
-                </div>
-                <div style={cardFooter}>
-                  <p style={cardName}>{t.name}</p>
-                  <p style={cardRole}>{t.role}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Pagination dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 28 }}>
-          {[0,1,2].map(i => (
-            <span
-              key={i}
+            <p
+              id="le-about-body"
               style={{
-                width: i === 0 ? 24 : 8,
-                height: 8,
-                borderRadius: 4,
-                background: i === 0 ? '#7F5268' : 'rgba(127,82,104,0.25)',
-                display: 'block',
-                transition: 'all 0.3s ease',
+                fontWeight: 300,
+                fontSize: 'clamp(1rem, 1.042vw, 1.25rem)',
+                letterSpacing: '0.05em',
+                lineHeight: 1.9,
+                color: '#000000',
+                textAlign: 'center',
+                margin: '0 auto 28px',
+                maxWidth: 900,
+                position: 'relative',
               }}
-            />
-          ))}
+            >
+              כשדור נולדה, הייתי אמא בפעם הראשונה והרגשתי אבודה לגמרי. רציתי לדעת מה נורמלי, רציתי לזכור מתי האכלתי,
+              רציתי מישהי שתענה לי בשלוש בלילה בלי לשפוט. לא מצאתי מקום אחד שנותן את כל זה,{' '}
+              <strong style={{ fontWeight: 700, color: '#3a1e2d' }}>אז הקמתי אותו.</strong>
+              {' '}אמא בסדר נולדה מהצורך האמיתי של אמא טרייה: לא עוד אפליקציה, אלא כלי שמבין אותך —
+              את ההריון שלך, את התינוק שלך, ואת הכאוס היפה הזה שנקרא ימים ראשונים.
+            </p>
+
+            {/* Signature */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 32, height: 2, background: '#7F5268', borderRadius: 2 }} />
+              <div style={{ textAlign: 'center' }}>
+                <p id="le-about-name" style={{ fontWeight: 700, fontSize: '0.95rem', color: '#7F5268', margin: 0 }}>
+                  עידית לאוב
+                </p>
+                <p id="le-about-role" style={{ fontWeight: 300, fontSize: '0.82rem', color: '#7F5268', margin: '2px 0 0' }}>
+                  מייסדת אמא בסדר ואמא של דור אורי
+                </p>
+              </div>
+              <div style={{ width: 32, height: 2, background: '#7F5268', borderRadius: 2 }} />
+            </div>
+          </div>
+
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          SECTION 7 — CTA FOOTER ("שנתחיל?")
-      ═══════════════════════════════════════════════════════════ */}
-      <section
-        style={{
-          background: '#2c1e27',
-          padding: 'clamp(64px,9vw,100px) clamp(20px,5vw,64px)',
-          textAlign: 'center',
-        }}
-      >
-        <div style={{ maxWidth: 600, margin: '0 auto' }}>
+      {/* ══════════════════════════════════════════════════════
+          §6 TESTIMONIALS  ("מה אמהות אומרות")
+      ══════════════════════════════════════════════════════ */}
+      <section style={{ background: '#f2e6dc', padding: 'clamp(50px,7vh,80px) clamp(24px,4vw,80px)' }}>
+        <div style={{ maxWidth: 1920, margin: '0 auto' }}>
           <h2
-            id="le-cta-heading"
-            className="reveal"
             style={{
               fontFamily: 'var(--font-body)',
-              fontSize: 'clamp(2rem,5vw,3.2rem)',
-              fontWeight: 700,
-              color: '#F7EDE2',
-              lineHeight: 1.2,
-              marginBottom: 16,
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              letterSpacing: '0.05em',
+              fontWeight: 500,
+              color: '#7F5268',
+              textAlign: 'center',
+              margin: '0 0 clamp(32px,4vh,48px)',
             }}
           >
-            שנתחיל? למה את מחכה!
+            מה אמהות אומרות
+          </h2>
+
+          {/* 4 cards in a row */}
+          <div
+            className="testimonials-grid"
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 'clamp(12px,2.44vw,47px)',
+              maxWidth: 2080,
+              margin: '0 auto',
+            }}
+          >
+            {([
+              { name: 'גלית ר.',  role: 'אמא + עצמאית',        quote: 'ניהלתי הריון ועסק במקביל. בלי המערכת הזו הייתי קורסת.',           ni:'le-test-0-name', ri:'le-test-0-role', qi:'le-test-0-quote' },
+              { name: 'נועה כ.',  role: 'אמא טרייה',            quote: 'סוף סוף אני יודעת בכל רגע מה קורה עם התינוק שלי. זה נתן לי שקט אמיתי.',  ni:'le-test-1-name', ri:'le-test-1-role', qi:'le-test-1-quote' },
+              { name: 'שירלי מ.', role: 'בהריון 32 שבועות',     quote: 'הפסקתי לשאול את גוגל בשלוש בלילה. עכשיו יש לי AI שמבין ולא שופט.',        ni:'le-test-2-name', ri:'le-test-2-role', qi:'le-test-2-quote' },
+              { name: 'יעל ב.',   role: 'אמא לתאומות',           quote: 'רישום האכלות לשתי תינוקות בלחיצה אחת. שינה לי את החיים ממש.',              ni:'le-test-3-name', ri:'le-test-3-role', qi:'le-test-3-quote' },
+            ] as {name:string;role:string;quote:string;ni:string;ri:string;qi:string}[]).map((t, i) => (
+              <div
+                key={i}
+                className="reveal-up"
+                style={{
+                  position: 'relative',
+                  height: 243,
+                  minHeight: 243,
+                }}
+              >
+                {/* White card body */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0, left: 0, right: 0,
+                  height: 223,
+                  background: '#fff',
+                  borderRadius: 30,
+                  padding: '33px 13px 76px',
+                  boxSizing: 'border-box',
+                  overflow: 'hidden',
+                }}>
+                  {/* Stars */}
+                  <div style={{ display: 'flex', marginBottom: 16, justifyContent: 'center' }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src="/icons/landing/stars-rating.svg" alt="" aria-hidden="true" style={{ width: 157, height: 27 }} />
+                  </div>
+                  <p
+                    id={t.qi}
+                    style={{
+                      fontSize: 'clamp(1rem, 1.042vw, 1.25rem)',
+                      letterSpacing: '0.05em',
+                      lineHeight: 1.75,
+                      color: '#000000',
+                      fontStyle: 'italic',
+                      fontWeight: 300,
+                      margin: 0,
+                      textAlign: 'center',
+                    }}
+                  >
+                    &ldquo;{t.quote}&rdquo;
+                  </p>
+                </div>
+                {/* Purple footer — overlaps card bottom edge */}
+                <div style={{
+                  position: 'absolute',
+                  top: 174,
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 207,
+                  height: 69,
+                  background: '#7F5268',
+                  borderRadius: 20,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}>
+                  <p id={t.ni} style={{ color: '#fff', fontWeight: 500, fontSize: '0.88rem', margin: 0 }}>{t.name}</p>
+                  <p id={t.ri} style={{ color: 'rgba(255,255,255,0.68)', fontWeight: 300, fontSize: '0.78rem', margin: '2px 0 0' }}>{t.role}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Arrow navigation dots */}
+          {/* RTL flex: first child = visual RIGHT, second child = visual LEFT */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, marginTop: 32, alignItems: 'center' }}>
+            {/* Previous button — visual RIGHT, outline, → arrow */}
+            <button aria-label="הקודם" style={{
+              width: 52, height: 52, borderRadius: '50%', border: '1.5px solid #7F5268',
+              background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <svg width={18} height={10} viewBox="0 0 36 21" fill="none" style={{ flexShrink: 0 }}>
+                <path d="M24 0C24 1.113 25.0995 2.775 26.2125 4.17C27.6435 5.97 29.3535 7.5405 31.314 8.739C32.784 9.6375 34.566 10.5 36 10.5M36 10.5C34.566 10.5 32.7825 11.3625 31.314 12.261C29.3535 13.461 27.6435 15.0315 26.2125 16.8285C25.0995 18.225 24 19.89 24 21M36 10.5H0"
+                  stroke="#7F5268" strokeWidth="1.5" />
+              </svg>
+            </button>
+            {[0,1].map(i => (
+              <span key={i} style={{
+                width: i === 0 ? 28 : 10, height: 10, borderRadius: 5,
+                background: i === 0 ? '#7F5268' : 'rgba(127,82,104,0.3)',
+                display: 'inline-block',
+                transition: 'all 0.3s',
+              }} />
+            ))}
+            {/* Next button — visual LEFT, filled purple, ← arrow */}
+            <button aria-label="הבא" style={{
+              width: 52, height: 52, borderRadius: '50%', border: 'none',
+              background: '#7F5268', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+              <Arrow color="#fff" size={18} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════
+          §7 CTA FOOTER  ("שנתחיל?")
+      ══════════════════════════════════════════════════════ */}
+      <section style={{
+        background: '#7F5268',
+        padding: 'clamp(60px,9vh,100px) clamp(24px,4vw,80px)',
+        textAlign: 'center',
+      }}>
+        <div style={{ maxWidth: 700, margin: '0 auto' }}>
+          <h2
+            id="le-cta-heading"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontWeight: 500,
+              fontSize: 'clamp(2rem, 2.604vw, 3.125rem)',
+              letterSpacing: '0.05em',
+              color: '#ffffff',
+              margin: '0 0 14px',
+              lineHeight: 1.25,
+            }}
+          >
+            שנתחיל? למה את מחכה?
           </h2>
           <p
             id="le-cta-sub"
             style={{
-              fontSize: 'clamp(0.9rem,1.6vw,1.05rem)',
-              color: 'rgba(247,237,226,0.7)',
               fontWeight: 300,
+              fontSize: 'clamp(1.25rem, 1.5625vw, 1.875rem)',
+              letterSpacing: '0.05em',
+              color: '#ffffff',
               lineHeight: 1.7,
-              marginBottom: 36,
+              margin: '0 0 36px',
             }}
           >
             הצטרפי לאמהות שכבר לא מנסות להסתדר לבד
           </p>
           <Link
             href="/auth"
-            className="btn-brand"
+            className="btn-hover"
             style={{
-              background: '#7F5268',
-              fontSize: '1rem',
-              padding: '14px 40px',
-              display: 'inline-flex',
+              ...btnFilled,
+              background: '#fff',
+              color: '#7F5268',
             }}
           >
-            הרשמה חינם
-            <BtnArrow />
+            להרשמה למערכת
+            <Arrow color="#7F5268" />
           </Link>
         </div>
       </section>
 
-      {/* ═══════════════════════════════════════════════════════════
-          PWA INSTALL
-      ═══════════════════════════════════════════════════════════ */}
+      {/* ── PWA Install ── */}
       <div id="pwa-install">
         <PwaInstallTabs />
       </div>
 
-      {/* ── Floating landing editor (activated via ?editor in URL) ── */}
+      {/* ── Floating landing editor (activated via ?editor) ── */}
       <LandingEditor />
 
     </main>
