@@ -21,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
       <PreloaderLottie />
-      <Sidebar userName={profile?.name} />
+      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
           babyName={profile?.baby_name}

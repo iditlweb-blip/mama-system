@@ -29,19 +29,34 @@ type NavItem = {
   | { customIcon: React.ReactNode; icon?: never }
 )
 
-const navItems: NavItem[] = [
-  { href: '/dashboard',   icon: LayoutDashboard, label: 'דשבורד' },
-  { href: '/tracker',     icon: Activity,        label: 'מעקב תינוק' },
-  { href: '/tasks',       icon: CheckSquare,     label: 'משימות' },
-  { href: '/business',    icon: Briefcase,       label: 'ניהול עבודה' },
-  { href: '/development', icon: Baby,            label: 'התפתחות' },
-  { href: '/products',    customIcon: <ShoppingBagIcon />, label: 'מוצרים ובעלי מקצוע' },
-  { href: '/personal',    icon: Heart,           label: 'לעצמי' },
-  { href: '/chat',        icon: MessageCircle,   label: "צ׳אט AI" },
-  { href: '/settings',    icon: Settings,        label: 'הגדרות' },
-]
+function PregnancyIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/><path d="M12 12c-4 0-7 3-7 6h14c0-3-3-6-7-6z"/>
+      <path d="M12 16c1.5 0 3 1 3 2" opacity=".4"/>
+    </svg>
+  )
+}
 
-export default function Sidebar({ userName }: { userName?: string | null }) {
+export default function Sidebar({ userName, trackingType }: {
+  userName?: string | null
+  trackingType?: 'pregnancy' | 'baby' | null
+}) {
+  const isPregnancy = trackingType === 'pregnancy'
+
+  const navItems: NavItem[] = [
+    { href: '/dashboard',             icon: LayoutDashboard,   label: 'דשבורד' },
+    isPregnancy
+      ? { href: '/pregnancy', customIcon: <PregnancyIcon />,   label: 'מעקב הריון' }
+      : { href: '/tracker',           icon: Activity,          label: 'מעקב תינוק' },
+    { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },
+    { href: '/business',              icon: Briefcase,         label: 'ניהול עבודה' },
+    { href: '/development',           icon: Baby,              label: 'התפתחות' },
+    { href: '/products', customIcon: <ShoppingBagIcon />,      label: 'מוצרים ובעלי מקצוע' },
+    { href: '/personal',              icon: Heart,             label: 'לעצמי' },
+    { href: '/chat',                  icon: MessageCircle,     label: "צ׳אט AI" },
+    { href: '/settings',              icon: Settings,          label: 'הגדרות' },
+  ]
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
