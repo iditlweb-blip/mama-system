@@ -2,7 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check, ChevronRight } from 'lucide-react'
+import {
+  Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check, ChevronRight,
+  Coffee, Footprints, Palette, BookOpen, Flower2, HandHeart, Music2, Leaf,
+  Star, Calendar, type LucideIcon
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
 export interface PersonalLog {
@@ -15,25 +19,25 @@ export interface PersonalLog {
   created_at: string
 }
 
-const ACTIVITIES = [
-  { key: 'coffee', emoji: '☕', label: 'קפה עם חברה', color: '#8B5A2B' },
-  { key: 'sport', emoji: '🏃', label: 'ספורט', color: '#4A7C59' },
-  { key: 'hobby', emoji: '🎨', label: 'חוג / תחביב', color: '#7F5268' },
-  { key: 'reading', emoji: '📚', label: 'קריאה', color: '#5C6BA0' },
-  { key: 'meditation', emoji: '🧘', label: 'מנוחה / מדיטציה', color: '#7A6A3C' },
-  { key: 'pampering', emoji: '💆', label: 'טיפוח עצמי', color: '#A0567A' },
-  { key: 'music', emoji: '🎵', label: 'מוסיקה / יצירה', color: '#5C7A8A' },
-  { key: 'nature', emoji: '🌿', label: 'טבע / הליכה', color: '#4A7C59' },
-  { key: 'other', emoji: '✨', label: 'משהו אחר', color: '#7F5268' },
+const ACTIVITIES: { key: string; icon: LucideIcon; label: string; color: string }[] = [
+  { key: 'coffee', icon: Coffee, label: 'קפה עם חברה', color: '#8B5A2B' },
+  { key: 'sport', icon: Footprints, label: 'ספורט', color: '#4A7C59' },
+  { key: 'hobby', icon: Palette, label: 'חוג / תחביב', color: '#7F5268' },
+  { key: 'reading', icon: BookOpen, label: 'קריאה', color: '#5C6BA0' },
+  { key: 'meditation', icon: Flower2, label: 'מנוחה / מדיטציה', color: '#7A6A3C' },
+  { key: 'pampering', icon: HandHeart, label: 'טיפוח עצמי', color: '#A0567A' },
+  { key: 'music', icon: Music2, label: 'מוסיקה / יצירה', color: '#5C7A8A' },
+  { key: 'nature', icon: Leaf, label: 'טבע / הליכה', color: '#4A7C59' },
+  { key: 'other', icon: Sparkles, label: 'משהו אחר', color: '#7F5268' },
 ]
 
-const MOTIVATIONS = [
-  'את מתנה לעצמך כשאת דואגת לעצמך 💜',
-  'אמא מאושרת = ילד מאושר 🌸',
-  'לא אנוכי לדאוג לעצמך — זה הכרחי',
-  'כל דקה לעצמך היא השקעה במשפחה שלך',
-  'את מספיקה. את עושה מספיק. את מספיקה.',
-  'גם סופגנייה עם קפה ספירה כ"לעצמי"  ☕',
+const MOTIVATIONS: { text: string; icon?: LucideIcon }[] = [
+  { text: 'את מתנה לעצמך כשאת דואגת לעצמך', icon: Heart },
+  { text: 'אמא מאושרת = ילד מאושר', icon: Flower2 },
+  { text: 'לא אנוכי לדאוג לעצמך — זה הכרחי' },
+  { text: 'כל דקה לעצמך היא השקעה במשפחה שלך' },
+  { text: 'את מספיקה. את עושה מספיק. את מספיקה.' },
+  { text: 'גם סופגנייה עם קפה ספירה כ"לעצמי"', icon: Coffee },
 ]
 
 interface Props {
@@ -170,7 +174,10 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
       <div className="rounded-2xl p-4 flex items-start gap-3"
         style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.12)' }}>
         <Sparkles className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#7F5268' }} />
-        <p className="text-sm font-light italic" style={{ color: '#7F5268' }}>{motivation}</p>
+        <p className="text-sm font-light italic flex items-center gap-1.5 flex-wrap" style={{ color: '#7F5268' }}>
+          {motivation.text}
+          {motivation.icon && <motivation.icon size={14} />}
+        </p>
       </div>
 
       {/* DB warning */}
@@ -182,14 +189,17 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-3">
-        <StatCard emoji="🌟" label="היום" value={todayCount} unit="פעילויות" />
-        <StatCard emoji="📅" label="השבוע" value={weekCount} unit="פעילויות" />
+        <StatCard icon={Star} label="היום" value={todayCount} unit="פעילויות" />
+        <StatCard icon={Calendar} label="השבוע" value={weekCount} unit="פעילויות" />
       </div>
 
       {/* Add form */}
       {adding && (
         <div className="card space-y-4">
-          <h2 className="font-semibold" style={{ color: 'var(--text)' }}>מה עשית לעצמך? 🌸</h2>
+          <h2 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            מה עשית לעצמך?
+            <Flower2 size={16} style={{ color: '#7F5268' }} />
+          </h2>
 
           {/* Activity grid */}
           <div className="grid grid-cols-3 gap-2">
@@ -203,7 +213,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
                   : { background: `${act.color}15`, color: act.color, border: `1px solid ${act.color}30` }
                 }
               >
-                <span className="text-xl">{act.emoji}</span>
+                <act.icon size={22} />
                 <span className="text-xs font-medium leading-tight">{act.label}</span>
               </button>
             ))}
@@ -284,7 +294,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
                 className="rounded-xl p-3 text-center transition-all hover:scale-105 flex flex-col items-center gap-1"
                 style={{ background: `${act.color}12`, color: act.color, border: `1px solid ${act.color}20` }}
               >
-                <span className="text-2xl">{act.emoji}</span>
+                <act.icon size={26} />
                 <span className="text-xs font-medium leading-tight">{act.label}</span>
               </button>
             ))}
@@ -323,7 +333,9 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
 
         {logs.length === 0 ? (
           <div className="card text-center py-10">
-            <p className="text-4xl mb-3">🌸</p>
+            <div className="flex justify-center mb-3">
+              <Flower2 size={40} style={{ color: '#7F5268' }} />
+            </div>
             <p className="font-medium" style={{ color: 'var(--text)' }}>עוד לא רשמת שום דבר</p>
             <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>הגיע הזמן לעשות משהו רק לעצמך!</p>
           </div>
@@ -336,9 +348,9 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
               const timeStr = date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
               return (
                 <div key={log.id} className="card py-3 px-4 flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ background: `${act.color}15` }}>
-                    {act.emoji}
+                    <act.icon size={20} style={{ color: act.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{log.title}</p>
@@ -368,10 +380,12 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
   )
 }
 
-function StatCard({ emoji, label, value, unit }: { emoji: string; label: string; value: number; unit: string }) {
+function StatCard({ icon: Icon, label, value, unit }: { icon: LucideIcon; label: string; value: number; unit: string }) {
   return (
     <div className="card text-center py-4">
-      <p className="text-2xl mb-1">{emoji}</p>
+      <div className="flex justify-center mb-1">
+        <Icon size={22} style={{ color: '#7F5268' }} />
+      </div>
       <p className="text-2xl font-bold" style={{ color: 'var(--text)' }}>{value}</p>
       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{unit} {label}</p>
     </div>

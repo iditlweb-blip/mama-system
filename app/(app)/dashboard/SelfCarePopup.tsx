@@ -2,16 +2,16 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X, Heart } from 'lucide-react'
+import { X, Heart, Sun, Sparkles, Leaf, ChevronLeft, type LucideIcon } from 'lucide-react'
 
-const MESSAGES = [
-  'צאי לשמש — גם 10 דקות משנות מצב רוח לגמרי ☀️',
-  'קשה זה עובר, ואת עושה את הכי טוב שלך 💜',
-  'גם קפה ברגע שקט זה טיפוח עצמי. ספורי ✨',
-  'אמא מאושרת = תינוק מאושר. לא אנוכי לדאוג לעצמך',
-  'יש לך כוח שאת אפילו לא מכירה בו עדיין 🌿',
-  'כל יום שעברת זה הישג. כן, גם אלה שהרגישו קשים',
-  'שאלי אותך: מתי בפעם האחרונה עשית משהו רק בשבילך?',
+const MESSAGES: { text: string; Icon: LucideIcon }[] = [
+  { text: 'צאי לשמש — גם 10 דקות משנות מצב רוח לגמרי', Icon: Sun },
+  { text: 'קשה זה עובר, ואת עושה את הכי טוב שלך', Icon: Heart },
+  { text: 'גם קפה ברגע שקט זה טיפוח עצמי. ספורי', Icon: Sparkles },
+  { text: 'אמא מאושרת = תינוק מאושר. לא אנוכי לדאוג לעצמך', Icon: Heart },
+  { text: 'יש לך כוח שאת אפילו לא מכירה בו עדיין', Icon: Leaf },
+  { text: 'כל יום שעברת זה הישג. כן, גם אלה שהרגישו קשים', Icon: Sparkles },
+  { text: 'שאלי אותך: מתי בפעם האחרונה עשית משהו רק בשבילך?', Icon: Heart },
 ]
 
 const STORAGE_KEY = 'selfcare_popup_shown'
@@ -72,7 +72,7 @@ export default function SelfCarePopup() {
             className="w-12 h-12 rounded-2xl flex items-center justify-center"
             style={{ background: 'rgba(127,82,104,0.12)' }}
           >
-            <Heart className="w-6 h-6" style={{ color: '#7F5268' }} />
+            <message.Icon className="w-6 h-6" style={{ color: '#7F5268' }} />
           </div>
         </div>
 
@@ -83,7 +83,7 @@ export default function SelfCarePopup() {
 
         {/* Encouragement */}
         <p className="text-sm text-center mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
-          {message}
+          {message.text}
         </p>
 
         {/* Actions */}
@@ -91,10 +91,10 @@ export default function SelfCarePopup() {
           <Link
             href="/personal"
             onClick={() => setVisible(false)}
-            className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center block"
+            className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center flex items-center justify-center gap-1"
             style={{ background: '#7F5268' }}
           >
-            לעמוד ״לעצמי״ ←
+            לעמוד ״לעצמי״ <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
           <button
             onClick={() => setVisible(false)}

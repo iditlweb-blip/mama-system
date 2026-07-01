@@ -1,11 +1,12 @@
 'use client'
 
 import { useState } from 'react'
+import { Apple, Smartphone, ArrowUp, Heart } from 'lucide-react'
 
 const steps = {
   android: [
     { icon: '1', text: 'פתחי את הדפדפן Chrome בטלפון Android' },
-    { icon: '2', text: 'לחצי על תפריט ⋮ (שלוש נקודות) בפינה הימנית העליונה' },
+    { icon: '2', text: 'לחצי על תפריט שלוש הנקודות בפינה הימנית העליונה' },
     { icon: '3', text: 'בחרי "הוסף למסך הבית" מהרשימה' },
     { icon: '4', text: 'בחרי שם לאפליקציה (למשל "אמא בסדר") ולחצי הוסף' },
     { icon: '5', text: 'האפליקציה תופיע על מסך הבית — לחצי עליה לפתיחה!' },
@@ -13,7 +14,7 @@ const steps = {
   iphone: [
     { icon: '1', text: 'פתחי את דפדפן Safari (חשוב! רק Safari תומך בהוספה לדף הבית)' },
     { icon: '2', text: 'גשי לאתר mama-system.vercel.app' },
-    { icon: '3', text: 'לחצי על כפתור השיתוף ⬆️ בתחתית המסך' },
+    { icon: '3', text: 'לחצי על כפתור השיתוף בתחתית המסך' },
     { icon: '4', text: 'גללי מטה ברשימה ובחרי "הוסף למסך הבית"' },
     { icon: '5', text: 'לחצי "הוסף" — האפליקציה תופיע על מסך הבית שלך!' },
   ],
@@ -26,17 +27,17 @@ export default function PwaInstallTabs() {
     <div className="reveal">
       {/* Tab buttons */}
       <div className="flex rounded-2xl overflow-hidden border mb-6" style={{ borderColor: 'rgba(127,82,104,0.2)' }}>
-        {([['iphone', '🍎 iPhone / iPad'], ['android', '🤖 Android']] as const).map(([id, label]) => (
+        {([['iphone', Apple, 'iPhone / iPad'], ['android', Smartphone, 'Android']] as const).map(([id, Icon, label]) => (
           <button
             key={id}
             onClick={() => setTab(id)}
-            className="flex-1 py-3 text-sm font-semibold transition-all"
+            className="flex-1 py-3 text-sm font-semibold transition-all flex items-center justify-center gap-1.5"
             style={tab === id
               ? { background: '#7F5268', color: '#fff' }
               : { background: '#fff', color: '#7F5268' }
             }
           >
-            {label}
+            <Icon size={15} /> {label}
           </button>
         ))}
       </div>
@@ -50,7 +51,7 @@ export default function PwaInstallTabs() {
           minHeight: 180,
         }}
       >
-        <span className="text-4xl">{tab === 'iphone' ? '🍎' : '🤖'}</span>
+        {tab === 'iphone' ? <Apple size={40} color="#7F5268" strokeWidth={1.4} /> : <Smartphone size={40} color="#7F5268" strokeWidth={1.4} />}
         <p className="text-sm font-medium" style={{ color: '#7F5268' }}>
           סרטון הדרכה — {tab === 'iphone' ? 'iPhone' : 'Android'}
         </p>
@@ -71,14 +72,17 @@ export default function PwaInstallTabs() {
             >
               {step.icon}
             </div>
-            <p className="text-sm leading-relaxed pt-0.5" style={{ color: '#111' }}>{step.text}</p>
+            <p className="text-sm leading-relaxed pt-0.5 flex items-center gap-1.5 flex-wrap" style={{ color: '#111' }}>
+              {step.text}
+              {tab === 'iphone' && step.icon === '3' && <ArrowUp size={14} style={{ color: '#7F5268' }} />}
+            </p>
           </div>
         ))}
       </div>
 
       {/* tip */}
-      <p className="text-xs text-center mt-5 font-light" style={{ color: 'rgba(127,82,104,0.7)' }}>
-        לא הצלחת? אפשר להשתמש ישירות מהדפדפן — זה עובד בדיוק אותו דבר 🙏
+      <p className="text-xs text-center mt-5 font-light flex items-center justify-center gap-1" style={{ color: 'rgba(127,82,104,0.7)' }}>
+        לא הצלחת? אפשר להשתמש ישירות מהדפדפן — זה עובד בדיוק אותו דבר <Heart size={12} />
       </p>
     </div>
   )

@@ -3,8 +3,17 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Loader2, Camera } from 'lucide-react'
+import { Loader2, Camera, Baby, BookOpen, ClipboardList, ShoppingBag, Flower2 } from 'lucide-react'
 import Image from 'next/image'
+
+function PregnancyIcon() {
+  return (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4"/><path d="M12 12c-4 0-7 3-7 6h14c0-3-3-6-7-6z"/>
+      <path d="M12 16c1.5 0 3 1 3 2" opacity=".4"/>
+    </svg>
+  )
+}
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -107,8 +116,9 @@ export default function OnboardingPage() {
         {/* Step 1 — Name */}
         {step === 1 && (
           <div>
-            <h1 className="text-3xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>
-              ברוכה הבאה! 🌸
+            <h1 className="text-3xl font-bold mb-2 text-center flex items-center justify-center gap-2" style={{ color: '#3d2b2b' }}>
+              ברוכה הבאה!
+              <Flower2 className="w-6 h-6" style={{ color: '#7F5268' }} />
             </h1>
             <p className="text-center mb-8" style={{ color: '#7a5a5a' }}>ספרי לנו עליך</p>
 
@@ -164,7 +174,7 @@ export default function OnboardingPage() {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">🤰</span>
+                  <span style={{ color: '#7F5268' }}><PregnancyIcon /></span>
                   <span className="font-semibold text-base" style={{ color: '#3d2b2b' }}>אני בהריון</span>
                 </div>
               </button>
@@ -194,7 +204,7 @@ export default function OnboardingPage() {
                 }}
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-2xl">👶</span>
+                  <Baby className="w-6 h-6" style={{ color: '#7F5268' }} />
                   <span className="font-semibold text-base" style={{ color: '#3d2b2b' }}>יש לי תינוק/ת</span>
                 </div>
               </button>
@@ -285,10 +295,10 @@ export default function OnboardingPage() {
 
             <div className="space-y-3 mb-6">
               {([
-                { value: 'learn' as const, emoji: '📚', label: 'ללמוד ולהתפתח' },
-                { value: 'organize' as const, emoji: '📋', label: 'לעשות לעצמי סדר' },
-                { value: 'recommendations' as const, emoji: '🛍️', label: 'לקבל המלצות ומוצרים' },
-              ]).map(({ value, emoji, label }) => (
+                { value: 'learn' as const, icon: BookOpen, label: 'ללמוד ולהתפתח' },
+                { value: 'organize' as const, icon: ClipboardList, label: 'לעשות לעצמי סדר' },
+                { value: 'recommendations' as const, icon: ShoppingBag, label: 'לקבל המלצות ומוצרים' },
+              ]).map(({ value, icon: GoalIcon, label }) => (
                 <button
                   key={value}
                   onClick={() => update('user_goal', value)}
@@ -299,7 +309,7 @@ export default function OnboardingPage() {
                   }}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-2xl">{emoji}</span>
+                    <GoalIcon className="w-6 h-6" style={{ color: '#7F5268' }} />
                     <span className="font-semibold text-base" style={{ color: '#3d2b2b' }}>{label}</span>
                   </div>
                 </button>

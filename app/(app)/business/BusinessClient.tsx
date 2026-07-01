@@ -5,7 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Briefcase, CheckSquare, Calendar, Link2, Plus, Trash2, Check,
   Globe, ExternalLink, Clock,
-  ChevronDown, Loader2, X
+  ChevronDown, Loader2, X,
+  Baby, Flower2, Coffee, Camera, Users, AlertTriangle, PartyPopper,
+  Sparkles, CheckCircle2
 } from 'lucide-react'
 import { Profile, Task, WeeklyScheduleItem } from '@/types/database'
 
@@ -20,10 +22,10 @@ const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 
 const DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 
 const scheduleTypeColors = {
-  work: { bg: '#7F526820', border: '#7F526840', text: '#7F5268', label: '💼 עבודה' },
-  baby: { bg: '#C4A0B420', border: '#C4A0B440', text: '#7F5268', label: '👶 תינוק' },
-  personal: { bg: '#4A7C5920', border: '#4A7C5940', text: '#4A7C59', label: '🌸 אישי' },
-  break: { bg: '#5C7A6A20', border: '#5C7A6A40', text: '#5C7A6A', label: '☕ הפסקה' },
+  work: { bg: '#7F526820', border: '#7F526840', text: '#7F5268', label: 'עבודה', icon: Briefcase },
+  baby: { bg: '#C4A0B420', border: '#C4A0B440', text: '#7F5268', label: 'תינוק', icon: Baby },
+  personal: { bg: '#4A7C5920', border: '#4A7C5940', text: '#4A7C59', label: 'אישי', icon: Flower2 },
+  break: { bg: '#5C7A6A20', border: '#5C7A6A40', text: '#5C7A6A', label: 'הפסקה', icon: Coffee },
 }
 
 const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
@@ -105,11 +107,11 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
   }
 
   const links = [
-    { label: '🌐 אתר אינטרנט', url: profile?.website_url, icon: Globe },
-    { label: '📸 אינסטגרם', url: profile?.instagram_url, icon: Link2 },
-    { label: '👥 פייסבוק', url: profile?.facebook_url, icon: Link2 },
-    { label: '💼 לינקדאין', url: profile?.linkedin_url, icon: Briefcase },
-    { label: '📅 Google Calendar', url: profile?.google_calendar_url, icon: Calendar },
+    { label: 'אתר אינטרנט', url: profile?.website_url, icon: Globe },
+    { label: 'אינסטגרם', url: profile?.instagram_url, icon: Camera },
+    { label: 'פייסבוק', url: profile?.facebook_url, icon: Users },
+    { label: 'לינקדאין', url: profile?.linkedin_url, icon: Briefcase },
+    { label: 'Google Calendar', url: profile?.google_calendar_url, icon: Calendar },
   ].filter(l => l.url)
 
   const doneTasks = tasks.filter(t => t.status === 'done')
@@ -121,8 +123,9 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
       <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)' }}>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: 'var(--text)' }}>
-              {profile?.business_name || 'ניהול עבודה'} 💼
+            <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              {profile?.business_name || 'ניהול עבודה'}
+              <Briefcase size={18} style={{ color: '#7F5268' }} />
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
               {profile?.business_type ? businessTypeLabel(profile.business_type) : 'לוז, משימות וקישורים מהירים'}
@@ -196,9 +199,9 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                     className="w-full px-3 py-2 rounded-xl border text-sm outline-none"
                     style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
                   >
-                    <option value="high">🔴 דחוף</option>
-                    <option value="medium">🟡 בינוני</option>
-                    <option value="low">🟢 נמוך</option>
+                    <option value="high">דחוף</option>
+                    <option value="medium">בינוני</option>
+                    <option value="low">נמוך</option>
                   </select>
                 </div>
                 <div className="flex-1">
@@ -227,9 +230,13 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
           {/* Open tasks */}
           {openTasks.length === 0 && !showTaskForm ? (
             <div className="card text-center py-8">
-              <p className="text-3xl mb-2">🎉</p>
+              <div className="flex justify-center mb-2">
+                <PartyPopper size={32} style={{ color: '#7F5268' }} />
+              </div>
               <p className="font-semibold" style={{ color: 'var(--text)' }}>כל המשימות הושלמו!</p>
-              <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>את מדהימה 💪</p>
+              <p className="text-sm mt-1 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                את מדהימה <Sparkles size={14} style={{ color: '#7F5268' }} />
+              </p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -243,7 +250,10 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
           {doneTasks.length > 0 && (
             <details className="card">
               <summary className="cursor-pointer text-sm font-medium list-none flex items-center justify-between" style={{ color: 'var(--text-muted)' }}>
-                <span>✅ הושלמו ({doneTasks.length})</span>
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#4A7C59' }} />
+                  הושלמו ({doneTasks.length})
+                </span>
                 <ChevronDown className="w-4 h-4" />
               </summary>
               <div className="mt-3 space-y-2">
@@ -344,7 +354,9 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
           {schedule.length === 0 ? (
             <div className="card text-center py-10">
-              <p className="text-3xl mb-2">📅</p>
+              <div className="flex justify-center mb-2">
+                <Calendar size={32} style={{ color: '#7F5268' }} />
+              </div>
               <p className="font-semibold" style={{ color: 'var(--text)' }}>הלוז ריק</p>
               <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>הוסיפי זמנים קבועים לעבודה, נמנומים, וזמן אישי</p>
             </div>
@@ -375,8 +387,9 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                                 {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
                               </p>
                             </div>
-                            <span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: `${colors.text}20`, color: colors.text }}>
-                              {colors.label.split(' ')[1]}
+                            <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: `${colors.text}20`, color: colors.text }}>
+                              <colors.icon size={12} />
+                              {colors.label}
                             </span>
                             <button onClick={() => deleteScheduleItem(item.id)} className="opacity-40 hover:opacity-100 transition-opacity">
                               <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
@@ -398,7 +411,9 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
         <div className="space-y-3">
           {links.length === 0 ? (
             <div className="card text-center py-10">
-              <p className="text-3xl mb-2">🔗</p>
+              <div className="flex justify-center mb-2">
+                <Link2 size={32} style={{ color: '#7F5268' }} />
+              </div>
               <p className="font-semibold" style={{ color: 'var(--text)' }}>אין קישורים</p>
               <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>הוסיפי קישורים בעמוד ההגדרות</p>
               <a href="/settings"
@@ -472,8 +487,8 @@ function TaskRow({ task, onToggle, onDelete }: {
           {task.title}
         </p>
         {task.due_date && (
-          <p className="text-xs mt-0.5" style={{ color: overdue ? '#C0392B' : 'var(--text-muted)' }}>
-            {overdue ? '⚠️ ' : '📅 '}
+          <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: overdue ? '#C0392B' : 'var(--text-muted)' }}>
+            {overdue ? <AlertTriangle size={11} /> : <Calendar size={11} />}
             {new Date(task.due_date).toLocaleDateString('he-IL')}
           </p>
         )}

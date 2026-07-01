@@ -2,22 +2,26 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Plus, X, Play, Pause, RotateCcw, Timer, ChevronDown, Baby, Home, Briefcase, CheckCircle2, AlertCircle, Circle, ChevronRight } from 'lucide-react'
+import {
+  Plus, X, Play, Pause, RotateCcw, Timer, ChevronDown, Baby, Home, Briefcase,
+  CheckCircle2, AlertCircle, Circle, ChevronRight, ClipboardList, Zap, Target,
+  Clock, Sprout, Coffee, Undo2, AlertTriangle, Calendar, Sparkles,
+} from 'lucide-react'
 import { Task, TaskCategory, TaskStatus, TaskPriority } from '@/types/database'
 import { useRouter } from 'next/navigation'
 
 interface Props { tasks: Task[]; userId: string }
 
-const columns: { status: TaskStatus; label: string; color: string; emoji: string }[] = [
-  { status: 'todo',       label: 'לביצוע',  color: '#7F5268', emoji: '📋' },
-  { status: 'inprogress', label: 'בתהליך',  color: '#B8860B', emoji: '⚡' },
-  { status: 'done',       label: 'הושלם',   color: '#4A7C59', emoji: '✅' },
+const columns: { status: TaskStatus; label: string; color: string; icon: React.ElementType }[] = [
+  { status: 'todo',       label: 'לביצוע',  color: '#7F5268', icon: ClipboardList },
+  { status: 'inprogress', label: 'בתהליך',  color: '#B8860B', icon: Zap },
+  { status: 'done',       label: 'הושלם',   color: '#4A7C59', icon: CheckCircle2 },
 ]
 
-const catConfig: Record<TaskCategory, { label: string; icon: React.ElementType; cls: string; emoji: string }> = {
-  work: { label: 'עבודה',  icon: Briefcase, cls: 'cat-work', emoji: '💼' },
-  home: { label: 'בית',    icon: Home,      cls: 'cat-home', emoji: '🏠' },
-  baby: { label: 'תינוק',  icon: Baby,      cls: 'cat-baby', emoji: '👶' },
+const catConfig: Record<TaskCategory, { label: string; icon: React.ElementType; cls: string }> = {
+  work: { label: 'עבודה',  icon: Briefcase, cls: 'cat-work' },
+  home: { label: 'בית',    icon: Home,      cls: 'cat-home' },
+  baby: { label: 'תינוק',  icon: Baby,      cls: 'cat-baby' },
 }
 const prioConfig: Record<TaskPriority, { label: string; color: string }> = {
   high:   { label: 'דחוף',   color: '#C0392B' },
@@ -147,10 +151,10 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatPill emoji="📋" label="פתוחות" value={openCount}    color="#7F5268" />
-        <StatPill emoji="✅" label="הושלמו" value={doneCount}    color="#4A7C59" />
-        <StatPill emoji="🔴" label="דחוף"   value={highCount}    color="#C0392B" />
-        <StatPill emoji="📅" label="היום"   value={dueTodayCount} color="#B8860B"
+        <StatPill icon={ClipboardList} label="פתוחות" value={openCount}    color="#7F5268" />
+        <StatPill icon={CheckCircle2} label="הושלמו" value={doneCount}    color="#4A7C59" />
+        <StatPill icon={Circle} iconFill label="דחוף"   value={highCount}    color="#C0392B" />
+        <StatPill icon={Calendar} label="היום"   value={dueTodayCount} color="#B8860B"
           extra={overdueCount > 0 ? `${overdueCount} באיחור` : undefined} />
       </div>
 
@@ -192,14 +196,14 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
               <Timer className="w-4 h-4" style={{ color: 'var(--primary)' }} />
               <span className="font-semibold" style={{ color: 'var(--text)' }}>טיימר פומודורו</span>
               {pomoCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
                   style={{ background: 'rgba(127,82,104,0.12)', color: '#7F5268' }}>
-                  🍅 {pomoCount} סשנים
+                  <Timer className="w-3 h-3" /> {pomoCount} סשנים
                 </span>
               )}
             </div>
-            <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
-              {pomoMode === 'work' ? 'מיקוד מלא — הניחי את הטלפון' : '☕ הפסקה! קחי נשימה'}
+            <p className="text-sm mb-3 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+              {pomoMode === 'work' ? 'מיקוד מלא — הניחי את הטלפון' : <><Coffee className="w-3.5 h-3.5" /> הפסקה! קחי נשימה</>}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={() => setPomoRunning(!pomoRunning)}
@@ -231,28 +235,33 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
 
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        {(['all', 'work', 'home', 'baby'] as const).map(cat => (
-          <button key={cat} onClick={() => setFilterCat(cat)}
-            className="px-4 py-1.5 rounded-full text-sm font-medium transition-all"
-            style={filterCat === cat
-              ? { background: 'var(--primary)', color: 'white' }
-              : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-            }
-          >
-            {cat === 'all' ? `הכל (${tasks.length})` : `${catConfig[cat].emoji} ${catConfig[cat].label} (${tasks.filter(t => t.category === cat).length})`}
-          </button>
-        ))}
+        {(['all', 'work', 'home', 'baby'] as const).map(cat => {
+          const CatIcon = cat !== 'all' ? catConfig[cat].icon : null
+          return (
+            <button key={cat} onClick={() => setFilterCat(cat)}
+              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
+              style={filterCat === cat
+                ? { background: 'var(--primary)', color: 'white' }
+                : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+              }
+            >
+              {CatIcon && <CatIcon className="w-3.5 h-3.5" />}
+              {cat === 'all' ? `הכל (${tasks.length})` : `${catConfig[cat].label} (${tasks.filter(t => t.category === cat).length})`}
+            </button>
+          )
+        })}
       </div>
 
       {/* Kanban */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {columns.map(({ status, label, color, emoji }) => {
+        {columns.map(({ status, label, color, icon: ColIcon }) => {
           const colTasks = filtered.filter(t => t.status === status)
+          const EmptyIcon = status === 'done' ? Target : status === 'inprogress' ? Clock : Sprout
           return (
             <div key={status} className="card" style={{ minHeight: 200 }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <span>{emoji}</span>
+                  <ColIcon className="w-4 h-4" style={{ color }} />
                   <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{label}</span>
                 </div>
                 <span className="text-xs px-2.5 py-0.5 rounded-full font-bold"
@@ -266,7 +275,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
                 ))}
                 {colTasks.length === 0 && (
                   <div className="text-center py-6">
-                    <p className="text-2xl mb-1">{status === 'done' ? '🎯' : status === 'inprogress' ? '⏳' : '🌱'}</p>
+                    <EmptyIcon className="w-6 h-6 mx-auto mb-1" style={{ color: 'var(--text-muted)' }} />
                     <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
                       {status === 'done' ? 'עדיין לא הושלם כלום' : status === 'inprogress' ? 'אין משימות בתהליך' : 'לחצי + להוסיף'}
                     </p>
@@ -291,7 +300,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/40">
           <div className="card w-full max-w-sm space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-bold" style={{ color: 'var(--text)' }}>משימה חדשה ✨</h3>
+              <h3 className="font-bold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>משימה חדשה <Sparkles className="w-4 h-4" style={{ color: '#7F5268' }} /></h3>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} /></button>
             </div>
             <input value={newTitle} onChange={e => setNewTitle(e.target.value)}
@@ -307,9 +316,9 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
                   className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
                   style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
                 >
-                  <option value="work">💼 עבודה</option>
-                  <option value="home">🏠 בית</option>
-                  <option value="baby">👶 תינוק</option>
+                  <option value="work">עבודה</option>
+                  <option value="home">בית</option>
+                  <option value="baby">תינוק</option>
                 </select>
               </div>
               <div>
@@ -318,9 +327,9 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
                   className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
                   style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
                 >
-                  <option value="high">🔴 דחוף</option>
-                  <option value="medium">🟡 בינוני</option>
-                  <option value="low">🟢 נמוך</option>
+                  <option value="high">דחוף</option>
+                  <option value="medium">בינוני</option>
+                  <option value="low">נמוך</option>
                 </select>
               </div>
             </div>
@@ -350,17 +359,17 @@ function TaskCard({ task, today, onMove, onDelete }: {
   onDelete: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
-  const { cls, label, emoji } = catConfig[task.category]
+  const { cls, label, icon: CatIcon } = catConfig[task.category]
   const { color } = prioConfig[task.priority]
 
   const isOverdue = task.due_date && task.due_date < today && task.status !== 'done'
   const isDueToday = task.due_date === today && task.status !== 'done'
 
   const nextStatus: Record<TaskStatus, TaskStatus> = { todo: 'inprogress', inprogress: 'done', done: 'todo' }
-  const nextLabel: Record<TaskStatus, string> = {
-    todo: '⚡ העבירי לבתהליך',
-    inprogress: '✅ סמני כהושלם',
-    done: '↩ החזירי לרשימה'
+  const nextLabel: Record<TaskStatus, { icon: React.ElementType; text: string }> = {
+    todo: { icon: Zap, text: 'העבירי לבתהליך' },
+    inprogress: { icon: CheckCircle2, text: 'סמני כהושלם' },
+    done: { icon: Undo2, text: 'החזירי לרשימה' },
   }
 
   return (
@@ -397,37 +406,44 @@ function TaskCard({ task, today, onMove, onDelete }: {
       </div>
 
       <div className="flex items-center gap-2 mt-2 flex-wrap">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cls}`}>{emoji} {label}</span>
-        <span className="text-xs px-1.5 py-0.5 rounded-full" style={{ background: `${color}15`, color }}>
-          {task.priority === 'high' ? '🔴' : task.priority === 'medium' ? '🟡' : '🟢'}
+        <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${cls}`}>
+          <CatIcon className="w-3 h-3" /> {label}
+        </span>
+        <span className="text-xs px-1.5 py-0.5 rounded-full flex items-center" style={{ background: `${color}15`, color }}>
+          <Circle className="w-2.5 h-2.5" fill={color} stroke="none" />
         </span>
         {task.due_date && (
-          <span className="text-xs font-medium"
+          <span className="text-xs font-medium flex items-center gap-1"
             style={{ color: isOverdue ? '#C0392B' : isDueToday ? '#B8860B' : 'var(--text-muted)' }}>
-            {isOverdue ? '⚠️ ' : isDueToday ? '📅 ' : ''}
+            {isOverdue ? <AlertTriangle className="w-3 h-3" /> : isDueToday ? <Calendar className="w-3 h-3" /> : null}
             {new Date(task.due_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
           </span>
         )}
       </div>
 
-      {open && (
-        <button onClick={() => onMove(task.id, nextStatus[task.status])}
-          className="mt-2 text-xs font-medium py-1.5 px-3 rounded-lg w-full text-center transition-opacity hover:opacity-80"
-          style={{ background: 'rgba(127,82,104,0.08)', color: 'var(--primary)' }}
-        >
-          {nextLabel[task.status]}
-        </button>
-      )}
+      {open && (() => {
+        const { icon: NextIcon, text: nextText } = nextLabel[task.status]
+        return (
+          <button onClick={() => onMove(task.id, nextStatus[task.status])}
+            className="mt-2 text-xs font-medium py-1.5 px-3 rounded-lg w-full flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
+            style={{ background: 'rgba(127,82,104,0.08)', color: 'var(--primary)' }}
+          >
+            <NextIcon className="w-3.5 h-3.5" />
+            {nextText}
+          </button>
+        )
+      })()}
     </div>
   )
 }
 
-function StatPill({ emoji, label, value, color, extra }: {
-  emoji: string; label: string; value: number; color: string; extra?: string
+function StatPill({ icon: Icon, iconFill, label, value, color, extra }: {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; fill?: string }>
+  iconFill?: boolean; label: string; value: number; color: string; extra?: string
 }) {
   return (
     <div className="card py-3 text-center">
-      <p className="text-xl mb-0.5">{emoji}</p>
+      <Icon className="w-5 h-5 mx-auto mb-0.5" style={{ color }} fill={iconFill ? color : 'none'} />
       <p className="text-2xl font-bold" style={{ color }}>{value}</p>
       <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
       {extra && <p className="text-xs mt-0.5 font-medium" style={{ color: '#C0392B' }}>{extra}</p>}

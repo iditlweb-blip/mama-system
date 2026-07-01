@@ -5,6 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import BackButton from '@/components/layout/BackButton'
 import GaveBirthModal from '@/components/GaveBirthModal'
+import {
+  PartyPopper, Baby, ClipboardList, Paperclip, Upload, X, Lightbulb, Check,
+  Sprout, Grape, Cherry, Citrus, Apple, Banana,
+  type LucideIcon,
+} from 'lucide-react'
 
 // Standard pregnancy tests by week
 const STANDARD_TESTS = [
@@ -49,8 +54,8 @@ interface Props {
   userId: string
 }
 
-function calcWeeks(dueDate: string | null): { weeks: number; label: string } {
-  if (!dueDate) return { weeks: 0, label: 'תאריך לידה לא הוגדר' }
+function calcWeeks(dueDate: string | null): { weeks: number; label: string; almostTime: boolean } {
+  if (!dueDate) return { weeks: 0, label: 'תאריך לידה לא הוגדר', almostTime: false }
   const due  = new Date(dueDate)
   const now  = new Date()
   const daysLeft = Math.round((due.getTime() - now.getTime()) / 86400000)
@@ -61,23 +66,40 @@ function calcWeeks(dueDate: string | null): { weeks: number; label: string } {
     weeks: clamped,
     label: remaining > 0
       ? `שבוע ${clamped} (עוד ${remaining} שבועות ללידה)`
-      : `שבוע ${clamped} — כמעט זמן! 🎉`,
+      : `שבוע ${clamped} — כמעט זמן!`,
+    almostTime: remaining <= 0,
   }
 }
 
-const BABY_SIZES: Record<number, string> = {
-  6: 'גרגיר אפון 🟢', 8: 'פטל 🫐', 10: 'תות 🍓', 12: 'ליים 🍋',
-  14: 'תפוח 🍎', 16: 'אגס 🍐', 18: 'מנגו 🥭', 20: 'בננה 🍌',
-  22: 'פפאיה 🪴', 24: 'תירס 🌽', 26: 'בצל 🧅', 28: 'ברוקולי 🥦',
-  30: 'כרוב 🥬', 32: 'קוקוס 🥥', 34: 'כרובית 🥦', 36: 'אבוקדו 🥑',
-  38: 'אבטיח קטן 🍉', 40: 'תינוק!!! 👶',
+// Fruit-size-per-week — one consistent icon family (closest lucide match per
+// fruit where one exists, generic Sprout otherwise), scaled up week over week
+// so the icon itself visually communicates "growing bigger".
+const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: number }> = {
+  6:  { name: 'גרגיר אפון',  icon: Sprout, iconSize: 14 },
+  8:  { name: 'פטל',         icon: Grape,  iconSize: 15 },
+  10: { name: 'תות',         icon: Cherry, iconSize: 16 },
+  12: { name: 'ליים',        icon: Citrus, iconSize: 17 },
+  14: { name: 'תפוח',        icon: Apple,  iconSize: 18 },
+  16: { name: 'אגס',         icon: Apple,  iconSize: 19 },
+  18: { name: 'מנגו',        icon: Citrus, iconSize: 20 },
+  20: { name: 'בננה',        icon: Banana, iconSize: 21 },
+  22: { name: 'פפאיה',       icon: Sprout, iconSize: 22 },
+  24: { name: 'תירס',        icon: Sprout, iconSize: 23 },
+  26: { name: 'בצל',         icon: Sprout, iconSize: 24 },
+  28: { name: 'ברוקולי',      icon: Sprout, iconSize: 25 },
+  30: { name: 'כרוב',        icon: Sprout, iconSize: 26 },
+  32: { name: 'קוקוס',       icon: Sprout, iconSize: 27 },
+  34: { name: 'כרובית',      icon: Sprout, iconSize: 28 },
+  36: { name: 'אבוקדו',      icon: Sprout, iconSize: 29 },
+  38: { name: 'אבטיח קטן',   icon: Citrus, iconSize: 30 },
+  40: { name: 'תינוק!!!',    icon: Baby,   iconSize: 32 },
 }
-function getBabySize(week: number): string {
+function getBabySize(week: number): { name: string; icon: LucideIcon; iconSize: number } | null {
   const keys = Object.keys(BABY_SIZES).map(Number).sort((a, b) => a - b)
   for (const k of [...keys].reverse()) {
     if (week >= k) return BABY_SIZES[k]
   }
-  return '...'
+  return null
 }
 
 export default function PregnancyClient({ profile, tests: initialTests, userId }: Props) {
@@ -96,7 +118,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   )
 
-  const { weeks, label } = calcWeeks(profile?.due_date ?? null)
+  const { weeks, label, almostTime } = calcWeeks(profile?.due_date ?? null)
   const progress  = Math.min(100, Math.round((weeks / 40) * 100))
   const babySize  = getBabySize(weeks)
   const completed = tests.filter(t => t.completed).length
@@ -125,7 +147,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
     await supabase.from('pregnancy_tests').update({ file_url: url.publicUrl }).eq('id', testId)
     setTests(prev => prev.map(t => t.id === testId ? { ...t, file_url: url.publicUrl } : t))
     setUploading(null)
-    showMsg('הקובץ הועלה בהצלחה! 📎')
+    showMsg('הקובץ הועלה בהצלחה!')
   }
 
   async function addStandardTest(name: string, week: number) {
@@ -164,7 +186,9 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
             fontFamily: 'var(--font-body)', letterSpacing: '0.02em',
           }}
         >
-          ילדתי! 🎉
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            ילדתי! <PartyPopper size={16} />
+          </span>
         </button>
       </div>
 
@@ -173,10 +197,12 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         background: 'linear-gradient(135deg,#7F5268 0%,#9b6a85 100%)',
         borderRadius: 20, padding: 'clamp(20px,3vw,32px)', color: '#fff', marginBottom: 20,
       }}>
-        <h1 style={{ fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 700, margin: '0 0 6px', letterSpacing: '0.04em' }}>
-          מעקב הריון 🤰
+        <h1 style={{ fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 700, margin: '0 0 6px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Baby size={22} /> מעקב הריון
         </h1>
-        <p style={{ opacity: 0.88, fontSize: '0.95rem', margin: '0 0 20px', letterSpacing: '0.02em' }}>{label}</p>
+        <p style={{ opacity: 0.88, fontSize: '0.95rem', margin: '0 0 20px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
+          {label}{almostTime && <PartyPopper size={16} />}
+        </p>
 
         <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, height: 10, marginBottom: 8 }}>
           <div style={{ background: '#fff', borderRadius: 10, height: '100%', width: `${progress}%`, transition: 'width 1s ease' }} />
@@ -185,9 +211,13 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
           <span>שבוע 1</span><span>{progress}% מהדרך</span><span>שבוע 40</span>
         </div>
 
-        {weeks > 0 && (
-          <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '10px 14px', fontSize: '0.88rem' }}>
-            גודל התינוק/ת השבוע: <strong>{babySize}</strong>
+        {weeks > 0 && babySize && (
+          <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '10px 14px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span>גודל התינוק/ת השבוע:</span>
+            <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <babySize.icon size={babySize.iconSize} />
+              {babySize.name}
+            </strong>
           </div>
         )}
       </div>
@@ -252,7 +282,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                   background: done ? '#4A7C59' : 'rgba(127,82,104,0.08)',
                   color: done ? '#fff' : '#7F5268', fontSize: '0.75rem', fontWeight: 700,
                 }}>
-                  {done ? '✓' : st.week}
+                  {done ? <Check size={14} /> : st.week}
                 </div>
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: 0, fontSize: '0.87rem', fontWeight: 500, color: '#3a1e2d' }}>{st.name}</p>
@@ -286,7 +316,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         <div>
           {tests.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>
-              <p style={{ fontSize: '2.5rem', margin: '0 0 10px' }}>📋</p>
+              <ClipboardList size={40} style={{ margin: '0 auto 10px' }} />
               <p>עדיין לא הוספת בדיקות.<br/>לחצי על ״לוח בדיקות״ כדי להוסיף</p>
             </div>
           ) : (
@@ -306,15 +336,15 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                         color: '#fff', fontSize: '0.75rem',
                         cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 2,
                       }}
-                    >{test.completed && '✓'}</button>
+                    >{test.completed && <Check size={14} />}</button>
                     <div style={{ flex: 1 }}>
                       <p style={{ margin: '0 0 3px', fontSize: '0.9rem', fontWeight: 500, color: test.completed ? '#999' : '#3a1e2d', textDecoration: test.completed ? 'line-through' : 'none' }}>
                         {test.test_name}
                       </p>
                       {test.scheduled_week && <p style={{ margin: 0, fontSize: '0.73rem', color: '#bbb' }}>שבוע {test.scheduled_week}</p>}
                       {test.file_url && (
-                        <a href={test.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.78rem', color: '#7F5268', display: 'block', marginTop: 4 }}>
-                          📎 צפי בקובץ
+                        <a href={test.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.78rem', color: '#7F5268', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
+                          <Paperclip size={13} /> צפי בקובץ
                         </a>
                       )}
                     </div>
@@ -325,9 +355,10 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                         background: 'rgba(127,82,104,0.08)', border: 'none',
                         borderRadius: 8, padding: '5px 10px', fontSize: '0.75rem',
                         color: '#7F5268', cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0,
+                        display: 'flex', alignItems: 'center', gap: 4,
                       }}
                     >
-                      {uploading === test.id ? '...' : '📤 צרפי'}
+                      {uploading === test.id ? '...' : (<><Upload size={13} /> צרפי</>)}
                     </button>
                   </div>
                   <button
@@ -339,7 +370,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                       color: '#C0392B', fontSize: '10px', cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
-                  >✕</button>
+                  ><X size={12} /></button>
                 </div>
               ))}
             </div>
@@ -373,9 +404,13 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
               }}
             >הוסיפי</button>
           </div>
-          <p style={{ color: '#aaa', fontSize: '0.82rem', textAlign: 'center', lineHeight: 1.5 }}>
-            💡 ניתן לצלם ולהעלות תוצאות בדיקה ישירות מהגלריה<br/>
-            מתוך לשונית ״הבדיקות שלי״ לחצי על ״📤 צרפי״
+          <p style={{ color: '#aaa', fontSize: '0.82rem', textAlign: 'center', lineHeight: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5 }}>
+              <Lightbulb size={14} /> ניתן לצלם ולהעלות תוצאות בדיקה ישירות מהגלריה
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+              מתוך לשונית ״הבדיקות שלי״ לחצי על ״<Upload size={13} /> צרפי״
+            </span>
           </p>
         </div>
       )}

@@ -2,8 +2,21 @@
 
 import { useState } from 'react'
 import { stages } from '@/lib/milestones'
-import { CheckCircle2, Circle, ChevronDown, ChevronUp, Info, AlertTriangle, Lightbulb, ChevronRight } from 'lucide-react'
+import {
+  CheckCircle2, Circle, ChevronDown, ChevronUp, Info, AlertTriangle, Lightbulb, ChevronRight,
+  Dumbbell, Brain, Heart, MessageCircle, Sprout, Smile, PartyPopper, Footprints, Cake,
+  AlertOctagon, Sparkles,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
+
+// Local icon mapping for age-stage tabs (replaces raw emoji stored in lib/milestones.ts)
+const STAGE_ICONS: Record<string, React.ElementType> = {
+  '0-1': Sprout,
+  '1-3': Smile,
+  '3-6': PartyPopper,
+  '6-9': Footprints,
+  '9-12': Cake,
+}
 
 export default function DevelopmentPage() {
   const router = useRouter()
@@ -12,6 +25,7 @@ export default function DevelopmentPage() {
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const stage = stages.find(s => s.id === activeStage)!
+  const CurrentStageIcon = STAGE_ICONS[stage.id] ?? Sprout
 
   function toggleCheck(id: string) {
     setChecked(prev => {
@@ -26,10 +40,10 @@ export default function DevelopmentPage() {
   const total = allMilestones.length
 
   const sections = [
-    { label: 'מוטורי', emoji: '💪', items: stage.motor, color: '#7F5268' },
-    { label: 'קוגניטיבי', emoji: '🧠', items: stage.cognitive, color: '#5C7A6A' },
-    { label: 'חברתי-רגשי', emoji: '💜', items: stage.social, color: '#C4A0B4' },
-    { label: 'שפה ותקשורת', emoji: '💬', items: stage.language, color: '#4A7C59' },
+    { label: 'מוטורי', icon: Dumbbell, items: stage.motor, color: '#7F5268' },
+    { label: 'קוגניטיבי', icon: Brain, items: stage.cognitive, color: '#5C7A6A' },
+    { label: 'חברתי-רגשי', icon: Heart, items: stage.social, color: '#C4A0B4' },
+    { label: 'שפה ותקשורת', icon: MessageCircle, items: stage.language, color: '#4A7C59' },
   ]
 
   return (
@@ -51,26 +65,30 @@ export default function DevelopmentPage() {
 
       {/* Stage Tabs */}
       <div className="flex gap-2 flex-wrap">
-        {stages.map(s => (
-          <button key={s.id} onClick={() => { setActiveStage(s.id); setExpanded(null) }}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
-            style={activeStage === s.id
-              ? { background: 'var(--primary)', color: 'white' }
-              : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-            }
-          >
-            <span>{s.emoji}</span>
-            {s.label}
-          </button>
-        ))}
+        {stages.map(s => {
+          const StageIcon = STAGE_ICONS[s.id] ?? Sprout
+          return (
+            <button key={s.id} onClick={() => { setActiveStage(s.id); setExpanded(null) }}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all"
+              style={activeStage === s.id
+                ? { background: 'var(--primary)', color: 'white' }
+                : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+              }
+            >
+              <StageIcon className="w-4 h-4" />
+              {s.label}
+            </button>
+          )
+        })}
       </div>
 
       {/* Summary card */}
       <div className="card" style={{ background: 'linear-gradient(135deg, rgba(192,132,252,0.12), rgba(249,168,212,0.12))' }}>
         <div className="flex items-start justify-between gap-4 mb-3">
           <div className="flex-1">
-            <h2 className="font-bold text-lg mb-1" style={{ color: 'var(--text)' }}>
-              {stage.emoji} {stage.label}
+            <h2 className="font-bold text-lg mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+              <CurrentStageIcon className="w-5 h-5" />
+              {stage.label}
             </h2>
             <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>{stage.summary}</p>
           </div>
@@ -87,10 +105,10 @@ export default function DevelopmentPage() {
       </div>
 
       {/* Milestone Sections */}
-      {sections.map(({ label, emoji, items, color }) => (
+      {sections.map(({ label, icon: SectionIcon, items, color }) => (
         <div key={label} className="card">
           <h3 className="font-semibold mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <span className="text-lg">{emoji}</span>
+            <SectionIcon className="w-5 h-5" style={{ color }} />
             {label}
           </h3>
           <div className="space-y-2">
@@ -113,7 +131,11 @@ export default function DevelopmentPage() {
                     <div className="flex-1">
                       <p className="text-sm font-medium" style={{ color: isChecked ? color : 'var(--text)' }}>
                         {item.title}
-                        {isChecked && <span className="text-xs mr-2" style={{ color }}>✓ השגנו!</span>}
+                        {isChecked && (
+                          <span className="text-xs mr-2 inline-flex items-center gap-0.5" style={{ color }}>
+                            <CheckCircle2 className="w-3 h-3" />השגנו!
+                          </span>
+                        )}
                       </p>
                     </div>
                     {isExpanded
@@ -157,8 +179,9 @@ export default function DevelopmentPage() {
         </h3>
         <div className="grid gap-2">
           {stage.didYouKnow.map((fact, i) => (
-            <div key={i} className="p-3 rounded-xl text-sm" style={{ background: 'var(--bg)', color: 'var(--text-muted)' }}>
-              🔹 {fact}
+            <div key={i} className="p-3 rounded-xl text-sm flex items-start gap-2" style={{ background: 'var(--bg)', color: 'var(--text-muted)' }}>
+              <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#5C7A6A' }} />
+              {fact}
             </div>
           ))}
         </div>
@@ -176,7 +199,7 @@ export default function DevelopmentPage() {
         <ul className="space-y-1">
           {stage.redFlags.map((flag, i) => (
             <li key={i} className="flex items-start gap-2 text-sm" style={{ color: '#DC2626' }}>
-              <span className="flex-shrink-0">⚠</span>
+              <AlertOctagon className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
               {flag}
             </li>
           ))}

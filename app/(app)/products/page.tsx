@@ -1,5 +1,6 @@
 import BackButton from '@/components/layout/BackButton'
 import { createClient } from '@/lib/supabase/server'
+import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Tag, Sparkles } from 'lucide-react'
 
 export default async function ProductsPage() {
   const supabase = await createClient()
@@ -29,12 +30,13 @@ export default async function ProductsPage() {
         color: '#fff',
         marginBottom: 36,
       }}>
-        <div style={{ fontSize: 48, marginBottom: 12 }}>🛍️</div>
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+          <ShoppingBag size={44} color="#fff" strokeWidth={1.6} />
+        </div>
         <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', fontWeight: 700, margin: '0 0 10px', letterSpacing: '0.03em' }}>
           מוצרים ובעלי מקצוע
         </h1>
         <p style={{ fontSize: 'clamp(0.88rem,1.5vw,1rem)', opacity: 0.9, margin: 0, lineHeight: 1.7 }}>
-          העמוד הזה בבנייה ויהיה זמין בקרוב 🌸<br/>
           כאן תמצאי המלצות על מוצרים עם קודי קופון בלעדיים<br/>
           ובעלי מקצוע מומלצים לפי אזור
         </p>
@@ -43,8 +45,8 @@ export default async function ProductsPage() {
       {/* ── Professionals ── */}
       {professionals && professionals.length > 0 && (
         <section style={{ marginBottom: 40 }}>
-          <h2 style={{ color: '#7F5268', fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, letterSpacing: '0.03em' }}>
-            👩‍⚕️ בעלי מקצוע מומלצים
+          <h2 style={{ color: '#7F5268', fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Stethoscope size={20} /> בעלי מקצוע מומלצים
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
             {professionals.map((pro) => (
@@ -60,20 +62,24 @@ export default async function ProductsPage() {
                   <img src={pro.image_url} alt={pro.name}
                     style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', marginBottom: 12 }} />
                 ) : (
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(127,82,104,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 12 }}>
-                    👩‍⚕️
+                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(127,82,104,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
+                    <Stethoscope size={26} color="#7F5268" strokeWidth={1.6} />
                   </div>
                 )}
                 <h3 style={{ color: '#3a1e2d', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 4px' }}>{pro.name}</h3>
                 {pro.title && <p style={{ color: '#7F5268', fontSize: '0.82rem', margin: '0 0 4px', fontWeight: 500 }}>{pro.title}</p>}
-                {pro.region && <p style={{ color: '#999', fontSize: '0.78rem', margin: '0 0 12px' }}>📍 {pro.region}</p>}
+                {pro.region && (
+                  <p style={{ color: '#999', fontSize: '0.78rem', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MapPin size={13} /> {pro.region}
+                  </p>
+                )}
                 {pro.phone && (
                   <a href={`tel:${pro.phone}`} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6,
                     background: '#7F5268', color: '#fff', borderRadius: 20,
                     padding: '7px 16px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600,
                   }}>
-                    📞 {pro.phone}
+                    <Phone size={13} /> {pro.phone}
                   </a>
                 )}
               </div>
@@ -85,8 +91,8 @@ export default async function ProductsPage() {
       {/* ── Products ── */}
       {products && products.length > 0 && (
         <section>
-          <h2 style={{ color: '#7F5268', fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, letterSpacing: '0.03em' }}>
-            🎁 מוצרים מומלצים
+          <h2 style={{ color: '#7F5268', fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Gift size={20} /> מוצרים מומלצים
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
             {products.map((prod) => (
@@ -114,18 +120,20 @@ export default async function ProductsPage() {
                     borderRadius: 8, padding: '7px 12px',
                     fontSize: '0.8rem', color: '#7F5268', fontWeight: 700,
                     marginBottom: 10, letterSpacing: '0.06em',
+                    display: 'flex', alignItems: 'center', gap: 6,
                   }}>
-                    🏷️ קוד קופון: {prod.coupon_code}
+                    <Tag size={14} /> קוד קופון: {prod.coupon_code}
                   </div>
                 )}
                 {prod.buy_link && (
                   <a href={prod.buy_link} target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-block', background: '#7F5268', color: '#fff',
+                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: '#7F5268', color: '#fff',
                     borderRadius: 20, padding: '8px 20px',
                     fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600,
                     textAlign: 'center',
                   }}>
-                    לרכישה →
+                    לרכישה
                   </a>
                 )}
               </div>
@@ -137,7 +145,9 @@ export default async function ProductsPage() {
       {/* Empty state */}
       {(!professionals?.length && !products?.length) && (
         <div style={{ textAlign: 'center', padding: '60px 20px', color: '#999' }}>
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🔜</div>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+            <Sparkles size={40} color="#c9a8b8" strokeWidth={1.5} />
+          </div>
           <p style={{ fontSize: '0.95rem' }}>התוכן יתווסף בקרוב על ידי הצוות שלנו</p>
         </div>
       )}

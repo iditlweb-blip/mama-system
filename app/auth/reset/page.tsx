@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Lock, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
+import { Lock, Eye, EyeOff, Loader2, CheckCircle2, KeyRound } from 'lucide-react'
 
 export default function ResetPasswordPage() {
   const [password, setPassword]     = useState('')
@@ -67,7 +67,9 @@ export default function ResetPasswordPage() {
             </div>
           ) : (
             <>
-              <h2 className="font-bold text-lg mb-1" style={{ color: 'var(--text)' }}>סיסמא חדשה 🔑</h2>
+              <h2 className="font-bold text-lg mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+                <KeyRound className="w-4 h-4" /> סיסמא חדשה
+              </h2>
               <p className="text-sm mb-5" style={{ color: 'var(--text-muted)' }}>בחרי סיסמא חדשה לחשבון שלך</p>
 
               <form onSubmit={handleReset} className="space-y-3">

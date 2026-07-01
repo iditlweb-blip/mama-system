@@ -3,7 +3,19 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { User, Baby, Briefcase, Link, Check, Loader2, Camera, AlertTriangle, X, Heart } from 'lucide-react'
+import {
+  User, Baby, Briefcase, Link, Check, Loader2, Camera, AlertTriangle, X, Heart,
+  Globe, Users, Calendar, UserRound
+} from 'lucide-react'
+
+function PregnancyIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="8" r="4" /><path d="M12 12c-4 0-7 3-7 6h14c0-3-3-6-7-6z" />
+      <path d="M12 16c1.5 0 3 1 3 2" opacity=".4" />
+    </svg>
+  )
+}
 
 interface ProfileFull {
   id: string
@@ -117,7 +129,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     setSaving(false)
   }
 
-  const initials = name ? name.charAt(0).toUpperCase() : '👩'
+  const initials = name ? name.charAt(0).toUpperCase() : ''
 
   return (
     <div className="space-y-6 max-w-2xl">
@@ -143,7 +155,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
             ) : (
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center text-2xl text-white"
                 style={{ background: '#7F5268' }}>
-                {initials}
+                {initials || <UserRound className="w-7 h-7" />}
               </div>
             )}
             {uploadingPhoto && (
@@ -177,14 +189,15 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         {/* Toggle */}
         <div className="flex rounded-xl overflow-hidden border mb-4" style={{ borderColor: 'var(--border)' }}>
           {([
-            { val: 'pregnancy', label: '🤰 מעקב הריון' },
-            { val: 'baby',      label: '👶 מעקב תינוק' },
-          ] as const).map(({ val, label }) => (
+            { val: 'pregnancy', label: 'מעקב הריון', Icon: PregnancyIcon },
+            { val: 'baby',      label: 'מעקב תינוק', Icon: Baby },
+          ] as const).map(({ val, label, Icon }) => (
             <button key={val} onClick={() => setTrackingType(val)}
-              className="flex-1 py-2.5 text-sm font-semibold transition-colors"
+              className="flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
               style={trackingType === val
                 ? { background: '#7F5268', color: '#fff' }
                 : { background: 'transparent', color: 'var(--text-muted)' }}>
+              <Icon className="w-4 h-4" />
               {label}
             </button>
           ))}
@@ -203,7 +216,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         {/* Baby — baby info */}
         {trackingType === 'baby' && (
           <div className="space-y-4">
-            <Field label="שם התינוק/ת" value={babyName} onChange={setBabyName} placeholder="שם יפה ☀️" />
+            <Field label="שם התינוק/ת" value={babyName} onChange={setBabyName} placeholder="שם יפה" />
             <Field
               label="תאריך לידה"
               value={babyBirthdate}
@@ -214,13 +227,14 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
             <div>
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text)' }}>מגדר</label>
               <div className="flex gap-3">
-                {([['boy', '👦 בן'], ['girl', '👧 בת']] as const).map(([val, lbl]) => (
+                {([['boy', 'בן'], ['girl', 'בת']] as const).map(([val, lbl]) => (
                   <button key={val} onClick={() => setBabyGender(val)}
-                    className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all"
+                    className="flex-1 py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5"
                     style={babyGender === val
                       ? { background: 'var(--primary)', color: 'white' }
                       : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
                     }>
+                    <UserRound className="w-4 h-4" />
                     {lbl}
                   </button>
                 ))}
@@ -252,11 +266,11 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       {/* ── Links ─────────────────────────────────────────────────── */}
       <Section icon={Link} title="קישורים מהירים" color="#5C7A6A">
         <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>מופיעים בעמוד ניהול העסק לגישה מהירה</p>
-        <Field label="🌐 אתר אינטרנט"    value={websiteUrl}   onChange={setWebsiteUrl}   placeholder="https://www.yoursite.com"      type="url" />
-        <Field label="📸 אינסטגרם"        value={instagramUrl} onChange={setInstagramUrl} placeholder="https://instagram.com/yourname" type="url" />
-        <Field label="👥 פייסבוק"         value={facebookUrl}  onChange={setFacebookUrl}  placeholder="https://facebook.com/yourpage" type="url" />
-        <Field label="💼 לינקדאין"        value={linkedinUrl}  onChange={setLinkedinUrl}  placeholder="https://linkedin.com/in/yourname" type="url" />
-        <Field label="📅 Google Calendar" value={calendarUrl}  onChange={setCalendarUrl}  placeholder="https://calendar.google.com/..." type="url" />
+        <Field label={<><Globe className="w-3.5 h-3.5" /> אתר אינטרנט</>}    value={websiteUrl}   onChange={setWebsiteUrl}   placeholder="https://www.yoursite.com"      type="url" />
+        <Field label={<><Camera className="w-3.5 h-3.5" /> אינסטגרם</>}        value={instagramUrl} onChange={setInstagramUrl} placeholder="https://instagram.com/yourname" type="url" />
+        <Field label={<><Users className="w-3.5 h-3.5" /> פייסבוק</>}         value={facebookUrl}  onChange={setFacebookUrl}  placeholder="https://facebook.com/yourpage" type="url" />
+        <Field label={<><Briefcase className="w-3.5 h-3.5" /> לינקדאין</>}        value={linkedinUrl}  onChange={setLinkedinUrl}  placeholder="https://linkedin.com/in/yourname" type="url" />
+        <Field label={<><Calendar className="w-3.5 h-3.5" /> Google Calendar</>} value={calendarUrl}  onChange={setCalendarUrl}  placeholder="https://calendar.google.com/..." type="url" />
       </Section>
 
       {/* ── Save ──────────────────────────────────────────────────── */}
@@ -264,7 +278,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         className="w-full py-3.5 rounded-xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
         style={{ background: saved ? '#4A7C59' : '#7F5268' }}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
-        {saving ? 'שומרת...' : saved ? '✓ נשמר בהצלחה!' : 'שמירת הגדרות'}
+        {saving ? 'שומרת...' : saved ? 'נשמר בהצלחה!' : 'שמירת הגדרות'}
       </button>
     </div>
   )
@@ -288,12 +302,12 @@ function Section({ icon: Icon, title, color, children }: {
 }
 
 function Field({ label, value, onChange, placeholder, type = 'text', max }: {
-  label: string; value: string; onChange: (v: string) => void
+  label: React.ReactNode; value: string; onChange: (v: string) => void
   placeholder?: string; type?: string; max?: string
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>{label}</label>
+      <label className="text-sm font-medium mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>{label}</label>
       <input type={type} value={value} onChange={e => onChange(e.target.value)}
         placeholder={placeholder} max={max}
         className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none transition-all"

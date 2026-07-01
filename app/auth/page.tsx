@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, CheckCircle2 } from 'lucide-react'
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, CheckCircle2, KeyRound, Heart, ChevronLeft } from 'lucide-react'
 
 type Mode = 'login' | 'signup' | 'forgot'
 
@@ -136,9 +136,9 @@ export default function AuthPage() {
   }
 
   const titles: Record<Mode, string> = {
-    login:  'ברוכה הבאה 👋',
-    signup: 'יוצרים חשבון ✨',
-    forgot: 'איפוס סיסמא 🔑',
+    login:  'ברוכה הבאה',
+    signup: 'יוצרים חשבון',
+    forgot: 'איפוס סיסמא',
   }
   const subtitles: Record<Mode, string> = {
     login:  'כיף שחזרת!',
@@ -170,7 +170,9 @@ export default function AuthPage() {
                 style={{ color: 'var(--text-muted)' }}>
                 <ArrowRight className="w-3.5 h-3.5" /> חזרה לכניסה
               </button>
-              <h2 className="font-bold text-lg" style={{ color: 'var(--text)' }}>{titles.forgot}</h2>
+              <h2 className="font-bold text-lg flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+                <KeyRound className="w-4 h-4" /> {titles.forgot}
+              </h2>
               <p className="text-sm font-light mt-0.5" style={{ color: 'var(--text-muted)' }}>{subtitles.forgot}</p>
             </div>
           ) : (
@@ -252,9 +254,11 @@ export default function AuthPage() {
             )}
             {info && (
               <button type="button" onClick={resendConfirmation}
-                className="text-xs px-3 py-2.5 rounded-xl w-full text-right hover:opacity-80 transition-opacity"
+                className="text-xs px-3 py-2.5 rounded-xl w-full flex items-center gap-1.5 hover:opacity-80 transition-opacity"
                 style={{ background: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE' }}>
-                📧 {info} ←
+                <Mail className="w-3.5 h-3.5 flex-shrink-0" />
+                <span className="flex-1 text-right">{info}</span>
+                <ChevronLeft className="w-3.5 h-3.5 flex-shrink-0" />
               </button>
             )}
             {success && (
@@ -296,8 +300,8 @@ export default function AuthPage() {
           )}
         </div>
 
-        <p className="text-center text-xs mt-5 font-light" style={{ color: 'var(--text-muted)' }}>
-          כל כך גאים בך — ממשיכה לנהל, לצמוח ולאהוב 💜
+        <p className="text-center text-xs mt-5 font-light flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          כל כך גאים בך — ממשיכה לנהל, לצמוח ולאהוב <Heart className="w-3 h-3" fill="currentColor" style={{ color: 'var(--purple, #7F5268)' }} />
         </p>
       </div>
     </div>

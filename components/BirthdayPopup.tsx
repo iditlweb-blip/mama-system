@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { X } from 'lucide-react'
+import { X, PartyPopper, Cake, Pencil, ChevronLeft, type LucideIcon } from 'lucide-react'
 
 interface Props {
   babyName: string
@@ -17,9 +17,9 @@ interface AppNotification {
   ts: number
 }
 
-function getMilestone(weeks: number): { key: string; label: string; emoji: string } | null {
-  if (weeks >= 24 && weeks <= 28) return { key: 'half', label: 'חצי שנה', emoji: '🎉' }
-  if (weeks >= 50 && weeks <= 54) return { key: 'year', label: 'שנה שלמה', emoji: '🎂' }
+function getMilestone(weeks: number): { key: string; label: string; Icon: LucideIcon } | null {
+  if (weeks >= 24 && weeks <= 28) return { key: 'half', label: 'חצי שנה', Icon: PartyPopper }
+  if (weeks >= 50 && weeks <= 54) return { key: 'year', label: 'שנה שלמה', Icon: Cake }
   return null
 }
 
@@ -45,7 +45,7 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
     const alreadyShown = !!localStorage.getItem(shownKey)
     const genderWord   = babyGender === 'girl' ? 'בת' : 'בן'
     const notifId      = `milestone_${milestone.key}`
-    const notifText    = `${babyName} ${genderWord} ${milestone.label}! ${milestone.emoji}`
+    const notifText    = `${babyName} ${genderWord} ${milestone.label}!`
 
     // Always make sure the notification exists in the list.
     // If popup was already shown → create as read (no red dot).
@@ -83,25 +83,25 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
           <X className="w-4 h-4" />
         </button>
 
-        <div className="text-5xl mb-3">{milestone.emoji}</div>
-        <h3 className="text-xl font-bold mb-1" style={{ color: 'var(--text)' }}>
-          {babyName} {genderWord} {milestone.label}! 🎊
+        <milestone.Icon className="mx-auto mb-3" style={{ width: 44, height: 44, color: '#7F5268' }} />
+        <h3 className="text-xl font-bold mb-1 flex items-center justify-center gap-1.5" style={{ color: 'var(--text)' }}>
+          {babyName} {genderWord} {milestone.label}! <PartyPopper className="w-4 h-4" />
         </h3>
         <p className="text-sm mb-2" style={{ color: 'var(--text-muted)' }}>
           איך את רוצה לציין או לחגוג ל{babyName}?
         </p>
-        <p className="text-xs mb-5" style={{ color: 'var(--text-muted)' }}>
-          אם יש לך רעיון — כתבי בפתק 📝
+        <p className="text-xs mb-5 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          אם יש לך רעיון — כתבי בפתק <Pencil className="w-3 h-3" />
         </p>
 
         <div className="flex flex-col gap-2">
           <Link
             href="/personal"
             onClick={() => setVisible(false)}
-            className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center block"
+            className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center flex items-center justify-center gap-1"
             style={{ background: '#7F5268' }}
           >
-            לפתק אישי ←
+            לפתק אישי <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
           <button onClick={() => setVisible(false)} className="w-full py-2 text-sm" style={{ color: 'var(--text-muted)' }}>
             סגור

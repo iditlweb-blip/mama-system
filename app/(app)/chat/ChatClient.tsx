@@ -38,7 +38,7 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
     prompts: ['אני מרגישה אובדת ועייפה', 'מרגישה אשמה שאני עובדת', 'לא מצליחה לאהנות מהתינוק', 'צריכה לשחרר קצת'],
   },
   {
-    id: 'pregnancy', label: 'הריון 🤰', icon: PregnancyIcon, color: '#C4748C',
+    id: 'pregnancy', label: 'הריון', icon: PregnancyIcon, color: '#C4748C',
     description: 'תסמינים, שבועות, בדיקות, הכנה ללידה',
     prompts: ['אני בשבוע 20 מה אני צריכה לדעת?', 'איך מתמודדים עם בחילות?', 'אילו בדיקות יש לעשות בטרימסטר שני?', 'מה נורמלי ומה לא בהריון?'],
   },

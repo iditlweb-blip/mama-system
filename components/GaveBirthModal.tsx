@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
+import { PartyPopper, UserRound, Check } from 'lucide-react'
 
 interface Props {
   onClose: () => void
@@ -73,7 +74,7 @@ export default function GaveBirthModal({ onClose }: Props) {
       >
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 48, marginBottom: 8 }}>🎉</div>
+          <div style={{ marginBottom: 8 }}><PartyPopper size={48} style={{ color: '#7F5268' }} /></div>
           <h2 style={{ color: '#7F5268', fontSize: '1.4rem', fontWeight: 700, margin: 0, letterSpacing: '0.04em' }}>
             מזל טוב!
           </h2>
@@ -131,8 +132,8 @@ export default function GaveBirthModal({ onClose }: Props) {
             </label>
             <div style={{ display: 'flex', gap: 12 }}>
               {[
-                { value: 'girl', label: '👧 בת' },
-                { value: 'boy',  label: '👦 בן' },
+                { value: 'girl', label: 'בת' },
+                { value: 'boy',  label: 'בן' },
               ].map(opt => (
                 <button
                   key={opt.value}
@@ -152,9 +153,10 @@ export default function GaveBirthModal({ onClose }: Props) {
                     cursor: 'pointer',
                     fontFamily: 'var(--font-body)',
                     transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                 >
-                  {opt.label}
+                  <UserRound size={16} /> {opt.label}
                 </button>
               ))}
             </div>
@@ -178,9 +180,10 @@ export default function GaveBirthModal({ onClose }: Props) {
                 opacity: loading ? 0.7 : 1,
                 fontFamily: 'var(--font-body)',
                 letterSpacing: '0.03em',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               }}
             >
-              {loading ? '...שומרת' : 'שמירה ✓'}
+              {loading ? '...שומרת' : (<>שמירה <Check size={16} /></>)}
             </button>
             <button
               type="button"

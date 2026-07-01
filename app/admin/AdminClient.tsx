@@ -6,6 +6,8 @@ import {
   Search, TrendingUp, UserCheck, Clock, Trash2,
   KeyRound, UserPlus, X, Loader2, Smartphone, Eye, EyeOff,
   Briefcase, ShoppingBag, Plus, Edit2, BarChart2,
+  Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
+  CheckCircle2, Hourglass, XCircle, Lock, Timer,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
@@ -157,21 +159,30 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     return `${hrs} ש׳`
   }
 
-  function fmtPage(page: string | null): string {
+  function fmtPage(page: string | null): React.ReactNode {
     if (!page) return '—'
-    const map: Record<string, string> = {
-      '/dashboard':  '🏠 בית',
-      '/tracker':    '👶 מעקב',
-      '/pregnancy':  '🤰 הריון',
-      '/chat':       '💬 צ׳אט',
-      '/products':   '🛒 מוצרים',
-      '/development':'📚 פיתוח',
-      '/personal':   '👤 אישי',
+    const map: Record<string, { icon: React.ElementType; label: string }> = {
+      '/dashboard':   { icon: Home,           label: 'בית' },
+      '/tracker':     { icon: Baby,           label: 'מעקב' },
+      '/pregnancy':   { icon: Baby,           label: 'הריון' },
+      '/chat':        { icon: MessageCircle,  label: 'צ׳אט' },
+      '/products':    { icon: ShoppingCart,   label: 'מוצרים' },
+      '/development': { icon: BookOpen,       label: 'פיתוח' },
+      '/personal':    { icon: User,           label: 'אישי' },
     }
-    return map[page] ?? page
+    const entry = map[page]
+    if (!entry) return page
+    const Icon = entry.icon
+    return (
+      <span className="inline-flex items-center gap-1">
+        <Icon className="w-3.5 h-3.5" />
+        {entry.label}
+      </span>
+    )
   }
 
-  const providerEmoji = (p: string) => p === 'google' ? '🔵' : '📧'
+  const providerIcon = (p: string) =>
+    p === 'google' ? <LogIn className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />
 
   // ── User actions ───────────────────────────────────────────────────────────────
   function handleDelete() {
@@ -358,9 +369,9 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               <select value={sort} onChange={e => setSort(e.target.value as typeof sort)}
                 className="text-sm px-3 py-1.5 rounded-xl border outline-none"
                 style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
-                <option value="newest">🕐 הצטרפות אחרונה</option>
-                <option value="active">⚡ פעילות אחרונה</option>
-                <option value="name">🔤 לפי שם</option>
+                <option value="newest">הצטרפות אחרונה</option>
+                <option value="active">פעילות אחרונה</option>
+                <option value="name">לפי שם</option>
               </select>
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
@@ -407,9 +418,11 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 {/* Email + badges */}
                 <div className="flex items-center gap-1.5 min-w-0">
                   <span className="text-sm truncate" style={{ color: 'var(--text-muted)' }}>{u.email}</span>
-                  <span title={u.provider}>{providerEmoji(u.provider)}</span>
+                  <span title={u.provider}>{providerIcon(u.provider)}</span>
                   {u.pwa_installed_at && (
-                    <span title={`PWA: ${new Date(u.pwa_installed_at).toLocaleDateString('he-IL')}`}>📱</span>
+                    <span title={`PWA: ${new Date(u.pwa_installed_at).toLocaleDateString('he-IL')}`}>
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </span>
                   )}
                 </div>
 
@@ -430,8 +443,9 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 <div>
                   {u.weeklySeconds > 0 ? (
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-xs font-semibold" style={{ color: '#7F5268' }}>
-                        ⏱ {fmtHours(u.weeklySeconds)}
+                      <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#7F5268' }}>
+                        <Timer className="w-3 h-3" />
+                        {fmtHours(u.weeklySeconds)}
                       </span>
                       {u.topPage && (
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmtPage(u.topPage)}</span>
@@ -444,12 +458,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
                 {/* Status */}
                 <div onClick={e => e.stopPropagation()}>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium inline-flex items-center gap-1"
                     style={u.confirmed
                       ? { background: 'rgba(74,124,89,0.12)', color: '#4A7C59' }
                       : { background: 'rgba(184,134,11,0.12)', color: '#B8860B' }
                     }>
-                    {u.confirmed ? '✓ מאושרת' : '⏳ ממתינה'}
+                    {u.confirmed
+                      ? <><CheckCircle2 className="w-3 h-3" />מאושרת</>
+                      : <><Hourglass className="w-3 h-3" />ממתינה</>}
                   </span>
                 </div>
 
@@ -651,8 +667,9 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           )}
         </div>
 
-        <p className="text-center text-xs mt-6" style={{ color: 'var(--text-muted)' }}>
-          🔒 דף זה נגיש רק לך · אמא בסדר Admin
+        <p className="text-center text-xs mt-6 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          <Lock className="w-3 h-3" />
+          דף זה נגיש רק לך · אמא בסדר Admin
         </p>
       </div>
 
@@ -727,17 +744,28 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           </div>
 
           <div className="space-y-2.5 mb-5 text-sm">
-            <DetailRow label="ספק"         value={selected.provider === 'google' ? '🔵 Google' : '📧 Email'} />
+            <DetailRow label="ספק" value={
+              <span className="inline-flex items-center gap-1.5">
+                {selected.provider === 'google' ? <LogIn className="w-3.5 h-3.5" /> : <Mail className="w-3.5 h-3.5" />}
+                {selected.provider === 'google' ? 'Google' : 'Email'}
+              </span>
+            } />
             <DetailRow label="הצטרף/ה"     value={fmt(selected.created_at)} />
             <DetailRow label="כניסה אחרונה" value={fmt(selected.last_sign_in)} />
             <DetailRow label="ותק"          value={memberDuration(selected.created_at) + ' במערכת'} />
-            <DetailRow label="PWA"          value={selected.pwa_installed_at ? `📱 ${new Date(selected.pwa_installed_at).toLocaleDateString('he-IL')}` : '—'} />
-            <DetailRow label="סטטוס"        value={selected.confirmed ? '✓ מאושרת' : '⏳ ממתינה'} />
+            <DetailRow label="PWA" value={selected.pwa_installed_at
+              ? <span className="inline-flex items-center gap-1.5"><Smartphone className="w-3.5 h-3.5" />{new Date(selected.pwa_installed_at).toLocaleDateString('he-IL')}</span>
+              : '—'} />
+            <DetailRow label="סטטוס" value={
+              selected.confirmed
+                ? <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />מאושרת</span>
+                : <span className="inline-flex items-center gap-1.5"><Hourglass className="w-3.5 h-3.5" />ממתינה</span>
+            } />
             {selected.weeklySeconds > 0 && (
-              <DetailRow label="⏱ זמן השבוע" value={fmtHours(selected.weeklySeconds)} highlight />
+              <DetailRow label={<span className="inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5" />זמן השבוע</span>} value={fmtHours(selected.weeklySeconds)} highlight />
             )}
             {selected.topPage && (
-              <DetailRow label="📊 עמוד מוביל" value={fmtPage(selected.topPage)} />
+              <DetailRow label={<span className="inline-flex items-center gap-1"><BarChart2 className="w-3.5 h-3.5" />עמוד מוביל</span>} value={fmtPage(selected.topPage)} />
             )}
           </div>
 
@@ -812,7 +840,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
       {toast && (
         <div className="fixed bottom-6 right-6 left-6 md:left-auto md:w-80 z-50 px-4 py-3 rounded-2xl shadow-lg text-sm font-medium flex items-center gap-2"
           style={{ background: toast.ok ? '#4A7C59' : '#C0392B', color: '#fff', direction: 'rtl' }}>
-          {toast.ok ? '✓' : '✗'} {toast.msg}
+          {toast.ok ? <CheckCircle2 className="w-4 h-4 flex-shrink-0" /> : <XCircle className="w-4 h-4 flex-shrink-0" />} {toast.msg}
         </div>
       )}
     </div>
@@ -838,7 +866,7 @@ function ModalOverlay({ children, onClose }: { children: React.ReactNode; onClos
   )
 }
 
-function DetailRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+function DetailRow({ label, value, highlight }: { label: React.ReactNode; value: React.ReactNode; highlight?: boolean }) {
   return (
     <div className="flex justify-between items-center">
       <span className="text-sm" style={{ color: 'var(--text-muted)' }}>{label}</span>
