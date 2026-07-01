@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminClient from './AdminClient'
 
-const ADMIN_EMAIL = 'iditlweb@gmail.com'
+const ADMIN_EMAIL = 'momsok100@gmail.com'
 
 export default async function AdminPage() {
   // 1. Auth check

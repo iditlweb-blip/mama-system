@@ -340,7 +340,7 @@ a{color:inherit;}
 .gallery{position:absolute;inset:0;}
 .tphoto{position:absolute;width:22.083%;height:45.142%;border-radius:1.56vw;overflow:hidden;box-shadow:0 22px 46px rgba(58,30,46,.18);transform-origin:center center;}
 .tphoto img{width:100%;height:100%;object-fit:cover;display:block;}
-.tphoto::after{content:"";position:absolute;inset:0;background:rgba(0,0,0,.1);}
+.tphoto::after{content:none;}
 .gal-clone{display:none;}
 /* fixed centers + rotations from Figma (translate -50% centers the card on its point) */
 .tphoto.g1{left:6.65%;top:59.66%;transform:translate(-50%,-50%) rotate(-25.23deg);}   /* kitchen, bleeds left */
@@ -713,45 +713,6 @@ a{color:inherit;}
 </div>
 
 
-<button class="fx-toggle" id="fxToggle" aria-label="פתח עורך עיצוב">&#9998;</button>
-<aside class="fx-panel" id="fxPanel" aria-label="עורך עיצוב">
-  <div class="fx-head" id="fxHead">
-    <h2>עורך עיצוב</h2>
-    <button class="fx-x" id="fxClose" aria-label="סגור">&#10005;</button>
-  </div>
-  <div class="fx-body">
-    <div class="fx-sec">
-      <h3>גרדיאנט הכותרת</h3>
-      <div class="fx-prev" id="gPrev"></div>
-      <div class="fx-row"><label>זווית</label><input type="range" id="gAngle" min="0" max="360" value="180"><span class="val" id="gAngleV">180&deg;</span></div>
-      <div class="fx-row"><input type="color" id="gC0" value="#7c4f64"><input type="range" id="gP0" min="0" max="100" value="0"><span class="val" id="gP0V">0%</span></div>
-      <div class="fx-row"><input type="color" id="gC1" value="#956c81"><input type="range" id="gP1" min="0" max="100" value="36"><span class="val" id="gP1V">36%</span></div>
-      <div class="fx-row"><input type="color" id="gC2" value="#f7ede2"><input type="range" id="gP2" min="0" max="100" value="85"><span class="val" id="gP2V">85%</span></div>
-    </div>
-    <div class="fx-sec">
-      <h3>רקע הצעצועים</h3>
-      <div class="fx-row"><label>אופקי</label><input type="range" id="tLeft" min="-30" max="40" value="17"><span class="val" id="tLeftV">17%</span></div>
-      <div class="fx-row"><label>אנכי</label><input type="range" id="tTop" min="-40" max="30" value="1"><span class="val" id="tTopV">1%</span></div>
-      <div class="fx-row"><label>רוחב</label><input type="range" id="tW" min="30" max="120" value="67"><span class="val" id="tWV">67%</span></div>
-      <div class="fx-row"><label>שקיפות</label><input type="range" id="tOp" min="0" max="60" value="14"><span class="val" id="tOpV">0.14</span></div>
-    </div>
-    <div class="fx-sec">
-      <h3>התמונה המרכזית</h3>
-      <div class="fx-row" style="gap:10px;align-items:flex-start"><img class="fx-thumb" id="cThumb" alt=""><div style="flex:1;min-width:0"><input class="fx-file" type="file" id="cFile" accept="image/*"><div class="fx-hint" id="cName" style="margin-top:5px">התמונה הנוכחית</div></div></div>
-    </div>
-    <div class="fx-sec">
-      <h3>עיגולים מתחת ל-300+</h3>
-      <input class="fx-file" type="file" id="avFiles" accept="image/*" multiple>
-      <div class="fx-hint">בחרי עד 8 תמונות (ממלא לפי הסדר, עיגול 1 = הימני), או לחצי על עיגול בודד להחלפה.</div>
-      <div class="fx-avatars" id="avGrid"></div>
-    </div>
-    <div class="fx-sec">
-      <button class="fx-copy" id="fxCopy">&#10022; העתקת פרומט</button>
-      <div class="fx-hint">העתיקי את הפרומט ושלחי לי בצ׳אט. אם החלפת תמונות — צרפי אותן באותה הודעה, ואחיל את כל השינויים על הקובץ.</div>
-      <button class="fx-reset" id="fxReset">איפוס לברירת מחדל</button>
-    </div>
-  </div>
-</aside>
 
 <script>
 (function(){
@@ -865,7 +826,6 @@ a{color:inherit;}
 })();
 </script>
 
-<div id="fxBar"><b id="fxBarLabel"></b><button id="fxMinus" title="הקטן">−</button><button id="fxPlus" title="הגדל">+</button><button id="fxDel" class="del" title="מחק" style="display:none">🗑</button></div>
 <script>
 (function(){
   // ---- testimonials infinite peeking carousel ----
@@ -927,94 +887,6 @@ a{color:inherit;}
     if(!n||!(e||document.getElementById('cf-phone').value.trim())||!m){alert('נא למלא שם, דרך ליצירת קשר והודעה');return;}
     document.getElementById('cform').classList.add('sent');
   };}
-})();
-</script>
-<script>
-(function(){
-  var page=document.querySelector('.page-body'); if(!page) return;
-  var ARROW='<svg width="36" height="21" viewBox="0 0 36 21" fill="none" xmlns="http://www.w3.org/2000/svg"> <path d="M12 0C12 1.113 10.9005 2.775 9.7875 4.17C8.3565 5.97 6.6465 7.5405 4.686 8.739C3.216 9.6375 1.434 10.5 0 10.5M0 10.5C1.434 10.5 3.2175 11.3625 4.686 12.261C6.6465 13.461 8.3565 15.0315 9.7875 16.8285C10.9005 18.225 12 19.89 12 21M0 10.5H36" stroke="currentColor"/> </svg>';
-  function eds(){return Array.prototype.slice.call(document.querySelectorAll('.page-body .editable'));}
-  var editing=false, sel=null, added=[];
-  var bar=document.getElementById('fxBar'), barLabel=document.getElementById('fxBarLabel'), btnDel=document.getElementById('fxDel');
-  function ensure(el){if(el.dataset.tx===undefined)el.dataset.tx=0;if(el.dataset.ty===undefined)el.dataset.ty=0;if(el.dataset.sc===undefined)el.dataset.sc=1;}
-  function applyT(el){el.style.transform='translate('+(el.dataset.tx||0)+'px,'+(el.dataset.ty||0)+'px) scale('+(el.dataset.sc||1)+')';}
-  function label(el){return el.dataset.label || el.dataset.el || 'פריט';}
-  function select(el){if(sel)sel.classList.remove('fx-sel');sel=el;if(el){el.classList.add('fx-sel');ensure(el);barLabel.textContent=label(el);btnDel.style.display=el.classList.contains('fx-added')?'block':'none';bar.classList.add('show');}else{bar.classList.remove('show');}}
-  function bind(el){ensure(el);el.addEventListener('pointerdown',function(e){if(!editing)return;e.preventDefault();e.stopPropagation();var moved=false,sx=e.clientX,sy=e.clientY,tx0=parseFloat(el.dataset.tx)||0,ty0=parseFloat(el.dataset.ty)||0;function mv(ev){var dx=ev.clientX-sx,dy=ev.clientY-sy;if(Math.abs(dx)+Math.abs(dy)>3)moved=true;el.dataset.tx=tx0+dx;el.dataset.ty=ty0+dy;applyT(el);if(sel!==el)select(el);}function up(){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);if(!moved)select(el);}document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);});}
-  eds().forEach(bind);
-  eds().forEach(function(el){if(el.dataset.label)return;var t=(el.querySelector('h3,p,.ph-label')||{}).textContent||'';var base={cube:'קובייה',img:'תמונה',tphoto:'תמונה מוטה',dcard:'כרטיס'}[el.dataset.el]||'פריט';el.dataset.label=base+(t?(' · '+t.trim().slice(0,20)):'');});
-  var host=document.querySelector('#fxPanel .fx-body');
-  // ---- mockup label/arrow editor section ----
-  var mkSec=document.createElement('div'); mkSec.className='fx-sec';
-  mkSec.innerHTML='<h3>עריכת מוקאפ (טקסטים וחיצים)</h3>'+'<div class="fx-hint">לחצי על תווית או חץ בדף כדי לגרור אותו.</div>'+'<div style="display:flex;gap:8px;margin-top:8px"><button class="fx-btn sm" id="mkLabelToggle" style="flex:1">✎ ערוך תוויות</button><button class="fx-btn sm" id="mkArrowToggle" style="flex:1">⟶ ערוך חיצים</button></div>'+'<button class="fx-copy" id="mkCopy" style="margin-top:10px">✦ העתקת מיקומי מוקאפ</button>';
-  // ---- layout editor section ----
-  var sec=document.createElement('div'); sec.className='fx-sec';
-  sec.innerHTML='<h3>עריכת פריסה (מיקום וגודל)</h3>'+'<button class="fx-btn" id="lyToggle" style="width:100%">מצב עריכה: כבוי</button>'+'<div class="fx-hint">דלקי מצב עריכה, ואז: גררי פריט כדי להזיז; לחצי עליו ובחרי −/+ למטה כדי לשנות גודל.</div>'+'<div style="display:flex;gap:8px;margin-top:8px"><button class="fx-btn sm" id="lyAddImg" style="flex:1">+ תמונה</button><button class="fx-btn sm" id="lyAddArrow" style="flex:1">+ חץ</button></div>'+'<button class="fx-copy" id="lyCopy" style="margin-top:10px">✦ העתקת פרומט פריסה</button>'+'<button class="fx-reset" id="lyReset">אפס פריסה</button>';
-  if(host){
-    host.insertBefore(mkSec, host.lastElementChild);
-    host.insertBefore(sec, host.lastElementChild);
-  } else {
-    [mkSec,sec].forEach(function(s){s.style.cssText='position:fixed;top:10px;left:10px;background:#fff;padding:10px;z-index:99999';document.body.appendChild(s);});
-  }
-  // mockup label/arrow dragging
-  var mkEditing=false;
-  function makeMkDraggable(el){
-    el.style.cursor='default';
-    el.addEventListener('pointerdown',function(e){
-      if(!mkEditing)return;
-      e.preventDefault(); e.stopPropagation();
-      var stage=document.querySelector('.mk-stage');
-      var sr=stage.getBoundingClientRect();
-      var stW=stage.offsetWidth, stH=stage.offsetHeight;
-      var asp=stW/stH; var cW=stW, cH=stH;
-      var tx0=parseFloat(el.dataset.mktx||0),ty0=parseFloat(el.dataset.mkty||0);
-      var sx=e.clientX,sy=e.clientY;
-      function mv(ev){var dx=ev.clientX-sx,dy=ev.clientY-sy;el.dataset.mktx=tx0+dx;el.dataset.mkty=ty0+dy;el.style.marginLeft=(tx0+dx)+'px';el.style.marginTop=(ty0+dy)+'px';}
-      function up(){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);}
-      document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);
-    });
-  }
-  document.querySelectorAll('.mk-l,.mk-a').forEach(makeMkDraggable);
-  function setMkEditing(type,on){
-    mkEditing=on;
-    document.querySelectorAll(type==='label'?'.mk-l':'.mk-a').forEach(function(el){
-      el.style.cursor=on?'move':'default';
-      el.style.outline=on?'1px dashed rgba(127,82,104,.5)':'none';
-    });
-  }
-  document.getElementById('mkLabelToggle').onclick=function(){
-    mkEditing=!mkEditing; setMkEditing('label',mkEditing);
-    this.classList.toggle('fx-on',mkEditing);
-    this.textContent=mkEditing?'✎ סיים עריכת תוויות':'✎ ערוך תוויות';
-  };
-  document.getElementById('mkArrowToggle').onclick=function(){
-    mkEditing=!mkEditing; setMkEditing('arrow',mkEditing);
-    this.classList.toggle('fx-on',mkEditing);
-    this.textContent=mkEditing?'⟶ סיים עריכת חיצים':'⟶ ערוך חיצים';
-  };
-  document.getElementById('mkCopy').onclick=function(){
-    var L=['מיקומי תוויות וחיצי מוקאפ:',''];
-    document.querySelectorAll('.mk-l').forEach(function(el,i){
-      L.push('תווית '+(i+1)+': dx='+Math.round(el.dataset.mktx||0)+' dy='+Math.round(el.dataset.mkty||0));
-    });
-    document.querySelectorAll('.mk-a').forEach(function(el,i){
-      L.push('חץ '+(i+1)+': dx='+Math.round(el.dataset.mktx||0)+' dy='+Math.round(el.dataset.mkty||0));
-    });
-    var txt=L.join('\n');
-    if(navigator.clipboard)navigator.clipboard.writeText(txt);
-    var b=this; b.textContent='✓ הועתק!'; setTimeout(function(){b.textContent='✦ העתקת מיקומי מוקאפ';},1600);
-  };
-  function setEditing(on){editing=on;document.getElementById('lyToggle').textContent='מצב עריכה: '+(on?'דלוק':'כבוי');document.getElementById('lyToggle').classList.toggle('fx-on',on);document.body.classList.toggle('fx-editing',on);if(!on)select(null);}
-  document.getElementById('lyToggle').onclick=function(){setEditing(!editing);};
-  document.getElementById('fxMinus').onclick=function(){if(!sel)return;var s=Math.max(0.3,(parseFloat(sel.dataset.sc)||1)-0.08);sel.dataset.sc=s.toFixed(3);applyT(sel);};
-  document.getElementById('fxPlus').onclick=function(){if(!sel)return;var s=Math.min(3,(parseFloat(sel.dataset.sc)||1)+0.08);sel.dataset.sc=s.toFixed(3);applyT(sel);};
-  btnDel.onclick=function(){if(sel&&sel.classList.contains('fx-added')){var i=added.indexOf(sel);if(i>=0)added.splice(i,1);sel.remove();select(null);}};
-  var imgIn=document.createElement('input');imgIn.type='file';imgIn.accept='image/*';imgIn.style.display='none';document.body.appendChild(imgIn);
-  document.getElementById('lyAddImg').onclick=function(){if(!editing)setEditing(true);imgIn.click();};
-  imgIn.onchange=function(e){var f=e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){var d=document.createElement('div');d.className='editable fx-added';d.dataset.el='img';d.dataset.label='תמונה שנוספה';d.dataset.kind='image';d.style.cssText='position:absolute;width:240px;z-index:50;left:'+(window.scrollX+window.innerWidth/2-120)+'px;top:'+(window.scrollY+140)+'px;';var im=document.createElement('img');im.src=r.result;im.style.cssText='width:100%;height:auto;display:block;border-radius:14px;box-shadow:0 10px 26px rgba(0,0,0,.2)';d.appendChild(im);page.appendChild(d);bind(d);added.push(d);select(d);};r.readAsDataURL(f);imgIn.value='';};
-  document.getElementById('lyAddArrow').onclick=function(){if(!editing)setEditing(true);var d=document.createElement('div');d.className='editable fx-added';d.dataset.el='arrow';d.dataset.label='חץ שנוסף';d.dataset.kind='arrow';d.style.cssText='position:absolute;width:130px;z-index:50;color:#7f5268;left:'+(window.scrollX+window.innerWidth/2-65)+'px;top:'+(window.scrollY+140)+'px;';d.innerHTML=ARROW;page.appendChild(d);bind(d);added.push(d);select(d);};
-  document.getElementById('lyReset').onclick=function(){eds().forEach(function(el){if(!el.classList.contains('fx-added')){el.dataset.tx=0;el.dataset.ty=0;el.dataset.sc=1;applyT(el);}});added.slice().forEach(function(el){el.remove();});added=[];select(null);};
-  document.getElementById('lyCopy').onclick=function(){var Lz=['עדכוני פריסה לדף (החלקים מתחת להירו):',''];eds().forEach(function(el){if(el.classList.contains('fx-added'))return;var tx=Math.round(el.dataset.tx||0),ty=Math.round(el.dataset.ty||0),sc=parseFloat(el.dataset.sc||1);if(tx||ty||Math.abs(sc-1)>0.01){Lz.push('• '+label(el)+': הזזה X='+tx+'px Y='+ty+'px'+(Math.abs(sc-1)>0.01?(' · גודל ×'+sc.toFixed(2)):''));}});added.forEach(function(el,i){var tx=Math.round(el.dataset.tx||0),ty=Math.round(el.dataset.ty||0),sc=parseFloat(el.dataset.sc||1);Lz.push('• '+(el.dataset.kind==='arrow'?'חץ חדש':'תמונה חדשה')+' #'+(i+1)+': מיקום left='+parseInt(el.style.left)+'px top='+parseInt(el.style.top)+'px , הזזה X='+tx+' Y='+ty+' , גודל ×'+sc.toFixed(2)+(el.dataset.kind==='image'?' (התמונה מצורפת בהודעה)':''));});if(Lz.length<=2)Lz.push('(לא בוצעו שינויי פריסה)');Lz.push('','אנא החל/י שינויים אלה על קובץ ה-HTML.');var txt=Lz.join('\n');function done(){var b=document.getElementById('lyCopy');var o=b.textContent;b.textContent='✓ הועתק!';setTimeout(function(){b.textContent=o;},1600);}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(txt).then(done,function(){fb(txt);done();});}else{fb(txt);done();}function fb(t){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(_){}ta.remove();}};
 })();
 </script>
 </body>

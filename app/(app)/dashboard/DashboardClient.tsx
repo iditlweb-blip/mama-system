@@ -207,167 +207,39 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* ── Quick tracker + status ────────────────── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-        {/* Quick Log */}
-        <div className="card">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <Plus className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-              רישום מהיר
-            </h2>
-            {savedFlash && (
-              <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
-                <Check className="w-3 h-3" /> נשמר!
-              </span>
-            )}
-          </div>
-
-          {!quickOpen ? (
-            /* Counts + open button */
-            <div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                {TRACK.map(({ type, label, color }) => (
-                  <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
-                    <p className="text-base font-semibold" style={{ color }}>
-                      {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
-                    </p>
-                    <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                  </div>
-                ))}
-              </div>
-
-              {/* Today's log list with delete buttons */}
-              {localLogs.length > 0 && (
-                <div className="space-y-1.5 mb-3">
-                  {localLogs.slice(0, 6).map(log => {
-                    const track = TRACK.find(t => t.type === log.type)
-                    if (!track) return null
-                    const Icon = track.icon
-                    const time = log.start_time
-                      ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                      : ''
-                    return (
-                      <div
-                        key={log.id}
-                        className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                        style={{ background: `${track.color}0d`, position: 'relative' }}
-                      >
-                        <div className="flex items-center gap-2">
-                          <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
-                          <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
-                          {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
-                        </div>
-                        <button
-                          onClick={() => deleteLog(log.id)}
-                          title="מחק רישום"
-                          style={{
-                            position: 'absolute',
-                            top: 6,
-                            right: 6,
-                            width: 20,
-                            height: 20,
-                            borderRadius: '50%',
-                            background: 'rgba(200,50,50,0.1)',
-                            color: '#cc3333',
-                            border: 'none',
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}
-                          onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
-                          onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-
-              <button
-                onClick={() => setQuickOpen(true)}
-                className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
-                style={{ background: 'rgba(127,82,104,0.1)', color: 'var(--primary)', border: '1px solid rgba(127,82,104,0.2)' }}
-              >
-                + הוסיפי רישום
-              </button>
-            </div>
-          ) : (
-            /* Inline type selector */
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>בחרי מה לרשום:</p>
-                <button onClick={() => { setQuickOpen(false); setSelectedType(null) }}>
-                  <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                {TRACK.map(({ type, icon: Icon, label, color }) => (
-                  <button
-                    key={type}
-                    onClick={() => setSelectedType(type)}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all"
-                    style={{
-                      background: selectedType === type ? color : `${color}12`,
-                      border: `1.5px solid ${selectedType === type ? color : `${color}28`}`,
-                    }}
-                  >
-                    <Icon className="w-4 h-4" style={{ color: selectedType === type ? '#fff' : color }} />
-                    <span className="text-xs font-medium" style={{ color: selectedType === type ? '#fff' : color }}>{label}</span>
-                  </button>
-                ))}
-              </div>
-              <button
-                onClick={saveLog}
-                disabled={!selectedType || saving}
-                className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
-                style={{ background: selectedType ? TRACK.find(t => t.type === selectedType)!.color : 'var(--border)' }}
-              >
-                {saving ? 'שומר...' : 'שמור'}
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Status */}
-        <div className="card">
-          <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <Moon className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-            סטטוס אחרון
-          </h2>
-          <div className="space-y-2">
-            {[
-              { icon: Milk, label: 'האכלה אחרונה', value: lastFeedAgo, color: '#7F5268' },
-              { icon: BedDouble, label: 'שינה אחרונה', value: lastSleepAgo, color: '#5C7A6A' },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between p-3 rounded-xl"
-                style={{ background: 'var(--surface-2, #FAF4ED)' }}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-3.5 h-3.5" style={{ color }} />
-                  <span className="text-sm font-light" style={{ color: 'var(--text)' }}>{label}</span>
-                </div>
-                <span className="text-sm font-medium" style={{ color: value ? color : 'var(--text-muted)' }}>
-                  {value || 'לא נרשם'}
-                </span>
-              </div>
-            ))}
-            <Link
-              href="/tracker"
-              className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
-              style={{ color: 'var(--primary)' }}
+      {/* ── Status ───────────────────────────────── */}
+      <div className="card">
+        <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+          <Moon className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+          סטטוס אחרון
+        </h2>
+        <div className="space-y-2">
+          {[
+            { icon: Milk, label: 'האכלה אחרונה', value: lastFeedAgo, color: '#7F5268' },
+            { icon: BedDouble, label: 'שינה אחרונה', value: lastSleepAgo, color: '#5C7A6A' },
+          ].map(({ icon: Icon, label, value, color }) => (
+            <div
+              key={label}
+              className="flex items-center justify-between p-3 rounded-xl"
+              style={{ background: 'var(--surface-2, #FAF4ED)' }}
             >
-              לטרקר המלא
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+              <div className="flex items-center gap-2">
+                <Icon className="w-3.5 h-3.5" style={{ color }} />
+                <span className="text-sm font-light" style={{ color: 'var(--text)' }}>{label}</span>
+              </div>
+              <span className="text-sm font-medium" style={{ color: value ? color : 'var(--text-muted)' }}>
+                {value || 'לא נרשם'}
+              </span>
+            </div>
+          ))}
+          <Link
+            href="/tracker"
+            className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
+            style={{ color: 'var(--primary)' }}
+          >
+            לטרקר המלא
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
@@ -474,6 +346,130 @@ export default function DashboardClient({
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Quick Log ────────────────────────────── */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <Plus className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+            רישום מהיר
+          </h2>
+          {savedFlash && (
+            <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
+              <Check className="w-3 h-3" /> נשמר!
+            </span>
+          )}
+        </div>
+
+        {!quickOpen ? (
+          /* Counts + open button */
+          <div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {TRACK.map(({ type, label, color }) => (
+                <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
+                  <p className="text-base font-semibold" style={{ color }}>
+                    {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
+                  </p>
+                  <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Today's log list with delete buttons */}
+            {localLogs.length > 0 && (
+              <div className="space-y-1.5 mb-3">
+                {localLogs.slice(0, 6).map(log => {
+                  const track = TRACK.find(t => t.type === log.type)
+                  if (!track) return null
+                  const Icon = track.icon
+                  const time = log.start_time
+                    ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                    : ''
+                  return (
+                    <div
+                      key={log.id}
+                      className="flex items-center justify-between px-3 py-1.5 rounded-lg"
+                      style={{ background: `${track.color}0d`, position: 'relative' }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
+                        <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
+                        {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
+                      </div>
+                      <button
+                        onClick={() => deleteLog(log.id)}
+                        title="מחק רישום"
+                        style={{
+                          position: 'absolute',
+                          top: 6,
+                          right: 6,
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: 'rgba(200,50,50,0.1)',
+                          color: '#cc3333',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <button
+              onClick={() => setQuickOpen(true)}
+              className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
+              style={{ background: 'rgba(127,82,104,0.1)', color: 'var(--primary)', border: '1px solid rgba(127,82,104,0.2)' }}
+            >
+              + הוסיפי רישום
+            </button>
+          </div>
+        ) : (
+          /* Inline type selector */
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>בחרי מה לרשום:</p>
+              <button onClick={() => { setQuickOpen(false); setSelectedType(null) }}>
+                <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+              </button>
+            </div>
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {TRACK.map(({ type, icon: Icon, label, color }) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedType(type)}
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all"
+                  style={{
+                    background: selectedType === type ? color : `${color}12`,
+                    border: `1.5px solid ${selectedType === type ? color : `${color}28`}`,
+                  }}
+                >
+                  <Icon className="w-4 h-4" style={{ color: selectedType === type ? '#fff' : color }} />
+                  <span className="text-xs font-medium" style={{ color: selectedType === type ? '#fff' : color }}>{label}</span>
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={saveLog}
+              disabled={!selectedType || saving}
+              className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
+              style={{ background: selectedType ? TRACK.find(t => t.type === selectedType)!.color : 'var(--border)' }}
+            >
+              {saving ? 'שומר...' : 'שמור'}
+            </button>
           </div>
         )}
       </div>
