@@ -3,12 +3,17 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import { ADMIN_EMAIL } from '@/lib/admin'
+import { isAdminEmail } from '@/lib/admin'
 
 async function verifyAdmin() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== ADMIN_EMAIL) throw new Error('Unauthorized')
+  if (!user || !isAdminEmail(user.email)) {
+    // Include the actually-detected session email in the thrown message so a
+    // mismatch (wrong account logged in, stale session, etc.) is visible
+    // directly in the error toast instead of requiring more back-and-forth.
+    throw new Error(`Unauthorized (session email: ${user?.email ?? 'none — not logged in'})`)
+  }
   return createAdminClient()
 }
 
@@ -28,11 +33,10 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean; error?:
 // ─── Send password reset email ─────────────────────────────────────────────────
 export async function sendPasswordReset(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    await verifyAdmin()
-    // Use regular auth (not admin) — this sends the email automatically
+    // Use the admin (service_role) client — this sends the email automatically
     const admin = await verifyAdmin()
     const { error } = await admin.auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mama-system.vercel.app'}/auth/reset`,
+      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mama-system.vercel.app'}/api/auth/callback?next=/auth/reset`,
     })
     if (error) return { ok: false, error: error.message }
     return { ok: true }

@@ -92,8 +92,11 @@ export default function AuthPage() {
       }
 
     } else if (mode === 'forgot') {
+      // Route through the code-exchange callback first (this app uses Supabase's
+      // PKCE flow, which sends a ?code=... query param, not a #access_token hash),
+      // then land on /auth/reset once a real session exists.
       const { error: err } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/reset`,
+        redirectTo: `${window.location.origin}/api/auth/callback?next=/auth/reset`,
       })
       if (err) {
         setError(translateError(err.message))

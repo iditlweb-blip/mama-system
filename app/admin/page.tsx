@@ -2,13 +2,13 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminClient from './AdminClient'
-import { ADMIN_EMAIL } from '@/lib/admin'
+import { isAdminEmail } from '@/lib/admin'
 
 export default async function AdminPage() {
   // 1. Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || user.email !== ADMIN_EMAIL) redirect('/dashboard')
+  if (!user || !isAdminEmail(user.email)) redirect('/dashboard')
 
   // 2. Fetch all users via admin client
   const admin = createAdminClient()
