@@ -360,6 +360,12 @@ a{color:inherit;}
 .dcard .ic{flex:none;width:clamp(70px,7vw,110px);height:clamp(70px,7vw,110px);display:flex;align-items:center;justify-content:center;}.dcard .ic svg{width:100%;height:100%;}
 .dcard--hl{background:var(--mauve);}.dcard--hl h3{color:#fff;}.dcard--hl p{color:rgba(255,255,255,.92);}
 .dcard--hl .ic svg [stroke]{stroke:#fff;}.dcard--hl .ic svg [fill]:not([fill="none"]){fill:#fff;}
+.dcard{transition:transform .32s cubic-bezier(.2,.7,.3,1),background .32s ease,box-shadow .32s ease;will-change:transform;}
+.dcard h3,.dcard p{transition:color .32s ease;}
+.dcard .ic svg [stroke]{transition:stroke .32s ease;}.dcard .ic svg [fill]:not([fill="none"]){transition:fill .32s ease;}
+.dcard:hover{background:var(--mauve);transform:translateY(-5px) scale(1.035);box-shadow:0 20px 44px rgba(127,82,104,.24);}
+.dcard:hover h3{color:#fff;}.dcard:hover p{color:rgba(255,255,255,.92);}
+.dcard:hover .ic svg [stroke]{stroke:#fff;}.dcard:hover .ic svg [fill]:not([fill="none"]){fill:#fff;}
 
 .s-story{padding-block:clamp(40px,6vw,90px);}
 .story{max-width:1024px;margin:0 auto;position:relative;display:flex;flex-direction:column;align-items:center;text-align:center;}
@@ -446,17 +452,13 @@ a{color:inherit;}
   /* mockup mobile: clean stacked — phone on top, annotations as cards below */
   .mk-stage{display:none;}
   .mk-mobile{display:block;}
-  /* gallery: infinite-scroll carousel (reset desktop absolute canvas) */
-  .gal-wrap{width:100%;margin-left:0;height:auto;aspect-ratio:auto;max-height:none;overflow:visible;-webkit-mask-image:none;mask-image:none;display:block;}
-  .gallery{position:static!important;inset:auto;left:auto;transform:none;bottom:auto;
-    display:flex;align-items:flex-start;flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x mandatory;
-    gap:14px;padding:4px 20px 0;scrollbar-width:none;width:100%;}
-  .gallery::-webkit-scrollbar{display:none;}
+  /* gallery: continuous marquee also on mobile (transform-driven, full-bleed) */
+  .gal-wrap{width:100vw;margin-left:calc(50% - 50vw);height:clamp(320px,80vw,460px);overflow:hidden;display:flex;align-items:center;-webkit-mask-image:none;mask-image:none;}
+  .gallery{gap:16px;padding-inline:12px;}
   .gal-clone{display:block!important;}
-  .tphoto{position:static!important;left:auto!important;top:auto!important;
-    transform:none!important;width:72vw;height:auto;aspect-ratio:380/460;scroll-snap-align:center;border-radius:20px;flex:none;}
-  .gal-cta{position:static!important;transform:none!important;margin-top:22px;display:flex;justify-content:center;}
-  .gal-nav{display:flex;gap:16px;justify-content:center;margin-top:22px;}
+  .tphoto{width:56vw;max-width:280px;}
+  .gal-cta{left:50%;bottom:12px;}
+  .gal-nav{display:none;}
   .gal-nav button{width:54px;height:54px;border-radius:50%;border:none;background:var(--mauve);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(127,82,104,.3);}
   .gal-nav .b-arrow{width:24px;}
   /* bigger testi arrows on mobile */
@@ -848,53 +850,60 @@ a{color:inherit;}
     document.getElementById('testiPrev').onclick=function(){go(-1);};
     window.addEventListener('resize',jump); setTimeout(jump,60);
   }
-  // ---- gallery: infinite linear marquee (desktop) + scroll carousel (mobile) ----
+  // ---- gallery: continuous infinite marquee (all screen sizes) ----
   (function(){
     var g=document.getElementById('gallery');
     if(!g) return;
     var origCards=Array.prototype.slice.call(g.children);
     var perSet=origCards.length;
-    // clone the set twice -> seamless desktop loop + infinite mobile scroll
+    if(!perSet) return;
+    // Clone the set twice so there are 3 identical sets side by side; we can
+    // translate by exactly one set width and reset seamlessly -> infinite loop.
     origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
     origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
 
-    function isMobile(){return window.innerWidth<=560;}
     var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var hasGsap=(typeof gsap!=='undefined');
+    var SPEED=42;            // px per second
+    var x=0, setW=0, last=0, raf=null, paused=false;
 
-    // ----- desktop marquee: translate the track by exactly one set, loop forever -----
-    var marquee=null;
-    function setDist(){var cs=g.children;return cs.length>perSet?(cs[perSet].offsetLeft-cs[0].offsetLeft):0;}
-    function startMarquee(){
-      if(marquee||!hasGsap||reduce)return;
-      var dist=setDist(); if(!dist)return;
-      gsap.set(g,{x:0});
-      marquee=gsap.to(g,{x:-dist,duration:dist/55,ease:'none',repeat:-1});
+    function measure(){
+      var cs=g.children;
+      // width of one original set = offset of the first cloned card
+      setW = cs.length>perSet ? (cs[perSet].offsetLeft - cs[0].offsetLeft) : 0;
     }
-    function stopMarquee(){
-      if(marquee){marquee.kill();marquee=null;}
-      if(hasGsap){gsap.set(g,{clearProps:'transform'});} else {g.style.transform='';}
+    function frame(t){
+      if(last===0) last=t;
+      var dt=(t-last)/1000; last=t;
+      if(!paused && setW>0){
+        x-=SPEED*dt;
+        if(-x>=setW) x+=setW;      // wrap seamlessly
+        g.style.transform='translate3d('+x+'px,0,0)';
+      }
+      raf=requestAnimationFrame(frame);
+    }
+    function start(){
+      measure();
+      if(setW<=0){ setTimeout(start,120); return; }   // wait for images/layout
+      if(reduce){ g.style.transform='translate3d(0,0,0)'; return; }
+      if(!raf){ last=0; raf=requestAnimationFrame(frame); }
     }
 
-    // ----- mobile scroll carousel -----
-    function scrollStep(){var c=g.querySelector('.tphoto');if(!c)return 0;var gap=parseFloat(getComputedStyle(g).gap)||14;return c.getBoundingClientRect().width+gap;}
-    function galScroll(dir){if(!isMobile())return;g.scrollBy({left:-dir*scrollStep(),behavior:'smooth'});}
-    g.addEventListener('scroll',function(){
-      if(!isMobile())return;
-      var sw=g.scrollWidth/3,sl=g.scrollLeft;
-      if(sl<sw*0.25){g.scrollLeft+=sw;}
-      else if(sl>sw*1.75){g.scrollLeft-=sw;}
+    // Pause on hover (desktop nicety), resume on leave.
+    g.addEventListener('mouseenter',function(){paused=true;});
+    g.addEventListener('mouseleave',function(){paused=false;});
+
+    // Recalculate set width on resize (keeps the loop seamless across breakpoints).
+    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(measure,160);});
+    // Re-measure once every image has decoded (base64 imgs settle instantly, but be safe).
+    Array.prototype.forEach.call(g.querySelectorAll('img'),function(im){
+      if(!im.complete){ im.addEventListener('load',measure,{once:true}); }
     });
-    function initScroll(){if(isMobile()&&g.scrollWidth>g.clientWidth){g.scrollLeft=g.scrollWidth/3;}}
-    var gn=document.getElementById('galNext'),gp=document.getElementById('galPrev');
-    if(gn) gn.onclick=function(){galScroll(-1);};
-    if(gp) gp.onclick=function(){galScroll(1);};
-
-    // ----- switch modes on load / resize -----
-    function sync(){ if(isMobile()){stopMarquee();initScroll();} else {g.scrollLeft=0;startMarquee();} }
-    setTimeout(sync,90);
-    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){stopMarquee();sync();},160);});
+    // Kick off after layout settles.
+    if(document.readyState==='complete') start();
+    else window.addEventListener('load',start);
+    setTimeout(start,150);
   })();
+
   // ---- contact form ----
   var send=document.getElementById('cf-send');
   if(send){send.onclick=function(){
@@ -1000,6 +1009,21 @@ a{color:inherit;}
         }
       );
     }
+  })();
+
+  // 5) "איך זה עובד" — the dashed connector lines draw themselves in as the
+  // section scrolls into view (scrubbed, right-to-left to match the RTL flow).
+  (function stepLinesDraw(){
+    var lines = document.querySelectorAll('.s-how .st-d');
+    if (!lines.length) return;
+    lines.forEach(function(d){
+      gsap.set(d, { clipPath: 'inset(0 0 0 100%)', webkitClipPath: 'inset(0 0 0 100%)' });
+      gsap.to(d, {
+        clipPath: 'inset(0 0 0 0%)', webkitClipPath: 'inset(0 0 0 0%)',
+        ease: 'none',
+        scrollTrigger: { trigger: d, start: 'top 88%', end: 'top 50%', scrub: 0.6 }
+      });
+    });
   })();
 })();
 </script>

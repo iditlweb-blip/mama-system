@@ -42,6 +42,8 @@ interface Product {
   id: string
   name: string
   description: string | null
+  details: string | null
+  category: string | null
   image_url: string | null
   coupon_code: string | null
   buy_link: string | null
@@ -86,7 +88,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   const [showProForm, setShowProForm] = useState(false)
 
   // Product form
-  const emptyProduct = { id: '', name: '', description: '', image_url: '', coupon_code: '', buy_link: '', sort_order: '' }
+  const emptyProduct = { id: '', name: '', description: '', details: '', category: '', image_url: '', coupon_code: '', buy_link: '', sort_order: '' }
   const [productForm, setProductForm]       = useState(emptyProduct)
   const [showProductForm, setShowProductForm] = useState(false)
   const [fetchingImage, setFetchingImage] = useState(false)
@@ -274,7 +276,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
   // ── Product actions ────────────────────────────────────────────────────────────
   function editProduct(p: Product) {
-    setProductForm({ id: p.id, name: p.name, description: p.description ?? '', image_url: p.image_url ?? '', coupon_code: p.coupon_code ?? '', buy_link: p.buy_link ?? '', sort_order: p.sort_order?.toString() ?? '' })
+    setProductForm({ id: p.id, name: p.name, description: p.description ?? '', details: p.details ?? '', category: p.category ?? '', image_url: p.image_url ?? '', coupon_code: p.coupon_code ?? '', buy_link: p.buy_link ?? '', sort_order: p.sort_order?.toString() ?? '' })
     setShowProductForm(true)
   }
 
@@ -302,6 +304,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
         id: productForm.id || undefined,
         name: productForm.name,
         description: productForm.description || undefined,
+        details: productForm.details || undefined,
+        category: productForm.category || undefined,
         image_url: productForm.image_url || undefined,
         coupon_code: productForm.coupon_code || undefined,
         buy_link: productForm.buy_link || undefined,
@@ -630,6 +634,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                     <input value={productForm.coupon_code} onChange={e => setProductForm(f => ({ ...f, coupon_code: e.target.value }))}
                       placeholder="קוד קופון"
                       className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <input value={productForm.category} onChange={e => setProductForm(f => ({ ...f, category: e.target.value }))}
+                      placeholder="קטגוריה (למשל: הנקה, שינה, טיולים)" list="product-categories"
+                      className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <datalist id="product-categories">
+                      <option value="הנקה" /><option value="האכלה" /><option value="שינה" />
+                      <option value="טיולים" /><option value="ביגוד" /><option value="טיפוח" />
+                      <option value="צעצועים" /><option value="כללי" />
+                    </datalist>
                     <input value={productForm.buy_link} onChange={e => setProductForm(f => ({ ...f, buy_link: e.target.value }))}
                       placeholder="קישור לרכישה"
                       className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
@@ -651,7 +663,11 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                         className="col-span-2 h-24 w-24 object-cover rounded-xl border" style={{ borderColor: 'var(--border)' }} />
                     )}
                     <textarea value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))}
-                      placeholder="תיאור קצר" rows={2}
+                      placeholder="תיאור קצר (מופיע בכרטיס)" rows={2}
+                      className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none resize-none"
+                      style={inputSty} />
+                    <textarea value={productForm.details} onChange={e => setProductForm(f => ({ ...f, details: e.target.value }))}
+                      placeholder="מידע מלא + המלצות (מופיע בעמוד המוצר)" rows={4}
                       className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none resize-none"
                       style={inputSty} />
                     <input type="number" value={productForm.sort_order}

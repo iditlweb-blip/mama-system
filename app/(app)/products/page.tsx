@@ -1,6 +1,7 @@
 import BackButton from '@/components/layout/BackButton'
 import { createClient } from '@/lib/supabase/server'
-import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Tag, Sparkles } from 'lucide-react'
+import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Sparkles } from 'lucide-react'
+import ProductsGrid from './ProductsGrid'
 
 export default async function ProductsPage() {
   const supabase = await createClient()
@@ -21,25 +22,28 @@ export default async function ProductsPage() {
         <BackButton href="/dashboard" />
       </div>
 
-      {/* Banner */}
+      {/* Banner — compact */}
       <div style={{
         background: 'linear-gradient(135deg, #7F5268 0%, #9b6a85 100%)',
-        borderRadius: 20,
-        padding: 'clamp(28px,4vw,48px)',
-        textAlign: 'center',
+        borderRadius: 16,
+        padding: '16px 20px',
         color: '#fff',
-        marginBottom: 36,
+        marginBottom: 28,
+        display: 'flex',
+        alignItems: 'center',
+        gap: 14,
       }}>
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
-          <ShoppingBag size={44} color="#fff" strokeWidth={1.6} />
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 44, height: 44, borderRadius: 12, background: 'rgba(255,255,255,0.15)' }}>
+          <ShoppingBag size={24} color="#fff" strokeWidth={1.7} />
         </div>
-        <h1 style={{ fontSize: 'clamp(1.4rem,2.5vw,2rem)', fontWeight: 700, margin: '0 0 10px', letterSpacing: '0.03em' }}>
-          מוצרים ובעלי מקצוע
-        </h1>
-        <p style={{ fontSize: 'clamp(0.88rem,1.5vw,1rem)', opacity: 0.9, margin: 0, lineHeight: 1.7 }}>
-          כאן תמצאי המלצות על מוצרים עם קודי קופון בלעדיים<br/>
-          ובעלי מקצוע מומלצים לפי אזור
-        </p>
+        <div>
+          <h1 style={{ fontSize: 'clamp(1.05rem,2vw,1.3rem)', fontWeight: 700, margin: '0 0 2px', letterSpacing: '0.02em' }}>
+            מוצרים ובעלי מקצוע
+          </h1>
+          <p style={{ fontSize: '0.82rem', opacity: 0.9, margin: 0, lineHeight: 1.5 }}>
+            המלצות על מוצרים עם קודי קופון בלעדיים ובעלי מקצוע לפי אזור
+          </p>
+        </div>
       </div>
 
       {/* ── Professionals ── */}
@@ -94,51 +98,7 @@ export default async function ProductsPage() {
           <h2 style={{ color: '#7F5268', fontSize: '1.15rem', fontWeight: 700, marginBottom: 16, letterSpacing: '0.03em', display: 'flex', alignItems: 'center', gap: 8 }}>
             <Gift size={20} /> מוצרים מומלצים
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
-            {products.map((prod) => (
-              <div key={prod.id} style={{
-                background: '#fff',
-                borderRadius: 16,
-                padding: 20,
-                boxShadow: '0 2px 16px rgba(127,82,104,0.1)',
-                border: '1px solid rgba(127,82,104,0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-              }}>
-                {prod.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={prod.image_url} alt={prod.name}
-                    style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10, marginBottom: 12 }} />
-                )}
-                <h3 style={{ color: '#3a1e2d', fontSize: '0.93rem', fontWeight: 700, margin: '0 0 6px' }}>{prod.name}</h3>
-                {prod.description && (
-                  <p style={{ color: '#666', fontSize: '0.81rem', margin: '0 0 10px', lineHeight: 1.5, flex: 1 }}>{prod.description}</p>
-                )}
-                {prod.coupon_code && (
-                  <div style={{
-                    background: 'rgba(127,82,104,0.07)', border: '1.5px dashed #7F5268',
-                    borderRadius: 8, padding: '7px 12px',
-                    fontSize: '0.8rem', color: '#7F5268', fontWeight: 700,
-                    marginBottom: 10, letterSpacing: '0.06em',
-                    display: 'flex', alignItems: 'center', gap: 6,
-                  }}>
-                    <Tag size={14} /> קוד קופון: {prod.coupon_code}
-                  </div>
-                )}
-                {prod.buy_link && (
-                  <a href={prod.buy_link} target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    background: '#7F5268', color: '#fff',
-                    borderRadius: 20, padding: '8px 20px',
-                    fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600,
-                    textAlign: 'center',
-                  }}>
-                    לרכישה באתר
-                  </a>
-                )}
-              </div>
-            ))}
-          </div>
+          <ProductsGrid products={products} />
         </section>
       )}
 

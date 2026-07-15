@@ -124,6 +124,8 @@ export async function upsertProduct(data: {
   id?: string
   name: string
   description?: string
+  details?: string
+  category?: string
   image_url?: string
   coupon_code?: string
   buy_link?: string
@@ -134,6 +136,8 @@ export async function upsertProduct(data: {
     const payload: Record<string, unknown> = {
       name: data.name,
       description: data.description ?? null,
+      details: data.details ?? null,
+      category: data.category?.trim() || 'כללי',
       image_url: data.image_url ?? null,
       coupon_code: data.coupon_code ?? null,
       buy_link: data.buy_link ?? null,
