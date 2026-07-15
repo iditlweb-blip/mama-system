@@ -17,7 +17,7 @@ export default async function ProductsPage() {
     .order('sort_order')
 
   return (
-    <div style={{ padding: 'clamp(20px,3vw,40px)', maxWidth: 900, margin: '0 auto', fontFamily: 'var(--font-body)', direction: 'rtl' }}>
+    <div style={{ padding: 'clamp(20px,3vw,40px)', maxWidth: 1040, margin: '0 auto', fontFamily: 'var(--font-body)', direction: 'rtl' }}>
       <div style={{ marginBottom: 20 }}>
         <BackButton href="/dashboard" />
       </div>

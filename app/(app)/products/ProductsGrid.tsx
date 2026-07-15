@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { Tag, Search, Info } from 'lucide-react'
+import { Search, Info } from 'lucide-react'
+import CopyableCoupon from './CopyableCoupon'
 
 export interface ProductRow {
   id: string
@@ -87,7 +88,7 @@ export default function ProductsGrid({ products }: { products: ProductRow[] }) {
           לא נמצאו מוצרים תואמים
         </p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(340px,1fr))', gap: 18 }}>
           {filtered.map((prod) => (
             <div key={prod.id} style={{
               background: '#fff', borderRadius: 16, padding: 20,
@@ -99,49 +100,44 @@ export default function ProductsGrid({ products }: { products: ProductRow[] }) {
                 {prod.image_url && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={prod.image_url} alt={prod.name}
-                    style={{ width: '100%', height: 140, objectFit: 'cover', borderRadius: 10, marginBottom: 12 }} />
+                    style={{ width: '100%', height: 180, objectFit: 'contain', background: '#fff', borderRadius: 10, marginBottom: 12, border: '1px solid rgba(127,82,104,0.08)' }} />
                 )}
                 {prod.category && (
                   <span style={{ display: 'inline-block', fontSize: '0.68rem', fontWeight: 700, color: '#7F5268', background: 'rgba(127,82,104,0.1)', borderRadius: 8, padding: '2px 8px', marginBottom: 8 }}>
                     {prod.category}
                   </span>
                 )}
-                <h3 style={{ color: '#3a1e2d', fontSize: '0.93rem', fontWeight: 700, margin: '0 0 6px' }}>{prod.name}</h3>
+                <h3 style={{ color: '#3a1e2d', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 6px' }}>{prod.name}</h3>
                 {prod.description && (
-                  <p style={{ color: '#666', fontSize: '0.81rem', margin: '0 0 10px', lineHeight: 1.5 }}>{prod.description}</p>
+                  <p style={{ color: '#666', fontSize: '0.83rem', margin: '0 0 10px', lineHeight: 1.5 }}>{prod.description}</p>
                 )}
               </Link>
 
               <div style={{ flex: 1 }} />
 
               {prod.coupon_code && (
-                <div style={{
-                  background: 'rgba(127,82,104,0.07)', border: '1.5px dashed #7F5268',
-                  borderRadius: 8, padding: '7px 12px', fontSize: '0.8rem', color: '#7F5268',
-                  fontWeight: 700, marginBottom: 10, letterSpacing: '0.06em',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}>
-                  <Tag size={14} /> קוד קופון: {prod.coupon_code}
+                <div style={{ marginBottom: 10 }}>
+                  <CopyableCoupon code={prod.coupon_code} />
                 </div>
               )}
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ display: 'flex', flexDirection: 'row', gap: 8 }}>
                 {prod.buy_link && (
                   <a href={prod.buy_link} target="_blank" rel="noopener noreferrer" style={{
-                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    background: '#7F5268', color: '#fff', borderRadius: 20, padding: '8px 20px',
-                    fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600, textAlign: 'center',
+                    flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                    background: '#7F5268', color: '#fff', borderRadius: 20, padding: '9px 12px',
+                    fontSize: '0.83rem', textDecoration: 'none', fontWeight: 600, textAlign: 'center',
                   }}>
                     לרכישה באתר
                   </a>
                 )}
                 <Link href={`/products/${prod.id}`} style={{
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                   background: 'transparent', color: '#7F5268', border: '1.5px solid #7F5268',
-                  borderRadius: 20, padding: '8px 20px', fontSize: '0.85rem',
+                  borderRadius: 20, padding: '9px 12px', fontSize: '0.83rem',
                   textDecoration: 'none', fontWeight: 600, textAlign: 'center',
                 }}>
-                  <Info size={15} /> מידע מלא על המוצר
+                  <Info size={15} /> מידע מלא
                 </Link>
               </div>
             </div>

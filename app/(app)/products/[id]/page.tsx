@@ -2,7 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import BackButton from '@/components/layout/BackButton'
 import { createClient } from '@/lib/supabase/server'
-import { Tag, ShoppingBag, Gift } from 'lucide-react'
+import { ShoppingBag, Gift } from 'lucide-react'
+import CopyableCoupon from '../CopyableCoupon'
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
@@ -38,7 +39,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
         {product.image_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={product.image_url} alt={product.name}
-            style={{ width: '100%', height: 'clamp(200px,38vw,340px)', objectFit: 'cover', display: 'block' }} />
+            style={{ width: '100%', height: 'clamp(240px,42vw,400px)', objectFit: 'contain', background: '#fff', display: 'block', padding: 12, boxSizing: 'border-box' }} />
         ) : (
           <div style={{ width: '100%', height: 'clamp(160px,30vw,260px)', background: 'linear-gradient(135deg,#7F5268,#9b6a85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <ShoppingBag size={54} color="#fff" strokeWidth={1.4} />
@@ -68,13 +69,8 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           )}
 
           {product.coupon_code && (
-            <div style={{
-              background: 'rgba(127,82,104,0.07)', border: '1.5px dashed #7F5268',
-              borderRadius: 10, padding: '10px 16px', fontSize: '0.9rem', color: '#7F5268',
-              fontWeight: 700, marginBottom: 20, letterSpacing: '0.06em',
-              display: 'flex', alignItems: 'center', gap: 8,
-            }}>
-              <Tag size={16} /> קוד קופון: {product.coupon_code}
+            <div style={{ marginBottom: 20 }}>
+              <CopyableCoupon code={product.coupon_code} size="lg" />
             </div>
           )}
 
