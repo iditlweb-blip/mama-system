@@ -335,17 +335,13 @@ a{color:inherit;}
 
 .s-anywhere{padding-block:clamp(40px,6vw,80px) 0;overflow:visible;}
 .s-anywhere .sec-title{margin-bottom:0;}
-/* infinite linear marquee — cards flow continuously, gentle alternating tilt */
-.gal-wrap{width:100vw;margin-left:calc(50% - 50vw);position:relative;height:clamp(340px,40vw,600px);overflow:hidden;display:flex;align-items:center;-webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);}
-.gallery{display:flex;flex-wrap:nowrap;align-items:center;gap:clamp(22px,2.6vw,50px);width:max-content;will-change:transform;padding-inline:clamp(11px,1.3vw,25px);}
-.tphoto{position:relative;flex:none;width:clamp(210px,22vw,340px);aspect-ratio:380/460;border-radius:clamp(16px,1.4vw,26px);overflow:hidden;box-shadow:0 22px 46px rgba(58,30,46,.18);transform-origin:center center;}
+/* semicircular (arc) carousel — cards orbit along a half-circle and fade at the ends */
+.gal-wrap{width:100vw;margin-left:calc(50% - 50vw);position:relative;height:clamp(360px,42vw,580px);overflow:hidden;}
+.gallery{position:relative;width:100%;height:100%;}
+.tphoto{position:absolute;top:0;left:0;width:clamp(150px,15vw,220px);aspect-ratio:380/460;border-radius:clamp(16px,1.4vw,26px);overflow:hidden;box-shadow:0 22px 46px rgba(58,30,46,.20);transform-origin:center center;will-change:transform,opacity;}
 .tphoto img{width:100%;height:100%;object-fit:cover;display:block;}
 .tphoto::after{content:none;}
 .gal-clone{display:block;}
-.tphoto:nth-of-type(4n+1){transform:rotate(-6deg);}
-.tphoto:nth-of-type(4n+2){transform:rotate(3deg);}
-.tphoto:nth-of-type(4n+3){transform:rotate(-3deg);}
-.tphoto:nth-of-type(4n){transform:rotate(6deg);}
 .gal-nav{display:none;}
 .gal-cta{position:absolute;left:50%;bottom:clamp(10px,2vw,26px);transform:translateX(-50%);z-index:6;}
 .s-anywhere .cta-row{display:none;}
@@ -452,11 +448,11 @@ a{color:inherit;}
   /* mockup mobile: clean stacked — phone on top, annotations as cards below */
   .mk-stage{display:none;}
   .mk-mobile{display:block;}
-  /* gallery: continuous marquee also on mobile (transform-driven, full-bleed) */
-  .gal-wrap{width:100vw;margin-left:calc(50% - 50vw);height:clamp(320px,80vw,460px);overflow:hidden;display:flex;align-items:center;-webkit-mask-image:none;mask-image:none;}
-  .gallery{gap:16px;padding-inline:12px;}
+  /* gallery: arc carousel on mobile too (JS positions cards) */
+  .gal-wrap{width:100vw;margin-left:calc(50% - 50vw);height:clamp(320px,82vw,440px);overflow:hidden;position:relative;}
+  .gallery{position:relative;width:100%;height:100%;}
   .gal-clone{display:block!important;}
-  .tphoto{width:56vw;max-width:280px;}
+  .tphoto{width:38vw;max-width:180px;}
   .gal-cta{left:50%;bottom:12px;}
   .gal-nav{display:none;}
   .gal-nav button{width:54px;height:54px;border-radius:50%;border:none;background:var(--mauve);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(127,82,104,.3);}
@@ -850,55 +846,76 @@ a{color:inherit;}
     document.getElementById('testiPrev').onclick=function(){go(-1);};
     window.addEventListener('resize',jump); setTimeout(jump,60);
   }
-  // ---- gallery: continuous infinite marquee (all screen sizes) ----
+  // ---- gallery: semicircular (arc) carousel ----
+  // Cards travel along the top of a half-circle: rising from the lower-right,
+  // over the crown, and back down to the lower-left. They scale up + come to
+  // the front near the crown and fade out at the two ends (hiding the wrap).
   (function(){
     var g=document.getElementById('gallery');
     if(!g) return;
     var origCards=Array.prototype.slice.call(g.children);
     var perSet=origCards.length;
     if(!perSet) return;
-    // Clone the set twice so there are 3 identical sets side by side; we can
-    // translate by exactly one set width and reset seamlessly -> infinite loop.
-    origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
+    // Duplicate the set once so the arc is well populated (base cards are few).
     origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
 
+    var cards=Array.prototype.slice.call(g.children);
+    var N=cards.length;
     var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var SPEED=42;            // px per second
-    var x=0, setW=0, last=0, raf=null, paused=false;
+    var SPEED=0.045;         // revolutions along the arc per second
+    var base=0, last=0, raf=null, paused=false;
+    var W=0,H=0,cx=0,cy=0,R=0,cw=0,ch=0;
 
     function measure(){
-      var cs=g.children;
-      // width of one original set = offset of the first cloned card
-      setW = cs.length>perSet ? (cs[perSet].offsetLeft - cs[0].offsetLeft) : 0;
+      W=g.clientWidth; H=g.clientHeight;
+      cw=cards[0].offsetWidth; ch=cards[0].offsetHeight;
+      cx=W/2;
+      // Radius: fit the arc comfortably inside width and height (leave headroom
+      // above the crown so the tallest card isn't clipped).
+      R=Math.min(W*0.40, (H-ch)*0.92);
+      cy=H*0.99;             // circle center near the bottom -> arc bulges up
     }
-    function frame(t){
-      if(last===0) last=t;
-      var dt=(t-last)/1000; last=t;
-      if(!paused && setW>0){
-        x-=SPEED*dt;
-        if(-x>=setW) x+=setW;      // wrap seamlessly
-        g.style.transform='translate3d('+x+'px,0,0)';
+
+    function smooth(e){ return e<=0?0:(e>=1?1:e*e*(3-2*e)); }
+
+    function place(){
+      for(var i=0;i<N;i++){
+        var p=(i/N + base) % 1;        // 0..1 position along the half-circle
+        var t=p*Math.PI;               // 0=right end, PI=left end
+        var s=Math.sin(t);             // 0 at ends, 1 at crown
+        var x=cx + R*Math.cos(t);      // right -> left
+        var y=cy - R*s;                // rise to the crown
+        var scale=0.62 + 0.38*s;       // bigger near the crown
+        var rot=(Math.PI/2 - t)*20;    // subtle tangential tilt (deg)
+        var op=smooth((s-0.06)/0.34);  // fade in/out near the ends
+        var c=cards[i];
+        c.style.transform='translate3d('+(x-cw/2)+'px,'+(y-ch/2)+'px,0) rotate('+rot+'deg) scale('+scale+')';
+        c.style.opacity=op.toFixed(3);
+        c.style.zIndex=String(Math.round(s*100));
       }
+    }
+
+    function frame(ts){
+      if(last===0) last=ts;
+      var dt=(ts-last)/1000; last=ts;
+      if(!paused){ base=(base+SPEED*dt)%1; place(); }
       raf=requestAnimationFrame(frame);
     }
     function start(){
       measure();
-      if(setW<=0){ setTimeout(start,120); return; }   // wait for images/layout
-      if(reduce){ g.style.transform='translate3d(0,0,0)'; return; }
+      if(W<=0||cw<=0){ setTimeout(start,120); return; }
+      place();
+      if(reduce) return;                 // respect reduced-motion: static arc
       if(!raf){ last=0; raf=requestAnimationFrame(frame); }
     }
 
-    // Pause on hover (desktop nicety), resume on leave.
     g.addEventListener('mouseenter',function(){paused=true;});
     g.addEventListener('mouseleave',function(){paused=false;});
 
-    // Recalculate set width on resize (keeps the loop seamless across breakpoints).
-    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(measure,160);});
-    // Re-measure once every image has decoded (base64 imgs settle instantly, but be safe).
+    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){measure();place();},160);});
     Array.prototype.forEach.call(g.querySelectorAll('img'),function(im){
-      if(!im.complete){ im.addEventListener('load',measure,{once:true}); }
+      if(!im.complete){ im.addEventListener('load',function(){measure();place();},{once:true}); }
     });
-    // Kick off after layout settles.
     if(document.readyState==='complete') start();
     else window.addEventListener('load',start);
     setTimeout(start,150);
@@ -951,13 +968,44 @@ a{color:inherit;}
   (function storyReveal(){
     var story = document.querySelector('.s-story .story');
     if (!story) return;
-    var els = story.querySelectorAll('.portrait, h2, .body, .sign');
+    var els = story.querySelectorAll('.portrait, h2, .sign');
     if (!els.length) return;
     gsap.set(els, { opacity: 0, y: 36 });
     gsap.to(els, {
       opacity: 1, y: 0,
       duration: 0.9, ease: 'power2.out', stagger: 0.12,
       scrollTrigger: { trigger: story, start: 'top 78%', toggleActions: 'play none none reverse' }
+    });
+  })();
+
+  // 2b) Story body — words "fill in" (dim -> full colour) as the reader scrolls.
+  (function storyFill(){
+    var body = document.querySelector('.s-story .body');
+    if (!body) return;
+    // Wrap every word in a span while preserving inline tags (<b>) and <br>.
+    function wrap(node){
+      Array.prototype.slice.call(node.childNodes).forEach(function(ch){
+        if (ch.nodeType === 3){
+          var parts = ch.nodeValue.split(/(\s+)/);
+          var frag = document.createDocumentFragment();
+          parts.forEach(function(pt){
+            if (!pt.length) return;
+            if (/^\s+$/.test(pt)) { frag.appendChild(document.createTextNode(pt)); }
+            else { var s = document.createElement('span'); s.className = 'rw'; s.textContent = pt; frag.appendChild(s); }
+          });
+          node.replaceChild(frag, ch);
+        } else if (ch.nodeType === 1 && ch.tagName !== 'BR'){
+          wrap(ch);
+        }
+      });
+    }
+    wrap(body);
+    var words = body.querySelectorAll('.rw');
+    if (!words.length) return;
+    gsap.set(words, { opacity: 0.2 });
+    gsap.to(words, {
+      opacity: 1, ease: 'none', stagger: 1,
+      scrollTrigger: { trigger: body, start: 'top 82%', end: 'bottom 58%', scrub: 0.4 }
     });
   })();
 
