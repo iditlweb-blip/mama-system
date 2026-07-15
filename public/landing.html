@@ -712,7 +712,8 @@ a{color:inherit;}
 
 </div>
 
-
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
 
 <script>
 (function(){
@@ -887,6 +888,96 @@ a{color:inherit;}
     if(!n||!(e||document.getElementById('cf-phone').value.trim())||!m){alert('נא למלא שם, דרך ליצירת קשר והודעה');return;}
     document.getElementById('cform').classList.add('sent');
   };}
+})();
+</script>
+
+<script>
+(function(){
+  // ---- scroll animations (GSAP + ScrollTrigger) ----
+  if (typeof gsap === 'undefined' || typeof ScrollTrigger === 'undefined') return;
+  gsap.registerPlugin(ScrollTrigger);
+
+  // Respect the user's OS-level motion preference — skip all scroll-linked
+  // animation and leave everything in its normal, static layout position.
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  // 1) Hero parallax: "אמא בסדר" headline drifts down and the mother+baby
+  // image scales up slightly as the hero section scrolls past.
+  (function heroParallax(){
+    var stage = document.querySelector('.stage');
+    var headline = document.querySelector('.headline');
+    var figureImg = document.querySelector('.figure img');
+    if (!stage || !headline || !figureImg) return;
+
+    gsap.to(headline, {
+      y: function(){ return stage.offsetHeight * 0.22; },
+      ease: 'none',
+      scrollTrigger: { trigger: stage, start: 'top top', end: 'bottom top', scrub: 0.6 }
+    });
+    gsap.to(figureImg, {
+      scale: 1.12,
+      transformOrigin: '50% 50%',
+      ease: 'none',
+      scrollTrigger: { trigger: stage, start: 'top top', end: 'bottom top', scrub: 0.6 }
+    });
+  })();
+
+  // 2) "הסיפור שמאחורי המערכת" — text reveals itself as it scrolls into view.
+  (function storyReveal(){
+    var story = document.querySelector('.s-story .story');
+    if (!story) return;
+    var els = story.querySelectorAll('.portrait, h2, .body, .sign');
+    if (!els.length) return;
+    gsap.set(els, { opacity: 0, y: 36 });
+    gsap.to(els, {
+      opacity: 1, y: 0,
+      duration: 0.9, ease: 'power2.out', stagger: 0.12,
+      scrollTrigger: { trigger: story, start: 'top 78%', toggleActions: 'play none none reverse' }
+    });
+  })();
+
+  // 3) Pleasant entrance animation for section headings, site-wide.
+  (function headingEntrances(){
+    var headings = document.querySelectorAll('.sec-title, .s-cta h2, .s-contact h2');
+    headings.forEach(function(h){
+      // .s-story h2 already gets its own reveal above — don't double-animate it.
+      if (h.closest('.s-story')) return;
+      gsap.fromTo(h, { opacity: 0, y: 28 }, {
+        opacity: 1, y: 0, duration: 0.8, ease: 'power2.out',
+        scrollTrigger: { trigger: h, start: 'top 85%', toggleActions: 'play none none reverse' }
+      });
+    });
+  })();
+
+  // 4) Phone mockup section: the mockup exits from off-screen, rotates,
+  // then settles into place and grows to its full, final display size.
+  (function phoneMockupEntrance(){
+    var section = document.querySelector('.s-phone');
+    if (!section) return;
+    var desktopStage = section.querySelector('.mk-stage');
+    var mobileImg = section.querySelector('.mk-mobile img');
+
+    if (desktopStage) {
+      gsap.fromTo(desktopStage,
+        { opacity: 0, scale: 0.72, rotate: -14, x: -60, transformOrigin: '50% 50%' },
+        {
+          opacity: 1, scale: 1, rotate: 0, x: 0,
+          duration: 1.1, ease: 'power3.out',
+          scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none reverse' }
+        }
+      );
+    }
+    if (mobileImg) {
+      gsap.fromTo(mobileImg,
+        { opacity: 0, scale: 0.8, rotate: -10, y: 40, transformOrigin: '50% 50%' },
+        {
+          opacity: 1, scale: 1, rotate: 0, y: 0,
+          duration: 1, ease: 'power3.out',
+          scrollTrigger: { trigger: section, start: 'top 75%', toggleActions: 'play none none reverse' }
+        }
+      );
+    }
+  })();
 })();
 </script>
 </body>

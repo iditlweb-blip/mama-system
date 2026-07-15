@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   User, Baby, Briefcase, Link, Check, Loader2, Camera, AlertTriangle, X, Heart,
-  Globe, Users, Calendar, UserRound
+  Globe, Users, Calendar, UserRound, LogOut
 } from 'lucide-react'
 
 function PregnancyIcon({ className }: { className?: string }) {
@@ -64,9 +64,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     (profile?.baby_gender as 'boy' | 'girl') || ''
   )
 
-  // ── Business
-  const [businessName, setBusinessName] = useState(profile?.business_name || '')
-  const [businessType, setBusinessType] = useState(profile?.business_type || '')
+  // ── Quick links
   const [websiteUrl,   setWebsiteUrl]   = useState(profile?.website_url || '')
   const [instagramUrl, setInstagramUrl] = useState(profile?.instagram_url || '')
   const [facebookUrl,  setFacebookUrl]  = useState(profile?.facebook_url || '')
@@ -109,8 +107,6 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       baby_birthdate:      babyBirthdate  || null,
       baby_gender:         babyGender     || null,
       profile_picture_url: profilePicUrl  || null,
-      business_name:       businessName   || null,
-      business_type:       businessType   || null,
       website_url:         websiteUrl     || null,
       instagram_url:       instagramUrl   || null,
       facebook_url:        facebookUrl    || null,
@@ -127,6 +123,15 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       router.refresh()
     }
     setSaving(false)
+  }
+
+  // ── Logout
+  const [loggingOut, setLoggingOut] = useState(false)
+  async function handleLogout() {
+    setLoggingOut(true)
+    await supabase.auth.signOut()
+    router.push('/auth')
+    router.refresh()
   }
 
   const initials = name ? name.charAt(0).toUpperCase() : ''
@@ -244,25 +249,6 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         )}
       </Section>
 
-      {/* ── Business ──────────────────────────────────────────────── */}
-      <Section icon={Briefcase} title="פרטי העסק" color="#4A7C59">
-        <Field label="שם העסק" value={businessName} onChange={setBusinessName} placeholder="סטודיו X, פרילנסר Y..." />
-        <div>
-          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>סוג עסק</label>
-          <select value={businessType} onChange={e => setBusinessType(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}>
-            <option value="">בחרי...</option>
-            <option value="freelance">פרילנסרית / עצמאית</option>
-            <option value="content">תוכן / סושיאל מדיה</option>
-            <option value="design">עיצוב / יצירה</option>
-            <option value="consulting">ייעוץ / הדרכה</option>
-            <option value="ecommerce">חנות אונליין</option>
-            <option value="other">אחר</option>
-          </select>
-        </div>
-      </Section>
-
       {/* ── Links ─────────────────────────────────────────────────── */}
       <Section icon={Link} title="קישורים מהירים" color="#5C7A6A">
         <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>מופיעים בעמוד ניהול העסק לגישה מהירה</p>
@@ -279,6 +265,14 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         style={{ background: saved ? '#4A7C59' : '#7F5268' }}>
         {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : null}
         {saving ? 'שומרת...' : saved ? 'נשמר בהצלחה!' : 'שמירת הגדרות'}
+      </button>
+
+      {/* ── Logout ────────────────────────────────────────────────── */}
+      <button onClick={handleLogout} disabled={loggingOut}
+        className="w-full py-3 rounded-xl font-semibold flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
+        style={{ background: 'transparent', color: '#DC2626', border: '1px solid #FECACA' }}>
+        {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+        {loggingOut ? 'מתנתקת...' : 'התנתקות'}
       </button>
     </div>
   )

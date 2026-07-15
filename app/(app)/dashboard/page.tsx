@@ -70,6 +70,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
+      userId={user!.id}
       profile={profile}
       tasks={tasks || []}
       motivation={motivation}

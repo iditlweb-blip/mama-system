@@ -3,11 +3,12 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle } from 'lucide-react'
 import { Task, BabyLog, Profile } from '@/types/database'
-import SelfCarePopup from './SelfCarePopup'
+import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
+import { useSleepTimer } from '@/lib/useSleepTimer'
 
 function NavBabyIcon() {
   return (
@@ -36,6 +37,7 @@ function NavTaskIcon() {
 }
 
 interface Props {
+  userId: string
   profile: Profile | null
   tasks: Task[]
   motivation: string
@@ -59,10 +61,11 @@ const TRACK = [
 ]
 
 export default function DashboardClient({
-  profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
+  userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
   nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
 }: Props) {
   const supabase = createClient()
+  const timer = useSleepTimer(userId)
 
   // Local mutable lists for optimistic deletion / editing
   const [localLogs,  setLocalLogs]  = useState<BabyLog[]>(initialLogs)
@@ -73,10 +76,17 @@ export default function DashboardClient({
   const [diaperCount, setDiaperCount] = useState(initialLogs.filter(l => l.type === 'diaper').length)
 
   const [showGaveBirth, setShowGaveBirth] = useState(false)
-  const [quickOpen,    setQuickOpen]    = useState(false)
-  const [selectedType, setSelectedType] = useState<'feed'|'sleep'|'diaper'|null>(null)
   const [saving,       setSaving]       = useState(false)
   const [savedFlash,   setSavedFlash]   = useState(false)
+
+  // Full log-entry form state (matches the baby tracker)
+  const [showForm,   setShowForm]   = useState<'feed'|'sleep'|'diaper'|null>(null)
+  const [feedType,   setFeedType]   = useState<'breast'|'bottle'>('breast')
+  const [amount,     setAmount]     = useState('')
+  const [duration,   setDuration]   = useState('')
+  const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
+  const [notes,      setNotes]      = useState('')
+  const [startTime,  setStartTime]  = useState(() => new Date().toISOString().slice(0, 16))
 
   // Edit state for tasks
   const [editingTaskId,    setEditingTaskId]    = useState<string | null>(null)
@@ -121,29 +131,54 @@ export default function DashboardClient({
     setEditingTaskTitle('')
   }
 
-  async function saveLog() {
-    if (!selectedType) return
-    setSaving(true)
-    const { data: { user } } = await supabase.auth.getUser()
-    const now = new Date().toISOString()
-    const { data: inserted } = await supabase
-      .from('baby_logs')
-      .insert({ user_id: user!.id, type: selectedType, start_time: now })
-      .select()
-      .single()
-    // Optimistic counter update — no reload
-    if (selectedType === 'feed')   setFeedCount(c => c + 1)
-    if (selectedType === 'sleep')  setSleepCount(c => c + 1)
-    if (selectedType === 'diaper') setDiaperCount(c => c + 1)
-    // Prepend new log to localLogs for immediate display
-    if (inserted) {
-      setLocalLogs(prev => [inserted as BabyLog, ...prev])
-    }
-    setSaving(false)
-    setSelectedType(null)
-    setQuickOpen(false)
+  // Add a freshly-inserted log to local state + bump the matching counter.
+  function addLogToState(log: BabyLog) {
+    setLocalLogs(prev => [log, ...prev])
+    if (log.type === 'feed')   setFeedCount(c => c + 1)
+    if (log.type === 'sleep')  setSleepCount(c => c + 1)
+    if (log.type === 'diaper') setDiaperCount(c => c + 1)
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 2000)
+  }
+
+  function resetForm() {
+    setShowForm(null)
+    setAmount(''); setDuration(''); setNotes('')
+    setFeedType('breast'); setDiaperType('wet')
+    setStartTime(new Date().toISOString().slice(0, 16))
+  }
+
+  function openForm(type: 'feed'|'sleep'|'diaper') {
+    setStartTime(new Date().toISOString().slice(0, 16))
+    setShowForm(type)
+  }
+
+  async function saveLog() {
+    if (!showForm) return
+    setSaving(true)
+    const payload: Partial<BabyLog> & { user_id: string; type: 'feed'|'sleep'|'diaper' } = {
+      user_id: userId,
+      type: showForm,
+      start_time: new Date(startTime).toISOString(),
+      notes: notes || null,
+    }
+    if (showForm === 'feed') {
+      payload.feed_type = feedType
+      if (amount)   payload.amount_ml   = parseInt(amount)
+      if (duration) payload.duration_min = parseInt(duration)
+    }
+    if (showForm === 'diaper') payload.diaper_type = diaperType
+    if (showForm === 'sleep' && duration) payload.duration_min = parseInt(duration)
+
+    const { data } = await supabase.from('baby_logs').insert(payload).select().single()
+    if (data) addLogToState(data as BabyLog)
+    setSaving(false)
+    resetForm()
+  }
+
+  async function handleTimerStop() {
+    const log = await timer.stop()
+    if (log) addLogToState(log)
   }
 
   const progressPercent = Math.min((babyWeeks / 52) * 100, 100)
@@ -151,8 +186,8 @@ export default function DashboardClient({
   return (
     <div className="space-y-5 max-w-5xl">
 
-      {/* Self-care popup — once per session, 4s delay */}
-      <SelfCarePopup />
+      {/* Entry popup — sleep timer status + quick feed/diaper marking */}
+      <EntryPopup userId={userId} onLog={addLogToState} />
 
       {/* Birthday milestone popup — at 6 months & 1 year */}
       {profile?.baby_name && (
@@ -384,6 +419,57 @@ export default function DashboardClient({
         )}
       </div>
 
+      {/* ── Sleep timer shortcut ─────────────────── */}
+      <div
+        className="card"
+        style={timer.active
+          ? { background: 'rgba(92,122,106,0.1)', border: '1px solid rgba(92,122,106,0.3)' }
+          : {}}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center"
+              style={{ background: timer.active ? 'rgba(92,122,106,0.15)' : 'var(--surface-2, #FAF4ED)' }}
+            >
+              <BedDouble className="w-5 h-5" style={{ color: '#5C7A6A' }} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {timer.active ? 'התינוק ישן עכשיו' : 'טיימר שינה'}
+              </p>
+              {timer.active ? (
+                <p className="text-lg font-mono font-bold" style={{ color: '#5C7A6A' }}>
+                  {timer.formatTimer(timer.elapsed)}
+                </p>
+              ) : (
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  לחצי כשהתינוק נרדם — יירשם אוטומטית
+                </p>
+              )}
+            </div>
+          </div>
+          {timer.active ? (
+            <button
+              onClick={handleTimerStop}
+              disabled={timer.stopping}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: '#5C7A6A' }}
+            >
+              <Square className="w-4 h-4" fill="white" /> {timer.stopping ? 'שומרת...' : 'סיום שינה'}
+            </button>
+          ) : (
+            <button
+              onClick={timer.start}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: '#5C7A6A' }}
+            >
+              <Play className="w-4 h-4" fill="white" /> התחלה
+            </button>
+          )}
+        </div>
+      </div>
+
       {/* ── Quick Log ────────────────────────────── */}
       <div className="card">
         <div className="flex items-center justify-between mb-3">
@@ -398,115 +484,233 @@ export default function DashboardClient({
           )}
         </div>
 
-        {!quickOpen ? (
-          /* Counts + open button */
-          <div>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {TRACK.map(({ type, label, color }) => (
-                <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
-                  <p className="text-base font-semibold" style={{ color }}>
-                    {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
-                  </p>
-                  <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
-                </div>
-              ))}
-            </div>
-
-            {/* Today's log list with delete buttons */}
-            {localLogs.length > 0 && (
-              <div className="space-y-1.5 mb-3">
-                {localLogs.slice(0, 6).map(log => {
-                  const track = TRACK.find(t => t.type === log.type)
-                  if (!track) return null
-                  const Icon = track.icon
-                  const time = log.start_time
-                    ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                    : ''
-                  return (
-                    <div
-                      key={log.id}
-                      className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                      style={{ background: `${track.color}0d`, position: 'relative' }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
-                        <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
-                        {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
-                      </div>
-                      <button
-                        onClick={() => deleteLog(log.id)}
-                        title="מחק רישום"
-                        style={{
-                          position: 'absolute',
-                          top: 6,
-                          right: 6,
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          background: 'rgba(200,50,50,0.1)',
-                          color: '#cc3333',
-                          border: 'none',
-                          cursor: 'pointer',
-                          fontSize: 12,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
-                      >
-                        ×
-                      </button>
-                    </div>
-                  )
-                })}
+        <div>
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            {TRACK.map(({ type, label, color }) => (
+              <div key={type} className="text-center py-2 rounded-lg" style={{ background: `${color}0d` }}>
+                <p className="text-base font-semibold" style={{ color }}>
+                  {type === 'feed' ? feedCount : type === 'sleep' ? sleepCount : diaperCount}
+                </p>
+                <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{label}</p>
               </div>
-            )}
-
-            <button
-              onClick={() => setQuickOpen(true)}
-              className="w-full py-2.5 rounded-xl text-sm font-medium transition-all"
-              style={{ background: 'rgba(127,82,104,0.1)', color: 'var(--primary)', border: '1px solid rgba(127,82,104,0.2)' }}
-            >
-              + הוסיפי רישום
-            </button>
+            ))}
           </div>
-        ) : (
-          /* Inline type selector */
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <p className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>בחרי מה לרשום:</p>
-              <button onClick={() => { setQuickOpen(false); setSelectedType(null) }}>
-                <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+
+          {/* Today's log list with delete buttons */}
+          {localLogs.length > 0 && (
+            <div className="space-y-1.5 mb-3">
+              {localLogs.slice(0, 6).map(log => {
+                const track = TRACK.find(t => t.type === log.type)
+                if (!track) return null
+                const Icon = track.icon
+                const time = log.start_time
+                  ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                  : ''
+                return (
+                  <div
+                    key={log.id}
+                    className="flex items-center justify-between px-3 py-1.5 rounded-lg"
+                    style={{ background: `${track.color}0d`, position: 'relative' }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
+                      <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
+                      {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
+                    </div>
+                    <button
+                      onClick={() => deleteLog(log.id)}
+                      title="מחק רישום"
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 6,
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        background: 'rgba(200,50,50,0.1)',
+                        color: '#cc3333',
+                        border: 'none',
+                        cursor: 'pointer',
+                        fontSize: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                    >
+                      ×
+                    </button>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {/* Per-type buttons — each opens the full log modal (date + time + details) */}
+          <div className="grid grid-cols-3 gap-2">
+            {TRACK.map(({ type, icon: Icon, label, color }) => (
+              <button
+                key={type}
+                onClick={() => openForm(type)}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all hover:opacity-90"
+                style={{ background: `${color}12`, border: `1.5px solid ${color}28` }}
+              >
+                <div className="flex items-center gap-1">
+                  <Plus className="w-3 h-3" style={{ color }} />
+                  <Icon className="w-4 h-4" style={{ color }} />
+                </div>
+                <span className="text-xs font-medium" style={{ color }}>{label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Log entry modal (full, like the tracker) ── */}
+      {showForm && (() => {
+        const cfg = TRACK.find(t => t.type === showForm)!
+        const CfgIcon = cfg.icon
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+            style={{ background: 'rgba(0,0,0,0.5)' }}
+            onClick={e => e.target === e.currentTarget && resetForm()}
+          >
+            <div className="card w-full max-w-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CfgIcon className="w-6 h-6" style={{ color: cfg.color }} />
+                  <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>רישום {cfg.label}</h3>
+                </div>
+                <button
+                  onClick={resetForm}
+                  className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70"
+                  style={{ background: 'var(--surface-2, #FAF4ED)' }}
+                >
+                  <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+                </button>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <Clock className="w-3 h-3" /> תאריך ושעה
+                </label>
+                <input
+                  type="datetime-local"
+                  value={startTime}
+                  onChange={e => setStartTime(e.target.value)}
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+
+              {showForm === 'feed' && (
+                <>
+                  <div>
+                    <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>סוג האכלה</label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {([['breast', Baby, 'שד'], ['bottle', Milk, 'בקבוק']] as const).map(([ft, FIcon, lbl]) => (
+                        <button
+                          key={ft}
+                          onClick={() => setFeedType(ft)}
+                          className="py-2.5 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5"
+                          style={feedType === ft
+                            ? { background: '#7F5268', color: 'white' }
+                            : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                        >
+                          <FIcon className="w-3.5 h-3.5" />{lbl}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    {feedType === 'bottle' && (
+                      <div>
+                        <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>כמות (מ&quot;ל)</label>
+                        <input
+                          type="number"
+                          value={amount}
+                          onChange={e => setAmount(e.target.value)}
+                          placeholder="120"
+                          className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                        />
+                      </div>
+                    )}
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך (דקות)</label>
+                      <input
+                        type="number"
+                        value={duration}
+                        onChange={e => setDuration(e.target.value)}
+                        placeholder="15"
+                        className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {showForm === 'sleep' && (
+                <div>
+                  <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
+                  <input
+                    type="number"
+                    value={duration}
+                    onChange={e => setDuration(e.target.value)}
+                    placeholder="90"
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                  />
+                </div>
+              )}
+
+              {showForm === 'diaper' && (
+                <div>
+                  <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>סוג חיתול</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {([['wet', Droplet, 'רטוב'], ['dirty', Circle, 'מלוכלך'], ['both', Sparkles, 'שניהם']] as const).map(([dt, DIcon, lbl]) => (
+                      <button
+                        key={dt}
+                        onClick={() => setDiaperType(dt)}
+                        className="py-2.5 rounded-xl text-xs font-medium transition-all flex flex-col items-center gap-1"
+                        style={diaperType === dt
+                          ? { background: '#4A7C59', color: 'white' }
+                          : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                      >
+                        <DIcon className="w-4 h-4" fill={dt === 'dirty' ? 'currentColor' : 'none'} />{lbl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>הערות (אופציונלי)</label>
+                <input
+                  type="text"
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="הוסיפי הערה..."
+                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
+
+              <button
+                onClick={saveLog}
+                disabled={saving}
+                className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
+                style={{ background: cfg.color }}
+              >
+                {saving ? 'שומרת...' : <><Check className="w-4 h-4" /> שמירת {cfg.label}</>}
               </button>
             </div>
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {TRACK.map(({ type, icon: Icon, label, color }) => (
-                <button
-                  key={type}
-                  onClick={() => setSelectedType(type)}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-xl transition-all"
-                  style={{
-                    background: selectedType === type ? color : `${color}12`,
-                    border: `1.5px solid ${selectedType === type ? color : `${color}28`}`,
-                  }}
-                >
-                  <Icon className="w-4 h-4" style={{ color: selectedType === type ? '#fff' : color }} />
-                  <span className="text-xs font-medium" style={{ color: selectedType === type ? '#fff' : color }}>{label}</span>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={saveLog}
-              disabled={!selectedType || saving}
-              className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all disabled:opacity-40"
-              style={{ background: selectedType ? TRACK.find(t => t.type === selectedType)!.color : 'var(--border)' }}
-            >
-              {saving ? 'שומר...' : 'שמור'}
-            </button>
           </div>
-        )}
-      </div>
+        )
+      })()}
 
       {/* ── Quick nav links ────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

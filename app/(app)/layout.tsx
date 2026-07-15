@@ -28,7 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
         />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-[calc(64px+env(safe-area-inset-bottom)+1.5rem)] md:pb-6">
           {children}
         </main>
         <PwaTracker />
