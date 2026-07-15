@@ -6,10 +6,12 @@ export default async function DashboardPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const [{ data: profile }, { data: tasks }, { data: logs }] = await Promise.all([
+  const todayDow = new Date().getDay()
+  const [{ data: profile }, { data: tasks }, { data: logs }, { data: todaySchedule }] = await Promise.all([
     supabase.from('profiles').select('*').eq('id', user!.id).single(),
     supabase.from('tasks').select('*').eq('user_id', user!.id).in('status', ['todo', 'inprogress']).order('created_at', { ascending: false }).limit(5),
     supabase.from('baby_logs').select('*').eq('user_id', user!.id).gte('start_time', new Date().toISOString().split('T')[0]).order('start_time', { ascending: false }).limit(10),
+    supabase.from('weekly_schedule').select('*').eq('user_id', user!.id).eq('day_of_week', todayDow).order('start_time'),
   ])
 
   const motivation = getDailyMotivation()
@@ -80,6 +82,7 @@ export default async function DashboardPage() {
       lastFeedAgo={lastFeedAgo}
       lastSleepAgo={lastSleepAgo}
       todayLogs={logs || []}
+      todaySchedule={todaySchedule || []}
     />
   )
 }

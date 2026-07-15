@@ -87,5 +87,7 @@ export interface WeeklyScheduleItem {
   end_time: string
   title: string
   type: 'work' | 'baby' | 'personal' | 'break'
+  notes?: string | null
+  completed?: boolean
   created_at: string
 }

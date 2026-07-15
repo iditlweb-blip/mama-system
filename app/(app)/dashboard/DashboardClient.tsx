@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle } from 'lucide-react'
-import { Task, BabyLog, Profile } from '@/types/database'
+import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
@@ -47,9 +47,16 @@ interface Props {
   lastFeedAgo: string | null
   lastSleepAgo: string | null
   todayLogs: BabyLog[]
+  todaySchedule: WeeklyScheduleItem[]
 }
 
 const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
+const scheduleColors: Record<'work'|'baby'|'personal'|'break', { text: string; label: string }> = {
+  work:     { text: '#7F5268', label: 'עבודה' },
+  baby:     { text: '#7F5268', label: 'תינוק' },
+  personal: { text: '#4A7C59', label: 'אישי' },
+  break:    { text: '#5C7A6A', label: 'הפסקה' },
+}
 const categoryText  = { work: 'עבודה', home: 'בית', baby: 'תינוק' }
 const categoryIcons = { work: Briefcase, home: Home, baby: Baby }
 const categoryClass   = { work: 'cat-work', home: 'cat-home', baby: 'cat-baby' }
@@ -63,6 +70,7 @@ const TRACK = [
 export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
   nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
+  todaySchedule: initialSchedule,
 }: Props) {
   const supabase = createClient()
   const timer = useSleepTimer(userId)
@@ -70,6 +78,12 @@ export default function DashboardClient({
   // Local mutable lists for optimistic deletion / editing
   const [localLogs,  setLocalLogs]  = useState<BabyLog[]>(initialLogs)
   const [localTasks, setLocalTasks] = useState<Task[]>(initialTasks)
+  const [localSchedule, setLocalSchedule] = useState<WeeklyScheduleItem[]>(initialSchedule)
+
+  async function toggleScheduleDone(id: string, completed: boolean) {
+    setLocalSchedule(prev => prev.map(s => s.id === id ? { ...s, completed } : s))
+    await supabase.from('weekly_schedule').update({ completed }).eq('id', id)
+  }
 
   const [feedCount,   setFeedCount]   = useState(initialLogs.filter(l => l.type === 'feed').length)
   const [sleepCount,  setSleepCount]  = useState(initialLogs.filter(l => l.type === 'sleep').length)
@@ -327,6 +341,50 @@ export default function DashboardClient({
           </Link>
         </div>
       </div>
+
+      {/* ── Today's schedule ───────────────────────── */}
+      {localSchedule.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+              הלוז של היום
+            </h2>
+            <Link href="/business" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
+              כל הלוז
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {localSchedule.map(item => {
+              const c = scheduleColors[item.type]
+              const done = !!item.completed
+              return (
+                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                  style={{ background: 'var(--surface-2, #FAF4ED)', opacity: done ? 0.55 : 1 }}>
+                  <button
+                    onClick={() => toggleScheduleDone(item.id, !done)}
+                    title={done ? 'בטלי סימון' : 'סמני כהושלם'}
+                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                    style={done ? { background: '#4A7C59', borderColor: '#4A7C59' } : { borderColor: c.text }}
+                  >
+                    {done && <Check className="w-3 h-3 text-white" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
+                    <p className="text-xs" style={{ color: c.text }}>
+                      {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
+                      {item.notes ? ` · ${item.notes}` : ''}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: `${c.text}18`, color: c.text }}>
+                    {c.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Tasks ──────────────────────────────────── */}
       <div className="card">

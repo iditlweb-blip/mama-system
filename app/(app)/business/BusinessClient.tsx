@@ -7,7 +7,7 @@ import {
   Globe, ExternalLink, Clock,
   ChevronDown, Loader2, X,
   Baby, Flower2, Coffee, Camera, Users, AlertTriangle, PartyPopper,
-  Sparkles, CheckCircle2
+  Sparkles, CheckCircle2, Pencil, StickyNote
 } from 'lucide-react'
 import { Profile, Task, WeeklyScheduleItem } from '@/types/database'
 
@@ -50,6 +50,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
   const [schedEnd, setSchedEnd] = useState('10:00')
   const [schedTitle, setSchedTitle] = useState('')
   const [schedType, setSchedType] = useState<'work' | 'baby' | 'personal' | 'break'>('work')
+  const [schedNotes, setSchedNotes] = useState('')
   const [schedSaving, setSchedSaving] = useState(false)
 
   async function addTask() {
@@ -77,6 +78,13 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus as any } : t))
   }
 
+  async function updateTask(id: string, title: string, priority: 'high' | 'medium' | 'low') {
+    const t = title.trim()
+    if (!t) return
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, title: t, priority } : x))
+    await supabase.from('tasks').update({ title: t, priority }).eq('id', id)
+  }
+
   async function deleteTask(id: string) {
     await supabase.from('tasks').delete().eq('id', id)
     setTasks(prev => prev.filter(t => t.id !== id))
@@ -92,13 +100,26 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
       end_time: schedEnd,
       title: schedTitle,
       type: schedType,
+      notes: schedNotes.trim() || null,
     }).select().single()
     if (data) setSchedule(prev => [...prev, data].sort((a, b) => a.day_of_week - b.day_of_week || a.start_time.localeCompare(b.start_time)))
     setSchedTitle('')
     setSchedStart('09:00')
     setSchedEnd('10:00')
+    setSchedNotes('')
     setShowScheduleForm(false)
     setSchedSaving(false)
+  }
+
+  async function toggleScheduleComplete(id: string, completed: boolean) {
+    setSchedule(prev => prev.map(s => s.id === id ? { ...s, completed } : s))
+    await supabase.from('weekly_schedule').update({ completed }).eq('id', id)
+  }
+
+  async function updateScheduleNote(id: string, notes: string) {
+    const n = notes.trim() || null
+    setSchedule(prev => prev.map(s => s.id === id ? { ...s, notes: n } : s))
+    await supabase.from('weekly_schedule').update({ notes: n }).eq('id', id)
   }
 
   async function deleteScheduleItem(id: string) {
@@ -241,7 +262,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
           ) : (
             <div className="space-y-2">
               {openTasks.map(task => (
-                <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                <TaskRow key={task.id} task={task} onToggle={toggleTask} onEdit={updateTask} onDelete={deleteTask} />
               ))}
             </div>
           )}
@@ -258,7 +279,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
               </summary>
               <div className="mt-3 space-y-2">
                 {doneTasks.map(task => (
-                  <TaskRow key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                  <TaskRow key={task.id} task={task} onToggle={toggleTask} onEdit={updateTask} onDelete={deleteTask} />
                 ))}
               </div>
             </details>
@@ -340,6 +361,17 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                   />
                 </div>
               </div>
+              <div>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>הערה (אופציונלי)</label>
+                <textarea
+                  value={schedNotes}
+                  onChange={e => setSchedNotes(e.target.value)}
+                  placeholder="פרטים נוספים על האירוע..."
+                  rows={2}
+                  className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                />
+              </div>
               <button
                 onClick={addScheduleItem}
                 disabled={schedSaving || !schedTitle.trim()}
@@ -375,28 +407,16 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                       יום {day}
                     </h3>
                     <div className="space-y-2">
-                      {dayItems.map(item => {
-                        const colors = scheduleTypeColors[item.type]
-                        return (
-                          <div key={item.id} className="flex items-center gap-3 p-2.5 rounded-xl"
-                            style={{ background: colors.bg, border: `1px solid ${colors.border}` }}>
-                            <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: colors.text }} />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{item.title}</p>
-                              <p className="text-xs" style={{ color: colors.text }}>
-                                {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
-                              </p>
-                            </div>
-                            <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: `${colors.text}20`, color: colors.text }}>
-                              <colors.icon size={12} />
-                              {colors.label}
-                            </span>
-                            <button onClick={() => deleteScheduleItem(item.id)} className="opacity-40 hover:opacity-100 transition-opacity">
-                              <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
-                            </button>
-                          </div>
-                        )
-                      })}
+                      {dayItems.map(item => (
+                        <ScheduleRow
+                          key={item.id}
+                          item={item}
+                          colors={scheduleTypeColors[item.type]}
+                          onToggle={toggleScheduleComplete}
+                          onSaveNote={updateScheduleNote}
+                          onDelete={deleteScheduleItem}
+                        />
+                      ))}
                     </div>
                   </div>
                 )
@@ -461,16 +481,67 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
   )
 }
 
-function TaskRow({ task, onToggle, onDelete }: {
+const priorityLabels: Record<'high' | 'medium' | 'low', string> = { high: 'דחוף', medium: 'בינוני', low: 'נמוך' }
+
+function TaskRow({ task, onToggle, onEdit, onDelete }: {
   task: Task
   onToggle: (id: string, status: string) => void
+  onEdit: (id: string, title: string, priority: 'high' | 'medium' | 'low') => void
   onDelete: (id: string) => void
 }) {
   const done = task.status === 'done'
   const overdue = task.due_date && !done && new Date(task.due_date) < new Date()
+  const [editing, setEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(task.title)
+  const [editPriority, setEditPriority] = useState<'high' | 'medium' | 'low'>(task.priority)
+
+  function startEdit() {
+    setEditTitle(task.title)
+    setEditPriority(task.priority)
+    setEditing(true)
+  }
+
+  function save() {
+    if (!editTitle.trim()) return
+    onEdit(task.id, editTitle, editPriority)
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(127,82,104,0.3)' }}>
+        <input
+          value={editTitle}
+          onChange={e => setEditTitle(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
+          autoFocus
+          className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
+          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+        />
+        <div className="flex items-center gap-2">
+          <select
+            value={editPriority}
+            onChange={e => setEditPriority(e.target.value as 'high' | 'medium' | 'low')}
+            className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+          >
+            <option value="high">דחוף</option>
+            <option value="medium">בינוני</option>
+            <option value="low">נמוך</option>
+          </select>
+          <button onClick={save} className="px-3 py-2 rounded-lg text-white text-sm font-medium flex items-center gap-1" style={{ background: '#4A7C59' }}>
+            <Check className="w-3.5 h-3.5" /> שמירה
+          </button>
+          <button onClick={() => setEditing(false)} className="px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            ביטול
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl transition-all"
+    <div className="flex items-center gap-3 p-3 rounded-xl transition-all group"
       style={{ background: 'var(--surface)', opacity: done ? 0.6 : 1 }}>
       <button
         onClick={() => onToggle(task.id, task.status)}
@@ -493,10 +564,97 @@ function TaskRow({ task, onToggle, onDelete }: {
           </p>
         )}
       </div>
-      <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: priorityColors[task.priority] }} />
-      <button onClick={() => onDelete(task.id)} className="opacity-30 hover:opacity-100 transition-opacity">
+      <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: `${priorityColors[task.priority]}18`, color: priorityColors[task.priority] }}>
+        {priorityLabels[task.priority]}
+      </span>
+      {!done && (
+        <button onClick={startEdit} title="עריכת משימה" className="opacity-30 group-hover:opacity-100 transition-opacity">
+          <Pencil className="w-3.5 h-3.5" style={{ color: '#7F5268' }} />
+        </button>
+      )}
+      <button onClick={() => onDelete(task.id)} title="מחיקה" className="opacity-30 hover:opacity-100 transition-opacity">
         <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
       </button>
+    </div>
+  )
+}
+
+function ScheduleRow({ item, colors, onToggle, onSaveNote, onDelete }: {
+  item: WeeklyScheduleItem
+  colors: { bg: string; border: string; text: string; label: string; icon: typeof Briefcase }
+  onToggle: (id: string, completed: boolean) => void
+  onSaveNote: (id: string, notes: string) => void
+  onDelete: (id: string) => void
+}) {
+  const done = !!item.completed
+  const [editingNote, setEditingNote] = useState(false)
+  const [noteDraft, setNoteDraft] = useState(item.notes || '')
+
+  return (
+    <div className="rounded-xl" style={{ background: colors.bg, border: `1px solid ${colors.border}`, opacity: done ? 0.55 : 1 }}>
+      <div className="flex items-center gap-3 p-2.5">
+        <button
+          onClick={() => onToggle(item.id, !done)}
+          title={done ? 'בטלי סימון' : 'סמני כהושלם'}
+          className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+          style={done ? { background: '#4A7C59', borderColor: '#4A7C59' } : { borderColor: colors.text }}
+        >
+          {done && <Check className="w-3 h-3 text-white" />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
+          <p className="text-xs" style={{ color: colors.text }}>
+            {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
+          </p>
+        </div>
+        <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: `${colors.text}20`, color: colors.text }}>
+          <colors.icon size={12} />
+          {colors.label}
+        </span>
+        <button
+          onClick={() => { setNoteDraft(item.notes || ''); setEditingNote(v => !v) }}
+          title="הערה"
+          className="transition-opacity"
+          style={{ opacity: item.notes ? 1 : 0.4, color: colors.text }}
+        >
+          <StickyNote className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={() => onDelete(item.id)} className="opacity-40 hover:opacity-100 transition-opacity">
+          <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
+        </button>
+      </div>
+
+      {!editingNote && item.notes && (
+        <p className="text-xs px-3 pb-2.5 -mt-1 leading-relaxed" style={{ color: 'var(--text-muted)', whiteSpace: 'pre-wrap' }}>
+          {item.notes}
+        </p>
+      )}
+
+      {editingNote && (
+        <div className="px-2.5 pb-2.5 space-y-2">
+          <textarea
+            value={noteDraft}
+            onChange={e => setNoteDraft(e.target.value)}
+            placeholder="כתבי הערה לאירוע..."
+            rows={2}
+            autoFocus
+            className="w-full px-3 py-2 rounded-lg border text-sm outline-none resize-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => { onSaveNote(item.id, noteDraft); setEditingNote(false) }}
+              className="px-3 py-1.5 rounded-lg text-white text-xs font-medium flex items-center gap-1"
+              style={{ background: '#4A7C59' }}
+            >
+              <Check className="w-3 h-3" /> שמירת הערה
+            </button>
+            <button onClick={() => setEditingNote(false)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+              ביטול
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
