@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Plus, Loader2, Heart, Trash2, Sparkles, FileText, Check, ChevronRight,
   Coffee, Footprints, Palette, BookOpen, Flower2, HandHeart, Music2, Leaf,
-  Star, Calendar, type LucideIcon
+  Star, Calendar, Eye, EyeOff, Copy, type LucideIcon
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -61,6 +61,8 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
   const NOTE_KEY = `personal_note_${userId}`
   const [noteText, setNoteText] = useState('')
   const [noteSaved, setNoteSaved] = useState(false)
+  const [noteOpen, setNoteOpen] = useState(false)
+  const [noteCopied, setNoteCopied] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
@@ -76,6 +78,28 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
       setTimeout(() => setNoteSaved(false), 2000)
     }, 800)
   }
+
+  async function copyNote() {
+    const text = noteText.trim()
+    if (!text) return
+    try {
+      await navigator.clipboard.writeText(text)
+    } catch {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.style.position = 'fixed'
+      ta.style.opacity = '0'
+      document.body.appendChild(ta)
+      ta.select()
+      try { document.execCommand('copy') } catch { /* ignore */ }
+      document.body.removeChild(ta)
+    }
+    setNoteCopied(true)
+    setTimeout(() => setNoteCopied(false), 1600)
+  }
+
+  const noteTrimmed = noteText.trim()
+  const noteExcerpt = noteTrimmed.length > 120 ? noteTrimmed.slice(0, 120).trimEnd() + '…' : noteTrimmed
 
   const motivation = MOTIVATIONS[new Date().getDay() % MOTIVATIONS.length]
 
@@ -309,20 +333,56 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
             <FileText className="w-4 h-4" style={{ color: '#7F5268' }} />
             פתק אישי
           </h2>
-          {noteSaved && (
-            <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
-              <Check className="w-3 h-3" /> נשמר
-            </span>
-          )}
+          <div className="flex items-center gap-2">
+            {noteSaved && (
+              <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
+                <Check className="w-3 h-3" /> נשמר
+              </span>
+            )}
+            {noteTrimmed && (
+              <button
+                onClick={copyNote}
+                title="העתקת הפתק"
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all"
+                style={{ background: noteCopied ? 'rgba(74,124,89,0.12)' : 'var(--surface-2)', color: noteCopied ? '#4A7C59' : 'var(--text-muted)', border: '1px solid var(--border)' }}
+              >
+                {noteCopied ? <><Check className="w-3 h-3" /> הועתק</> : <><Copy className="w-3 h-3" /> העתקה</>}
+              </button>
+            )}
+            <button
+              onClick={() => setNoteOpen(o => !o)}
+              title={noteOpen ? 'סגירה' : 'צפייה ועריכה'}
+              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs transition-all"
+              style={{ background: 'rgba(127,82,104,0.08)', color: '#7F5268', border: '1px solid rgba(127,82,104,0.18)' }}
+            >
+              {noteOpen ? <><EyeOff className="w-3 h-3" /> סגירה</> : <><Eye className="w-3 h-3" /> {noteTrimmed ? 'צפייה ועריכה' : 'כתיבה'}</>}
+            </button>
+          </div>
         </div>
-        <textarea
-          value={noteText}
-          onChange={e => handleNoteChange(e.target.value)}
-          placeholder="כתבי כאן כל מה שעל הלב — חלומות, תוכניות, מחשבות, מה שמתחשק..."
-          rows={5}
-          className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none leading-relaxed"
-          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-        />
+
+        {noteOpen ? (
+          <textarea
+            value={noteText}
+            onChange={e => handleNoteChange(e.target.value)}
+            placeholder="כתבי כאן כל מה שעל הלב — חלומות, תוכניות, מחשבות, מה שמתחשק..."
+            rows={6}
+            autoFocus
+            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none leading-relaxed"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+        ) : noteTrimmed ? (
+          <button
+            onClick={() => setNoteOpen(true)}
+            className="w-full text-right rounded-xl border px-3 py-2.5 text-sm leading-relaxed transition-all hover:opacity-80"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }}
+          >
+            {noteExcerpt}
+          </button>
+        ) : (
+          <p className="text-sm px-1 py-1" style={{ color: 'var(--text-muted)' }}>
+            עוד לא כתבת כלום. לחצי על ״כתיבה״ כדי להתחיל פתק אישי.
+          </p>
+        )}
       </div>
 
       {/* Log */}
