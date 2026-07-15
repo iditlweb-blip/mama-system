@@ -87,6 +87,7 @@ export default function DashboardClient({
   const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
   const [notes,      setNotes]      = useState('')
   const [startTime,  setStartTime]  = useState(() => new Date().toISOString().slice(0, 16))
+  const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
   // Edit state for tasks
   const [editingTaskId,    setEditingTaskId]    = useState<string | null>(null)
@@ -143,14 +144,27 @@ export default function DashboardClient({
 
   function resetForm() {
     setShowForm(null)
+    setEditingLogId(null)
     setAmount(''); setDuration(''); setNotes('')
     setFeedType('breast'); setDiaperType('wet')
     setStartTime(new Date().toISOString().slice(0, 16))
   }
 
   function openForm(type: 'feed'|'sleep'|'diaper') {
+    setEditingLogId(null)
     setStartTime(new Date().toISOString().slice(0, 16))
     setShowForm(type)
+  }
+
+  function editLog(log: BabyLog) {
+    setEditingLogId(log.id)
+    setShowForm(log.type as 'feed'|'sleep'|'diaper')
+    setStartTime(new Date(log.start_time).toISOString().slice(0, 16))
+    setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
+    setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
+    setDuration(log.duration_min != null ? String(log.duration_min) : '')
+    setDiaperType((log.diaper_type as 'wet'|'dirty'|'both') || 'wet')
+    setNotes(log.notes || '')
   }
 
   async function saveLog() {
@@ -161,6 +175,10 @@ export default function DashboardClient({
       type: showForm,
       start_time: new Date(startTime).toISOString(),
       notes: notes || null,
+      feed_type: null,
+      amount_ml: null,
+      diaper_type: null,
+      duration_min: null,
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
@@ -170,8 +188,13 @@ export default function DashboardClient({
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'sleep' && duration) payload.duration_min = parseInt(duration)
 
-    const { data } = await supabase.from('baby_logs').insert(payload).select().single()
-    if (data) addLogToState(data as BabyLog)
+    if (editingLogId) {
+      const { data } = await supabase.from('baby_logs').update(payload).eq('id', editingLogId).select().single()
+      if (data) setLocalLogs(prev => prev.map(l => l.id === editingLogId ? (data as BabyLog) : l))
+    } else {
+      const { data } = await supabase.from('baby_logs').insert(payload).select().single()
+      if (data) addLogToState(data as BabyLog)
+    }
     setSaving(false)
     resetForm()
   }
@@ -518,6 +541,29 @@ export default function DashboardClient({
                       {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
                     </div>
                     <button
+                      onClick={() => editLog(log)}
+                      title="ערוך רישום"
+                      style={{
+                        position: 'absolute',
+                        top: 6,
+                        right: 30,
+                        width: 20,
+                        height: 20,
+                        borderRadius: '50%',
+                        background: 'rgba(127,82,104,0.1)',
+                        color: '#7F5268',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.2)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.1)')}
+                    >
+                      <Pencil className="w-3 h-3" />
+                    </button>
+                    <button
                       onClick={() => deleteLog(log.id)}
                       title="מחק רישום"
                       style={{
@@ -581,7 +627,7 @@ export default function DashboardClient({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CfgIcon className="w-6 h-6" style={{ color: cfg.color }} />
-                  <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>רישום {cfg.label}</h3>
+                  <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>{editingLogId ? 'עריכת' : 'רישום'} {cfg.label}</h3>
                 </div>
                 <button
                   onClick={resetForm}
@@ -705,7 +751,7 @@ export default function DashboardClient({
                 className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
                 style={{ background: cfg.color }}
               >
-                {saving ? 'שומרת...' : <><Check className="w-4 h-4" /> שמירת {cfg.label}</>}
+                {saving ? 'שומרת...' : <><Check className="w-4 h-4" /> {editingLogId ? 'שמירת שינויים' : `שמירת ${cfg.label}`}</>}
               </button>
             </div>
           </div>

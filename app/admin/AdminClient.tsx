@@ -5,14 +5,14 @@ import {
   Users, Activity, Baby, CheckSquare, Shield,
   Search, TrendingUp, UserCheck, Clock, Trash2,
   KeyRound, UserPlus, X, Loader2, Smartphone, Eye, EyeOff,
-  Briefcase, ShoppingBag, Plus, Edit2, BarChart2,
+  Briefcase, ShoppingBag, Plus, Edit2, BarChart2, ImageDown,
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
   upsertProfessional, deleteProfessional,
-  upsertProduct, deleteProduct,
+  upsertProduct, deleteProduct, fetchProductImage,
 } from './actions'
 
 interface UserRow {
@@ -86,9 +86,10 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   const [showProForm, setShowProForm] = useState(false)
 
   // Product form
-  const emptyProduct = { id: '', name: '', description: '', coupon_code: '', buy_link: '', sort_order: '' }
+  const emptyProduct = { id: '', name: '', description: '', image_url: '', coupon_code: '', buy_link: '', sort_order: '' }
   const [productForm, setProductForm]       = useState(emptyProduct)
   const [showProductForm, setShowProductForm] = useState(false)
+  const [fetchingImage, setFetchingImage] = useState(false)
 
   // Create-user form
   const [newEmail, setNewEmail] = useState('')
@@ -273,8 +274,24 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
   // ── Product actions ────────────────────────────────────────────────────────────
   function editProduct(p: Product) {
-    setProductForm({ id: p.id, name: p.name, description: p.description ?? '', coupon_code: p.coupon_code ?? '', buy_link: p.buy_link ?? '', sort_order: p.sort_order?.toString() ?? '' })
+    setProductForm({ id: p.id, name: p.name, description: p.description ?? '', image_url: p.image_url ?? '', coupon_code: p.coupon_code ?? '', buy_link: p.buy_link ?? '', sort_order: p.sort_order?.toString() ?? '' })
     setShowProductForm(true)
+  }
+
+  async function handleFetchImage() {
+    if (!productForm.buy_link.trim()) {
+      showToast('יש להזין קודם קישור לרכישה', false)
+      return
+    }
+    setFetchingImage(true)
+    const res = await fetchProductImage(productForm.buy_link.trim())
+    setFetchingImage(false)
+    if (res.ok && res.image_url) {
+      setProductForm(f => ({ ...f, image_url: res.image_url! }))
+      showToast('תמונה נמשכה מהאתר')
+    } else {
+      showToast(res.error ?? 'לא נמצאה תמונה', false)
+    }
   }
 
   function handleSaveProduct(e: React.FormEvent) {
@@ -285,6 +302,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
         id: productForm.id || undefined,
         name: productForm.name,
         description: productForm.description || undefined,
+        image_url: productForm.image_url || undefined,
         coupon_code: productForm.coupon_code || undefined,
         buy_link: productForm.buy_link || undefined,
         sort_order: productForm.sort_order ? parseInt(productForm.sort_order) : undefined,
@@ -615,6 +633,23 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                     <input value={productForm.buy_link} onChange={e => setProductForm(f => ({ ...f, buy_link: e.target.value }))}
                       placeholder="קישור לרכישה"
                       className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    <div className="col-span-2 flex gap-2 items-start">
+                      <input value={productForm.image_url} onChange={e => setProductForm(f => ({ ...f, image_url: e.target.value }))}
+                        placeholder="קישור לתמונת המוצר"
+                        className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                      <button type="button" onClick={handleFetchImage} disabled={fetchingImage}
+                        title="משיכת תמונה מהאתר לפי קישור הרכישה"
+                        className="px-3 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60 shrink-0"
+                        style={{ background: '#7F5268' }}>
+                        {fetchingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageDown className="w-4 h-4" />}
+                        משיכת תמונה
+                      </button>
+                    </div>
+                    {productForm.image_url && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={productForm.image_url} alt="תצוגה מקדימה"
+                        className="col-span-2 h-24 w-24 object-cover rounded-xl border" style={{ borderColor: 'var(--border)' }} />
+                    )}
                     <textarea value={productForm.description} onChange={e => setProductForm(f => ({ ...f, description: e.target.value }))}
                       placeholder="תיאור קצר" rows={2}
                       className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none resize-none"

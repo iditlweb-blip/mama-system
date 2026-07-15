@@ -133,7 +133,7 @@ export default async function ProductsPage() {
                     fontSize: '0.85rem', textDecoration: 'none', fontWeight: 600,
                     textAlign: 'center',
                   }}>
-                    לרכישה
+                    לרכישה באתר
                   </a>
                 )}
               </div>

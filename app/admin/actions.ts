@@ -124,6 +124,7 @@ export async function upsertProduct(data: {
   id?: string
   name: string
   description?: string
+  image_url?: string
   coupon_code?: string
   buy_link?: string
   sort_order?: number
@@ -133,6 +134,7 @@ export async function upsertProduct(data: {
     const payload: Record<string, unknown> = {
       name: data.name,
       description: data.description ?? null,
+      image_url: data.image_url ?? null,
       coupon_code: data.coupon_code ?? null,
       buy_link: data.buy_link ?? null,
       sort_order: data.sort_order ?? null,
@@ -144,6 +146,48 @@ export async function upsertProduct(data: {
     revalidatePath('/admin')
     revalidatePath('/products')
     return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Fetch a product image (og:image / twitter:image) from a product page URL.
+export async function fetchProductImage(url: string): Promise<{ ok: boolean; image_url?: string; error?: string }> {
+  try {
+    await verifyAdmin()
+    if (!url || !/^https?:\/\//i.test(url)) {
+      return { ok: false, error: 'קישור לא תקין' }
+    }
+    const res = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; MamaFlowBot/1.0; +https://mamaflow.app)',
+        'Accept': 'text/html,application/xhtml+xml',
+      },
+      redirect: 'follow',
+    })
+    if (!res.ok) return { ok: false, error: `שגיאה בטעינת האתר (${res.status})` }
+    const html = await res.text()
+
+    const pick = (re: RegExp): string | null => {
+      const m = html.match(re)
+      return m ? m[1] : null
+    }
+    // Try several meta tags (property/name order varies between sites)
+    let img =
+      pick(/<meta[^>]+property=["']og:image:secure_url["'][^>]+content=["']([^"']+)["']/i) ||
+      pick(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image:secure_url["']/i) ||
+      pick(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ||
+      pick(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i) ||
+      pick(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i) ||
+      pick(/<meta[^>]+content=["']([^"']+)["'][^>]+name=["']twitter:image["']/i) ||
+      pick(/<link[^>]+rel=["']image_src["'][^>]+href=["']([^"']+)["']/i)
+
+    if (!img) return { ok: false, error: 'לא נמצאה תמונה באתר' }
+
+    // Resolve relative URLs against the page URL
+    try { img = new URL(img, url).href } catch { /* keep as-is */ }
+
+    return { ok: true, image_url: img }
   } catch (e: unknown) {
     return { ok: false, error: (e as Error).message }
   }

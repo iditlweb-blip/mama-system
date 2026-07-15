@@ -8,7 +8,7 @@ import {
   Circle, CalendarPlus, ChevronDown, ChevronUp, AlertTriangle, ChevronRight,
   ClipboardList, Carrot, Baby, Droplet, Sparkles, Star, Sprout, Calendar,
   Check, PartyPopper, Scale, Clock3, Ban, ChefHat, Salad, LeafyGreen, Soup,
-  Drumstick, Fish, Egg, Wheat, Banana, Moon, Sunrise,
+  Drumstick, Fish, Egg, Wheat, Banana, Moon, Sunrise, Pencil,
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -321,6 +321,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const supabase = createClient()
 
@@ -373,10 +374,16 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   async function saveLog() {
     if (!showForm) return
     setSaving(true)
+    // Fields that vary by type — reset the ones that don't apply so an edit
+    // that changes context doesn't leave stale values behind.
     const payload: Partial<BabyLog> = {
       user_id: userId, type: showForm,
       start_time: new Date(startTime).toISOString(),
       notes: notes || null,
+      feed_type: null,
+      amount_ml: null,
+      diaper_type: null,
+      duration_min: null,
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
@@ -386,17 +393,34 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'sleep' && duration) payload.duration_min = parseInt(duration)
 
-    const { data } = await supabase.from('baby_logs').insert(payload).select().single()
-    if (data) setLogs(prev => [data, ...prev])
+    if (editingId) {
+      const { data } = await supabase.from('baby_logs').update(payload).eq('id', editingId).select().single()
+      if (data) setLogs(prev => prev.map(l => (l.id === editingId ? data : l)))
+    } else {
+      const { data } = await supabase.from('baby_logs').insert(payload).select().single()
+      if (data) setLogs(prev => [data, ...prev])
+    }
     resetForm()
     setSaving(false)
   }
 
   function resetForm() {
     setShowForm(null)
+    setEditingId(null)
     setAmount(''); setDuration(''); setNotes('')
     setFeedType('breast'); setDiaperType('wet')
     setStartTime(new Date().toISOString().slice(0, 16))
+  }
+
+  function editLog(log: BabyLog) {
+    setEditingId(log.id)
+    setShowForm(log.type)
+    setStartTime(new Date(log.start_time).toISOString().slice(0, 16))
+    setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
+    setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
+    setDuration(log.duration_min != null ? String(log.duration_min) : '')
+    setDiaperType((log.diaper_type as 'wet' | 'dirty' | 'both') || 'wet')
+    setNotes(log.notes || '')
   }
 
   async function deleteLog(id: string) {
@@ -562,7 +586,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {(() => { const ModalIcon = typeConfig[showForm].icon; return <ModalIcon className="w-6 h-6" style={{ color: typeConfig[showForm].color }} /> })()}
-                <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>רישום {typeConfig[showForm].label}</h3>
+                <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>{editingId ? 'עריכת' : 'רישום'} {typeConfig[showForm].label}</h3>
               </div>
               <button onClick={resetForm} className="w-8 h-8 rounded-lg flex items-center justify-center hover:opacity-70" style={{ background: 'var(--bg)' }}>
                 <X className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
@@ -645,7 +669,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             <button onClick={saveLog} disabled={saving}
               className="w-full py-3 rounded-xl font-bold text-white flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: typeConfig[showForm].color }}>
-              {saving ? 'שומרת...' : <><Check className="w-4 h-4" />{`שמירת ${typeConfig[showForm].label}`}</>}
+              {saving ? 'שומרת...' : <><Check className="w-4 h-4" />{editingId ? 'שמירת שינויים' : `שמירת ${typeConfig[showForm].label}`}</>}
             </button>
           </div>
         </div>
@@ -687,7 +711,10 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{time}</span>
-                          <button onClick={() => deleteLog(log.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => editLog(log)} className="md:opacity-0 md:group-hover:opacity-100 transition-opacity" title="עריכה">
+                            <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+                          </button>
+                          <button onClick={() => deleteLog(log.id)} className="md:opacity-0 md:group-hover:opacity-100 transition-opacity" title="מחיקה">
                             <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
                           </button>
                         </div>
