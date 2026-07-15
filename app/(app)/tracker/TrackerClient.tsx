@@ -8,7 +8,7 @@ import {
   Circle, CalendarPlus, ChevronDown, ChevronUp, AlertTriangle, ChevronRight,
   ClipboardList, Carrot, Baby, Droplet, Sparkles, Star, Sprout, Calendar,
   Check, PartyPopper, Scale, Clock3, Ban, ChefHat, Salad, LeafyGreen, Soup,
-  Drumstick, Fish, Egg, Wheat, Banana,
+  Drumstick, Fish, Egg, Wheat, Banana, Moon, Sunrise,
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -133,6 +133,86 @@ const VACCINE_SCHEDULE = [
   { month: 24, title: 'הפטיטיס A', desc: 'חיסון שנתיים' },
 ]
 
+// ─── Age-based wake windows & naps ────────────────────────────
+// Each band: max age (weeks) it applies to, typical awake window between
+// sleeps (minutes), total daytime naps, and a typical nap length (minutes).
+const SLEEP_CONFIG = [
+  { maxWeek: 6,    label: '0–6 שבועות',    wakeMin: 60,  naps: 5, napLenMin: 45 },
+  { maxWeek: 12,   label: '6–12 שבועות',   wakeMin: 80,  naps: 4, napLenMin: 50 },
+  { maxWeek: 17,   label: '3–4 חודשים',    wakeMin: 105, naps: 4, napLenMin: 60 },
+  { maxWeek: 26,   label: '4–6 חודשים',    wakeMin: 135, naps: 3, napLenMin: 75 },
+  { maxWeek: 34,   label: '6–8 חודשים',    wakeMin: 165, naps: 3, napLenMin: 80 },
+  { maxWeek: 52,   label: '8–12 חודשים',   wakeMin: 210, naps: 2, napLenMin: 90 },
+  { maxWeek: 78,   label: '12–18 חודשים',  wakeMin: 270, naps: 2, napLenMin: 90 },
+  { maxWeek: 9999, label: '18 חודשים+',    wakeMin: 330, naps: 1, napLenMin: 120 },
+] as const
+
+type SleepBand = typeof SLEEP_CONFIG[number]
+
+function getSleepBand(weeks: number): SleepBand {
+  return SLEEP_CONFIG.find(c => weeks <= c.maxWeek) || SLEEP_CONFIG[SLEEP_CONFIG.length - 1]
+}
+
+interface SleepPlan {
+  band: SleepBand
+  napsTaken: number
+  napsRemaining: number
+  minutesToNextNap: number | null   // null when we can't compute (sleeping / no wake data)
+  nextNapAt: Date | null
+  bedtime: Date | null
+  sleeping: boolean
+  hasWakeData: boolean
+}
+
+function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping: boolean): SleepPlan {
+  const band = getSleepBand(weeks)
+
+  const sleeps = logs
+    .filter(l => l.type === 'sleep')
+    .map(l => ({ start: new Date(l.start_time), dur: l.duration_min || 0 }))
+    .sort((a, b) => a.start.getTime() - b.start.getTime())
+
+  // Count daytime sleeps (05:00–19:00) as naps already taken today.
+  const napsTaken = sleeps.filter(s => { const h = s.start.getHours(); return h >= 5 && h < 19 }).length
+  const napsRemaining = Math.max(0, band.naps - napsTaken)
+
+  // Most recent moment the baby woke up = end of the last completed sleep.
+  let lastWakeEnd: Date | null = null
+  if (sleeps.length) {
+    const last = sleeps[sleeps.length - 1]
+    lastWakeEnd = new Date(last.start.getTime() + last.dur * 60000)
+  }
+  const hasWakeData = lastWakeEnd !== null
+
+  let nextNapAt: Date | null = null
+  let minutesToNextNap: number | null = null
+  if (!sleeping && lastWakeEnd) {
+    nextNapAt = new Date(lastWakeEnd.getTime() + band.wakeMin * 60000)
+    minutesToNextNap = Math.round((nextNapAt.getTime() - now) / 60000)
+  }
+
+  // Predicted bedtime: chain the remaining naps and wake windows from the
+  // last time the baby was awake (or an assumed 07:00 morning wake if no data).
+  const morning = new Date(now); morning.setHours(7, 0, 0, 0)
+  const anchor = lastWakeEnd || morning
+  const N = napsRemaining
+  let bedtime: Date | null = new Date(anchor.getTime() + ((N + 1) * band.wakeMin + N * band.napLenMin) * 60000)
+  if (bedtime.getTime() < now) bedtime = null // overdue → show "soon" instead of a stale time
+
+  return { band, napsTaken, napsRemaining, minutesToNextNap, nextNapAt, bedtime, sleeping, hasWakeData }
+}
+
+function fmtDur(min: number): string {
+  if (min <= 0) return 'עכשיו'
+  const h = Math.floor(min / 60), m = min % 60
+  if (h > 0) return m > 0 ? `${h} ש׳ ו-${m} דק׳` : `${h} ש׳`
+  return `${m} דק׳`
+}
+
+function fmtTime(d: Date): string {
+  return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+}
+
 // ─── Main Component ───────────────────────────────────────────
 export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents }: Props) {
   const router = useRouter()
@@ -200,6 +280,8 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
           logs={logs} setLogs={setLogs}
           userId={userId}
           genderSuffix={genderSuffix}
+          babyWeeks={babyWeeks}
+          babyName={babyName}
         />
       )}
 
@@ -223,9 +305,10 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
 }
 
 // ─── Daily Tab ────────────────────────────────────────────────
-function DailyTab({ logs, setLogs, userId, genderSuffix }: {
+function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: {
   logs: BabyLog[]; setLogs: React.Dispatch<React.SetStateAction<BabyLog[]>>
   userId: string; genderSuffix: string
+  babyWeeks: number | null; babyName: string | null
 }) {
   const [showForm, setShowForm] = useState<LogType | null>(null)
   const [saving, setSaving] = useState(false)
@@ -238,7 +321,18 @@ function DailyTab({ logs, setLogs, userId, genderSuffix }: {
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
+  const [now, setNow] = useState(() => Date.now())
   const supabase = createClient()
+
+  // Tick every 30s so the "time until next nap" countdown stays fresh.
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30000)
+    return () => clearInterval(id)
+  }, [])
+
+  const sleepPlan = babyWeeks !== null
+    ? computeSleepPlan(babyWeeks, logs, now, sleepTimerActive)
+    : null
 
   useEffect(() => {
     if (!sleepTimerActive || !sleepTimerStart) return
@@ -327,6 +421,79 @@ function DailyTab({ logs, setLogs, userId, genderSuffix }: {
         <StatCard icon={Droplets} color="#4A7C59" label="חיתולים" value={diaperLogs.length}
           sub={`${diaperLogs.filter(l => l.diaper_type === 'dirty' || l.diaper_type === 'both').length} מלוכלך`} />
       </div>
+
+      {/* Sleep windows & naps by age */}
+      {sleepPlan && (
+        <div className="card" style={{ background: 'rgba(92,122,106,0.07)', border: '1px solid rgba(92,122,106,0.25)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Moon className="w-4 h-4" style={{ color: '#5C7A6A' }} />
+              חלונות שינה וערות
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'rgba(92,122,106,0.15)', color: '#5C7A6A' }}>
+              {sleepPlan.band.label}
+            </span>
+          </div>
+
+          {/* Wake window + total naps for age */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                <Sunrise className="w-3 h-3" /> חלון ערות
+              </p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>{fmtDur(sleepPlan.band.wakeMin)}</p>
+            </div>
+            <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+              <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                <BedDouble className="w-3 h-3" /> שנ״צים ביום
+              </p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>{sleepPlan.band.naps}</p>
+            </div>
+          </div>
+
+          {/* Live insights based on what was marked today */}
+          <div className="space-y-2">
+            {/* Remaining naps until night */}
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+              <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
+              <p className="text-sm" style={{ color: 'var(--text)' }}>
+                {sleepPlan.napsRemaining > 0
+                  ? <>נותרו עוד <b>{sleepPlan.napsRemaining}</b> שנ״צים עד הלילה <span style={{ color: 'var(--text-muted)' }}>({sleepPlan.napsTaken} כבר סומנו)</span></>
+                  : <>כל השנ״צים להיום הושלמו — נשארה רק שנת הלילה 🌙</>
+                }
+              </p>
+            </div>
+
+            {/* Time until next nap */}
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+              <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
+              <p className="text-sm" style={{ color: 'var(--text)' }}>
+                {sleepPlan.sleeping
+                  ? <>{`יש${genderSuffix} עכשיו 😴 — הטיימר רץ`}</>
+                  : !sleepPlan.hasWakeData
+                    ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
+                    : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
+                      ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
+                      : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
+                }
+              </p>
+            </div>
+
+            {/* Predicted bedtime */}
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+              style={{ background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
+              <Moon className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
+              <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                {sleepPlan.bedtime
+                  ? <>{`הלילה של ${babyName || 'התינוק'} יתחיל היום בערך ב-`}<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b></>
+                  : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Sleep Timer */}
       <div className="card" style={sleepTimerActive
