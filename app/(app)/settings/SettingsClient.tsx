@@ -279,6 +279,23 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         {loggingOut ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
         {loggingOut ? 'מתנתקת...' : 'התנתקות'}
       </button>
+
+      {/* ── Legal & copyright ──────────────────────── */}
+      <div className="pt-2 text-center">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+          <a href="/legal/privacy" className="underline" style={{ color: 'var(--text-muted)' }}>מדיניות פרטיות</a>
+          <span style={{ color: 'var(--border-solid)' }}>·</span>
+          <a href="/legal/accessibility" className="underline" style={{ color: 'var(--text-muted)' }}>הצהרת נגישות</a>
+          <span style={{ color: 'var(--border-solid)' }}>·</span>
+          <a href="/legal/terms" className="underline" style={{ color: 'var(--text-muted)' }}>תנאי שימוש</a>
+        </div>
+        <p className="text-xs mt-2" style={{ color: 'var(--text-muted)' }}>
+          כל הזכויות שמורות לעידית לאוב
+        </p>
+        <p className="text-[11px] mt-1 leading-relaxed" style={{ color: 'var(--text-muted)', opacity: 0.85 }}>
+          המידע באפליקציה הוא כללי בלבד ואינו מהווה ייעוץ רפואי או תחליף לרופא.
+        </p>
+      </div>
     </div>
   )
 }

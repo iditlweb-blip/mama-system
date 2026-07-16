@@ -411,6 +411,14 @@ a{color:inherit;}
 .cform .ok{display:none;text-align:center;color:var(--mauve);font-size:clamp(16px,1.6vw,20px);padding:10px;}
 .cform.sent .form-inner{display:none;}.cform.sent .ok{display:block;}
 
+.s-footer{background:var(--mauve);color:#fff;padding-block:clamp(30px,4vw,48px);text-align:center;}
+.s-footer .foot-links{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 14px;margin-bottom:16px;}
+.s-footer .foot-links a{color:#fff;text-decoration:underline;font-size:clamp(14px,1.2vw,16px);letter-spacing:.03em;opacity:.95;}
+.s-footer .foot-links a:hover{opacity:.75;}
+.s-footer .foot-links span{opacity:.5;}
+.s-footer .foot-disclaimer{max-width:680px;margin:0 auto 14px;font-size:clamp(12px,1vw,14px);line-height:1.7;opacity:.82;font-weight:300;}
+.s-footer .foot-rights{font-size:clamp(13px,1.1vw,15px);letter-spacing:.04em;opacity:.95;}
+
 .page-body .editable{transition:outline .1s;}
 .fx-editing .editable{cursor:move;}
 .fx-editing .editable:not(.fx-sel){outline:1px dashed rgba(127,82,104,.45);outline-offset:2px;}
@@ -710,6 +718,20 @@ a{color:inherit;}
       <div class="ok">תודה רבה! ההודעה נשלחה &#128156; נחזור אלייך בהקדם.</div>
     </div>
   </div></section>
+
+  <footer class="s-footer">
+    <div class="wrap">
+      <div class="foot-links">
+        <a href="/legal/privacy">מדיניות פרטיות</a>
+        <span>·</span>
+        <a href="/legal/accessibility">הצהרת נגישות</a>
+        <span>·</span>
+        <a href="/legal/terms">תנאי שימוש</a>
+      </div>
+      <p class="foot-disclaimer">המידע באתר ובאפליקציה הוא כללי ומידעי בלבד, נאסף בין היתר ממקורות פומביים באינטרנט, ואינו מהווה ייעוץ רפואי, אבחון או תחליף להתייעצות עם רופא/ה או גורם מוסמך.</p>
+      <p class="foot-rights">כל הזכויות שמורות לעידית לאוב &copy; 2026</p>
+    </div>
+  </footer>
 
 </div>
 
