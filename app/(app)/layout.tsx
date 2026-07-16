@@ -34,10 +34,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           profilePicUrl={profile?.profile_picture_url}
         />
         <main className="flex-1 overflow-y-auto">
-          {/* Consistent centered grid + symmetric side gutters across every page
-              (mobile + desktop). Extra bottom padding on mobile keeps content
-              clear of the fixed bottom nav bar. */}
-          <div className="mx-auto w-full max-w-5xl px-4 md:px-8 pt-4 md:pt-6 pb-[calc(64px+env(safe-area-inset-bottom)+5rem)] md:pb-8">
+          {/* Full-width content with symmetric side gutters (equal left/right)
+              across every page, mobile + desktop. Extra bottom padding on
+              mobile keeps content clear of the fixed bottom nav bar. */}
+          <div className="w-full px-4 md:px-8 pt-4 md:pt-6 pb-[calc(64px+env(safe-area-inset-bottom)+5rem)] md:pb-8">
             {children}
           </div>
         </main>
