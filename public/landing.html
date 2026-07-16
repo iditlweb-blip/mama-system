@@ -336,11 +336,15 @@ a{color:inherit;}
 .s-anywhere{padding-block:clamp(40px,6vw,80px) 0;overflow:visible;}
 .s-anywhere .sec-title{margin-bottom:0;}
 /* semicircular (arc) carousel — cards orbit along a half-circle and fade at the ends */
-.gal-wrap{width:100vw;margin-left:calc(50% - 50vw);position:relative;height:clamp(360px,42vw,580px);overflow:hidden;}
-.gallery{position:relative;width:100%;height:100%;}
-.tphoto{position:absolute;top:0;left:0;width:clamp(150px,15vw,220px);aspect-ratio:380/460;border-radius:clamp(16px,1.4vw,26px);overflow:hidden;box-shadow:0 22px 46px rgba(58,30,46,.20);transform-origin:center center;will-change:transform,opacity;}
+.gal-wrap{width:100vw;margin-left:calc(50% - 50vw);position:relative;height:clamp(360px,40vw,560px);overflow:hidden;display:flex;align-items:center;justify-content:flex-start;direction:ltr;}
+.gallery{display:flex;align-items:center;gap:clamp(48px,7vw,130px);width:max-content;direction:ltr;will-change:transform;padding:0 clamp(40px,6vw,110px);}
+.tphoto{position:relative;flex:none;width:clamp(210px,20vw,320px);aspect-ratio:380/460;border-radius:clamp(16px,1.4vw,26px);overflow:hidden;box-shadow:0 22px 46px rgba(58,30,46,.20);will-change:transform;}
 .tphoto img{width:100%;height:100%;object-fit:cover;display:block;}
 .tphoto::after{content:none;}
+.tphoto:nth-of-type(4n+1){transform:rotate(-6deg);}
+.tphoto:nth-of-type(4n+2){transform:rotate(4deg);}
+.tphoto:nth-of-type(4n+3){transform:rotate(-3deg);}
+.tphoto:nth-of-type(4n){transform:rotate(6deg);}
 .gal-clone{display:block;}
 .gal-nav{display:none;}
 .gal-cta{position:absolute;left:50%;bottom:clamp(10px,2vw,26px);transform:translateX(-50%);z-index:6;}
@@ -449,10 +453,10 @@ a{color:inherit;}
   .mk-stage{display:none;}
   .mk-mobile{display:block;}
   /* gallery: arc carousel on mobile too (JS positions cards) */
-  .gal-wrap{width:100vw;margin-left:calc(50% - 50vw);height:clamp(320px,82vw,440px);overflow:hidden;position:relative;}
-  .gallery{position:relative;width:100%;height:100%;}
+  .gal-wrap{width:100vw;margin-left:calc(50% - 50vw);height:clamp(300px,76vw,430px);overflow:hidden;position:relative;display:flex;align-items:center;}
+  .gallery{gap:clamp(30px,11vw,70px);padding:0 26px;}
   .gal-clone{display:block!important;}
-  .tphoto{width:38vw;max-width:180px;}
+  .tphoto{width:46vw;max-width:200px;}
   .gal-cta{left:50%;bottom:12px;}
   .gal-nav{display:none;}
   .gal-nav button{width:54px;height:54px;border-radius:50%;border:none;background:var(--mauve);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 6px 18px rgba(127,82,104,.3);}
@@ -847,74 +851,50 @@ a{color:inherit;}
     window.addEventListener('resize',jump); setTimeout(jump,60);
   }
   // ---- gallery: semicircular (arc) carousel ----
-  // Cards travel along the top of a half-circle: rising from the lower-right,
-  // over the crown, and back down to the lower-left. They scale up + come to
-  // the front near the crown and fade out at the two ends (hiding the wrap).
+  // Linear marquee: tilted cards drift continuously to the left and loop
+  // seamlessly. It NEVER pauses on hover or interaction. Cards run off the
+  // screen at both edges (the wrap clips them via overflow:hidden).
   (function(){
     var g=document.getElementById('gallery');
     if(!g) return;
     var origCards=Array.prototype.slice.call(g.children);
     var perSet=origCards.length;
     if(!perSet) return;
-    // Duplicate the set once so the arc is well populated (base cards are few).
-    origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
-
-    var cards=Array.prototype.slice.call(g.children);
-    var N=cards.length;
-    var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var SPEED=0.045;         // revolutions along the arc per second
-    var base=0, last=0, raf=null, paused=false;
-    var W=0,H=0,cx=0,cy=0,R=0,cw=0,ch=0;
-
-    function measure(){
-      W=g.clientWidth; H=g.clientHeight;
-      cw=cards[0].offsetWidth; ch=cards[0].offsetHeight;
-      cx=W/2;
-      // Radius: fit the arc comfortably inside width and height (leave headroom
-      // above the crown so the tallest card isn't clipped).
-      R=Math.min(W*0.40, (H-ch)*0.92);
-      cy=H*0.99;             // circle center near the bottom -> arc bulges up
+    // Duplicate the set twice (=> 3 sets) so the strip always overflows the
+    // viewport and can loop without any visible gap.
+    for(var k=0;k<2;k++){
+      origCards.forEach(function(c){var cl=c.cloneNode(true);cl.classList.add('gal-clone');g.appendChild(cl);});
     }
 
-    function smooth(e){ return e<=0?0:(e>=1?1:e*e*(3-2*e)); }
+    var cards=Array.prototype.slice.call(g.children);
+    var reduce=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var SPEED=42;            // px/second — constant, uninterrupted drift
+    var x=0, last=0, raf=null, setW=0;
 
-    function place(){
-      for(var i=0;i<N;i++){
-        var p=(i/N + base) % 1;        // 0..1 position along the half-circle
-        var t=p*Math.PI;               // 0=right end, PI=left end
-        var s=Math.sin(t);             // 0 at ends, 1 at crown
-        var x=cx + R*Math.cos(t);      // right -> left
-        var y=cy - R*s;                // rise to the crown
-        var scale=0.62 + 0.38*s;       // bigger near the crown
-        var rot=(Math.PI/2 - t)*20;    // subtle tangential tilt (deg)
-        var op=smooth((s-0.06)/0.34);  // fade in/out near the ends
-        var c=cards[i];
-        c.style.transform='translate3d('+(x-cw/2)+'px,'+(y-ch/2)+'px,0) rotate('+rot+'deg) scale('+scale+')';
-        c.style.opacity=op.toFixed(3);
-        c.style.zIndex=String(Math.round(s*100));
-      }
+    function measure(){
+      // Exact width of one set incl. the trailing gap = distance between the
+      // first card of set 1 and the first card of set 2.
+      setW=(cards[perSet]?cards[perSet].offsetLeft:0)-cards[0].offsetLeft;
     }
 
     function frame(ts){
       if(last===0) last=ts;
       var dt=(ts-last)/1000; last=ts;
-      if(!paused){ base=(base+SPEED*dt)%1; place(); }
+      x-=SPEED*dt;
+      if(setW>0){ while(-x>=setW){ x+=setW; } }
+      g.style.transform='translate3d('+x+'px,0,0)';
       raf=requestAnimationFrame(frame);
     }
     function start(){
       measure();
-      if(W<=0||cw<=0){ setTimeout(start,120); return; }
-      place();
-      if(reduce) return;                 // respect reduced-motion: static arc
+      if(setW<=0){ setTimeout(start,120); return; }
+      if(reduce){ g.style.transform='translate3d(0,0,0)'; return; }
       if(!raf){ last=0; raf=requestAnimationFrame(frame); }
     }
 
-    g.addEventListener('mouseenter',function(){paused=true;});
-    g.addEventListener('mouseleave',function(){paused=false;});
-
-    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){measure();place();},160);});
+    var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(measure,160);});
     Array.prototype.forEach.call(g.querySelectorAll('img'),function(im){
-      if(!im.complete){ im.addEventListener('load',function(){measure();place();},{once:true}); }
+      if(!im.complete){ im.addEventListener('load',measure,{once:true}); }
     });
     if(document.readyState==='complete') start();
     else window.addEventListener('load',start);

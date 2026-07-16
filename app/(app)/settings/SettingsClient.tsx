@@ -83,8 +83,13 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
       if (upErr) throw upErr
       const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-      setProfilePicUrl(publicUrl)
-      await supabase.from('profiles').upsert({ id: userId, profile_picture_url: publicUrl })
+      // The storage path is stable, so the public URL never changes between
+      // uploads and the browser keeps serving the cached old image. A version
+      // query param forces both this preview and the TopBar avatar to refresh.
+      const bustedUrl = `${publicUrl}?v=${Date.now()}`
+      setProfilePicUrl(bustedUrl)
+      const { error: saveErr } = await supabase.from('profiles').upsert({ id: userId, profile_picture_url: bustedUrl })
+      if (saveErr) throw saveErr
       router.refresh()
     } catch {
       setError('שגיאה בהעלאת התמונה. ודאי שה-bucket "avatars" קיים ב-Supabase Storage.')

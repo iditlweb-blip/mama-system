@@ -68,7 +68,7 @@ export default function Sidebar({ userName, trackingType }: {
   }
 
   const Content = () => (
-    <div className="flex flex-col h-full py-6 px-4">
+    <div className="flex flex-col h-full pt-6 px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] md:pb-6">
       {/* Logo */}
       <div className="flex items-center gap-3 px-2 mb-8">
         <Image src="/logo.svg" alt="אמא בסדר" width={22} height={36} />
@@ -128,7 +128,7 @@ export default function Sidebar({ userName, trackingType }: {
       </aside>
 
       <button
-        className="md:hidden fixed top-4 right-4 z-50 w-10 h-10 rounded-xl flex items-center justify-center"
+        className="md:hidden fixed top-4 right-4 z-[120] w-10 h-10 rounded-xl flex items-center justify-center"
         style={{ background: '#fff', border: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
         onClick={() => setOpen(!open)}
       >
@@ -137,9 +137,9 @@ export default function Sidebar({ userName, trackingType }: {
       </button>
 
       {open && (
-        <div className="md:hidden fixed inset-0 z-40">
+        <div className="md:hidden fixed inset-0 z-[110]">
           <div className="absolute inset-0 bg-black/30" onClick={() => setOpen(false)} />
-          <aside className="absolute right-0 top-0 h-full w-56 flex flex-col" style={{ background: '#fff' }}>
+          <aside className="absolute right-0 top-0 h-full w-56 flex flex-col overflow-y-auto" style={{ background: '#fff' }}>
             <Content />
           </aside>
         </div>

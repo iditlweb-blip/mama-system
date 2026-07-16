@@ -15,7 +15,7 @@ function PregnancyIcon() {
   )
 }
 
-export default function OnboardingPage() {
+export default function OnboardingClient() {
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
@@ -65,7 +65,7 @@ export default function OnboardingPage() {
           .upload(path, form.profileFile, { upsert: true })
         if (uploadData) {
           const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-          profile_picture_url = urlData.publicUrl
+          profile_picture_url = `${urlData.publicUrl}?v=${Date.now()}`
         }
         setUploading(false)
       }
