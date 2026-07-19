@@ -56,6 +56,7 @@ export interface BabyLog {
   notes: string | null
   start_time: string
   end_time: string | null
+  is_night: boolean | null
   created_at: string
 }
 

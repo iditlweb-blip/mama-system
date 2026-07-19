@@ -1,26 +1,36 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
   Milk, BedDouble, Droplets, Plus, X, Clock,
-  Trash2, Play, Square, Apple, Syringe, CheckCircle2,
-  Circle, CalendarPlus, ChevronDown, ChevronUp, AlertTriangle, ChevronRight,
-  ClipboardList, Carrot, Baby, Droplet, Sparkles, Star, Sprout, Calendar,
-  Check, PartyPopper, Scale, Clock3, Ban, ChefHat, Salad, LeafyGreen, Soup,
-  Drumstick, Fish, Egg, Wheat, Banana, Moon, Sunrise, Pencil,
+  Trash2, Play, Square, Syringe,
+  Circle, AlertTriangle, ChevronRight,
+  ClipboardList, Carrot, Baby, Droplet, Sparkles, Star,
+  Check, Clock3, Moon, Sunrise, Pencil,
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
+import { useSleepTimer } from '@/lib/useSleepTimer'
+import dynamic from 'next/dynamic'
+import type { HealthEvent } from './HealthTab'
 
-interface HealthEvent {
-  id: string
-  user_id: string
-  type: 'vaccine' | 'checkup' | 'other'
-  title: string
-  scheduled_date: string
-  completed: boolean
-  notes?: string | null
+// Weaning guide and health/vaccine tabs carry sizeable static Hebrew data
+// (and their own icon sets) that most sessions never touch — lazy-load them
+// so that weight isn't in the initial JS for the default "daily" tab.
+const WeaningTab = dynamic(() => import('./WeaningTab'), {
+  loading: () => <TabLoading />,
+})
+const HealthTab = dynamic(() => import('./HealthTab'), {
+  loading: () => <TabLoading />,
+})
+
+function TabLoading() {
+  return (
+    <div className="card text-center py-10" style={{ color: 'var(--text-muted)' }}>
+      טוענת...
+    </div>
+  )
 }
 
 interface Props {
@@ -38,100 +48,6 @@ const typeConfig = {
   sleep:  { label: 'שינה',  icon: BedDouble, color: '#5C7A6A', bg: 'rgba(92,122,106,0.1)',  border: 'rgba(92,122,106,0.25)' },
   diaper: { label: 'חיתול', icon: Droplets,  color: '#7A6A3C', bg: 'rgba(122,106,60,0.1)',  border: 'rgba(122,106,60,0.25)' },
 }
-
-// ─── Weaning guide data ───────────────────────────────────────
-const WEANING_STAGES = [
-  {
-    fromWeek: 17, toWeek: 20,
-    title: 'שלב ראשון — טעימות ראשונות',
-    subtitle: '4–5 חודשים',
-    icon: Carrot,
-    quantity: '1–3 כפיות',
-    frequency: 'פעם ביום',
-    timing: 'אחרי האכלת חלב',
-    texture: 'פירה חלק מאוד, דק עם חלב אם / מים',
-    foods: ['בטטה', 'גזר', 'תפוח', 'אגס', 'קישוא', 'דלעת'],
-    avoid: ['דבש', 'מלח', 'סוכר', 'בקר (חלבון)', 'ביצה'],
-    allergens: [],
-    recipes: [
-      { name: 'פירה בטטה', icon: Carrot, steps: 'בשלי בטטה עד לריכוך, מעכי עם מים/חלב אם לפירה חלק.' },
-      { name: 'פירה גזר', icon: Carrot, steps: 'בשלי גזר, הוסיפי קצת מים לפירה דליל.' },
-      { name: 'פירה תפוח', icon: Apple, steps: 'אדי/בשלי תפוח, תמעכי. אפשר גם להגיש חי (מגורר דק מאוד).' },
-    ],
-  },
-  {
-    fromWeek: 21, toWeek: 26,
-    title: 'שלב שני — הרחבת תפריט',
-    subtitle: '5–6 חודשים',
-    icon: Salad,
-    quantity: '3–6 כפות',
-    frequency: 'פעם–פעמיים ביום',
-    timing: 'בין האכלות חלב',
-    texture: 'פירה עם קצת גושים קטנים',
-    foods: ['ברוקולי', 'אפונה', 'אבוקדו', 'בננה', 'אוכמניות', 'דגני בוקר (שיבולת שועל)'],
-    avoid: ['דבש', 'מלח', 'אגוזים שלמים'],
-    allergens: ['ניתן להתחיל גלוטן (שיבולת שועל/חיטה)'],
-    recipes: [
-      { name: 'אבוקדו+בננה', icon: LeafyGreen, steps: 'מעכי אבוקדו ובננה ביחד — לא צריך בישול!' },
-      { name: 'ברוקולי מאודה', icon: Salad, steps: 'אדי ברוקולי 8 דק׳, מעכי עם מים לפירה.' },
-      { name: 'דייסת שיבולת שועל', icon: Soup, steps: 'שיבולת שועל + חלב אם/מים, בישול 3 דק׳.' },
-    ],
-  },
-  {
-    fromWeek: 27, toWeek: 34,
-    title: 'שלב שלישי — מרקמים ועשיר',
-    subtitle: '6.5–8 חודשים',
-    icon: Drumstick,
-    quantity: '1/4–1/2 כוס לארוחה',
-    frequency: '2–3 ארוחות ביום',
-    timing: 'ארוחת בוקר, צהריים, ערב',
-    texture: 'פירה גס, מרוסק, או BLW — אצבעות רכות',
-    foods: ['עוף מבושל', 'דג (סלמון/קרפיון)', 'עדשים', 'יוגורט', 'גבינה בולגרית'],
-    avoid: ['דבש', 'מלח', 'סוכר', 'אוכל ים (שרימפס/לובסטר)', 'פטריות נא'],
-    allergens: ['ביצה (חלמון קודם)', 'דגים (אחת בשבוע)', 'חלב מוצרים (לא חלב פרה נוזלי)'],
-    recipes: [
-      { name: 'עוף+ירקות', icon: Drumstick, steps: 'בשלי עוף+גזר+תפו"א, מרסקי לפירה. מניחי גוש עוף לBLW.' },
-      { name: 'סלמון מאודה', icon: Fish, steps: 'אדי סלמון 10 דק׳, פרקי לחתיכות קטנות. בדקי עצמות!' },
-      { name: 'חביתה ביצה', icon: Egg, steps: 'חלמון+חלבון, מטגנת בכפית שמן זית, חתכי לרצועות.' },
-    ],
-  },
-  {
-    fromWeek: 35, toWeek: 52,
-    title: 'שלב רביעי — אוכל משפחתי',
-    subtitle: '8–12 חודשים',
-    icon: Wheat,
-    quantity: 'כ-150–200 מ"ל לארוחה',
-    frequency: '3 ארוחות + 1–2 חטיפים',
-    timing: 'תבנית ארוחות קבועה',
-    texture: 'גושים רכים, אצבעות, אוכל "משפחתי" מרוסק',
-    foods: ['פסטה', 'אורז', 'לחם רך', 'גבינות', 'כל ירק/פרי', 'קטניות'],
-    avoid: ['דבש', 'מלח מוסף', 'סוכר', 'אוכל חד-מרגנרין', 'אגוזים שלמים (בטחון)'],
-    allergens: ['ניתן כבר לאכול רוב האלרגנים — כולל אגוהי קשיו (טחון)'],
-    recipes: [
-      { name: 'פסטה+ציר', icon: Wheat, steps: 'פסטה קצרה + ציר ירקות/עוף ביתי. ללא מלח.' },
-      { name: 'עדשות+תרד', icon: Soup, steps: 'עדשות כתומות + תרד + גזר. בישול 20 דק׳.' },
-      { name: 'חטיף בננה+גבינה', icon: Banana, steps: 'פרוסות בננה + גבינת שמנת = חטיף מהיר.' },
-    ],
-  },
-]
-
-const READINESS_CHECKLIST = [
-  { id: 'head', label: 'מחזיק/ת ראש זקוף ויושב/ת עם תמיכה', detail: 'צריך ליכולת לאכול בבטחה' },
-  { id: 'interest', label: 'מראה עניין באוכל — מסתכל/ת, מושיט/ה יד', detail: 'סימן לבגרות' },
-  { id: 'mouth', label: 'מכניס/ה דברים לפה', detail: 'כישור יסוד לאכילה' },
-  { id: 'tongue', label: 'לא מוציא/ה אוכל מהפה מיד (ירידה רפלקס דחיפה)', detail: 'מוכנות פיזיולוגית' },
-]
-
-// Standard Israeli vaccine schedule (months)
-const VACCINE_SCHEDULE = [
-  { month: 0,  title: 'הפטיטיס B', desc: 'חיסון ראשון — ניתן בלידה' },
-  { month: 2,  title: 'פנטה + פוליו + פנאומוקוק + רוטה', desc: 'חיסון 2 חודשים' },
-  { month: 4,  title: 'פנטה + פוליו + פנאומוקוק + רוטה', desc: 'חיסון 4 חודשים' },
-  { month: 6,  title: 'פנטה + פוליו + פנאומוקוק + הפטיטיס B', desc: 'חיסון 6 חודשים' },
-  { month: 12, title: 'חצבת-אדמת-חזרת (MMR) + אבעבועות רוח', desc: 'חיסון שנה' },
-  { month: 18, title: 'בוסטר פנטה + פוליו + המופילוס', desc: 'חיסון 18 חודשים' },
-  { month: 24, title: 'הפטיטיס A', desc: 'חיסון שנתיים' },
-]
 
 // ─── Age-based wake windows & naps ────────────────────────────
 // Each band: max age (weeks) it applies to, typical awake window between
@@ -162,31 +78,44 @@ interface SleepPlan {
   bedtime: Date | null
   sleeping: boolean
   hasWakeData: boolean
+  recommendFewerNaps: boolean
+  recommendedNapsRemaining: number | null
 }
 
-function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping: boolean): SleepPlan {
+// Sleeping = a timer is currently running (day nap or night). nightSleeping =
+// that running timer was started as a "night timer" — in that case we skip
+// next-nap predictions entirely (the running sleep IS the night sleep).
+function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping: boolean, nightSleeping: boolean): SleepPlan {
   const band = getSleepBand(weeks)
 
   const sleeps = logs
     .filter(l => l.type === 'sleep')
-    .map(l => ({ start: new Date(l.start_time), dur: l.duration_min || 0 }))
+    .map(l => ({ start: new Date(l.start_time), dur: l.duration_min || 0, isNight: !!l.is_night }))
     .sort((a, b) => a.start.getTime() - b.start.getTime())
 
-  // Count daytime sleeps (05:00–19:00) as naps already taken today.
-  const napsTaken = sleeps.filter(s => { const h = s.start.getHours(); return h >= 5 && h < 19 }).length
+  // Count daytime sleeps as naps already taken today — night sleeps (flagged
+  // explicitly, or falling outside 05:00–19:00) don't count toward the daily
+  // nap total and don't drive the next-nap prediction.
+  const napsTaken = sleeps.filter(s => {
+    if (s.isNight) return false
+    const h = s.start.getHours()
+    return h >= 5 && h < 19
+  }).length
   const napsRemaining = Math.max(0, band.naps - napsTaken)
 
-  // Most recent moment the baby woke up = end of the last completed sleep.
+  // Most recent moment the baby woke up = end of the last completed sleep
+  // (ignoring an in-progress night sleep, which has no "wake" yet).
+  const completedSleeps = sleeps.filter(s => s.dur > 0)
   let lastWakeEnd: Date | null = null
-  if (sleeps.length) {
-    const last = sleeps[sleeps.length - 1]
+  if (completedSleeps.length) {
+    const last = completedSleeps[completedSleeps.length - 1]
     lastWakeEnd = new Date(last.start.getTime() + last.dur * 60000)
   }
   const hasWakeData = lastWakeEnd !== null
 
   let nextNapAt: Date | null = null
   let minutesToNextNap: number | null = null
-  if (!sleeping && lastWakeEnd) {
+  if (!sleeping && !nightSleeping && lastWakeEnd) {
     nextNapAt = new Date(lastWakeEnd.getTime() + band.wakeMin * 60000)
     minutesToNextNap = Math.round((nextNapAt.getTime() - now) / 60000)
   }
@@ -199,7 +128,25 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
   let bedtime: Date | null = new Date(anchor.getTime() + ((N + 1) * band.wakeMin + N * band.napLenMin) * 60000)
   if (bedtime.getTime() < now) bedtime = null // overdue → show "soon" instead of a stale time
 
-  return { band, napsTaken, napsRemaining, minutesToNextNap, nextNapAt, bedtime, sleeping, hasWakeData }
+  // If the chained prediction lands after 21:00, suggest trimming naps so the
+  // baby doesn't get overtired — find the largest remaining-nap count that
+  // still lands at/before 21:00 from the same anchor.
+  let recommendFewerNaps = false
+  let recommendedNapsRemaining: number | null = null
+  if (bedtime) {
+    const cutoff = new Date(now); cutoff.setHours(21, 0, 0, 0)
+    if (bedtime.getTime() > cutoff.getTime()) {
+      let found: number | null = null
+      for (let n = N - 1; n >= 0; n--) {
+        const trial = new Date(anchor.getTime() + ((n + 1) * band.wakeMin + n * band.napLenMin) * 60000)
+        if (trial.getTime() <= cutoff.getTime()) { found = n; break }
+      }
+      recommendFewerNaps = true
+      recommendedNapsRemaining = found ?? 0
+    }
+  }
+
+  return { band, napsTaken, napsRemaining, minutesToNextNap, nextNapAt, bedtime, sleeping, hasWakeData, recommendFewerNaps, recommendedNapsRemaining }
 }
 
 function fmtDur(min: number): string {
@@ -312,12 +259,11 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
 }) {
   const [showForm, setShowForm] = useState<LogType | null>(null)
   const [saving, setSaving] = useState(false)
-  const [sleepTimerActive, setSleepTimerActive] = useState(false)
-  const [sleepTimerStart, setSleepTimerStart] = useState<Date | null>(null)
-  const [sleepTimerElapsed, setSleepTimerElapsed] = useState(0)
+  const timer = useSleepTimer(userId)
   const [feedType, setFeedType] = useState<'breast' | 'bottle'>('breast')
   const [amount, setAmount] = useState('')
   const [duration, setDuration] = useState('')
+  const [wakeTime, setWakeTime] = useState('')
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
@@ -331,44 +277,15 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
     return () => clearInterval(id)
   }, [])
 
-  const sleepPlan = babyWeeks !== null
-    ? computeSleepPlan(babyWeeks, logs, now, sleepTimerActive)
-    : null
-
-  useEffect(() => {
-    if (!sleepTimerActive || !sleepTimerStart) return
-    const interval = setInterval(() => {
-      setSleepTimerElapsed(Math.floor((Date.now() - sleepTimerStart.getTime()) / 1000))
-    }, 1000)
-    return () => clearInterval(interval)
-  }, [sleepTimerActive, sleepTimerStart])
-
-  function startSleepTimer() {
-    setSleepTimerStart(new Date())
-    setSleepTimerActive(true)
-    setSleepTimerElapsed(0)
-  }
+  const sleepPlan = useMemo(() => (
+    babyWeeks !== null
+      ? computeSleepPlan(babyWeeks, logs, now, timer.active, timer.active && timer.isNight)
+      : null
+  ), [babyWeeks, logs, now, timer.active, timer.isNight])
 
   async function stopSleepTimer() {
-    if (!sleepTimerStart) return
-    setSleepTimerActive(false)
-    const durationMin = Math.floor(sleepTimerElapsed / 60)
-    const { data } = await supabase.from('baby_logs').insert({
-      user_id: userId, type: 'sleep',
-      start_time: sleepTimerStart.toISOString(),
-      duration_min: durationMin > 0 ? durationMin : 1,
-    }).select().single()
-    if (data) setLogs(prev => [data, ...prev])
-    setSleepTimerStart(null)
-    setSleepTimerElapsed(0)
-  }
-
-  function formatTimer(secs: number) {
-    const h = Math.floor(secs / 3600)
-    const m = Math.floor((secs % 3600) / 60)
-    const s = secs % 60
-    if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+    const log = await timer.stop()
+    if (log) setLogs(prev => [log, ...prev])
   }
 
   async function saveLog() {
@@ -384,6 +301,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
       amount_ml: null,
       diaper_type: null,
       duration_min: null,
+      end_time: null,
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
@@ -391,7 +309,20 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
       if (duration) payload.duration_min = parseInt(duration)
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
-    if (showForm === 'sleep' && duration) payload.duration_min = parseInt(duration)
+    if (showForm === 'sleep') {
+      // Prefer an explicit wake-up time — compute duration from the gap so
+      // "נרדמה"/"התעוררה" stay consistent. Fall back to a manual duration.
+      if (wakeTime) {
+        const start = new Date(startTime)
+        const end = new Date(wakeTime)
+        if (end.getTime() > start.getTime()) {
+          payload.end_time = end.toISOString()
+          payload.duration_min = Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000))
+        }
+      } else if (duration) {
+        payload.duration_min = parseInt(duration)
+      }
+    }
 
     if (editingId) {
       const { data } = await supabase.from('baby_logs').update(payload).eq('id', editingId).select().single()
@@ -407,7 +338,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   function resetForm() {
     setShowForm(null)
     setEditingId(null)
-    setAmount(''); setDuration(''); setNotes('')
+    setAmount(''); setDuration(''); setNotes(''); setWakeTime('')
     setFeedType('breast'); setDiaperType('wet')
     setStartTime(new Date().toISOString().slice(0, 16))
   }
@@ -416,6 +347,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
     setEditingId(log.id)
     setShowForm(log.type)
     setStartTime(new Date(log.start_time).toISOString().slice(0, 16))
+    setWakeTime(log.end_time ? new Date(log.end_time).toISOString().slice(0, 16) : '')
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
@@ -493,68 +425,96 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
               <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
               <p className="text-sm" style={{ color: 'var(--text)' }}>
-                {sleepPlan.sleeping
-                  ? <>{`יש${genderSuffix} עכשיו 😴 — הטיימר רץ`}</>
-                  : !sleepPlan.hasWakeData
-                    ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
-                    : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
-                      ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
-                      : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
+                {timer.active && timer.isNight
+                  ? <>{`מתעד${genderSuffix === 'ת' ? 'ת' : ''} שינת לילה 🌙 — הטיימר רץ`}</>
+                  : sleepPlan.sleeping
+                    ? <>{`יש${genderSuffix} עכשיו 😴 — הטיימר רץ`}</>
+                    : !sleepPlan.hasWakeData
+                      ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
+                      : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
+                        ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
+                        : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
                 }
               </p>
             </div>
 
             {/* Predicted bedtime */}
-            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
-              style={{ background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
-              <Moon className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
-              <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                {sleepPlan.bedtime
-                  ? <>{`הלילה של ${babyName || 'התינוק'} יתחיל היום בערך ב-`}<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b></>
-                  : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
-                }
-              </p>
-            </div>
+            {!(timer.active && timer.isNight) && (
+              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+                style={{ background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
+                <Moon className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
+                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+                  {sleepPlan.bedtime
+                    ? <>{`הלילה של ${babyName || 'התינוק'} יתחיל היום בערך ב-`}<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b></>
+                    : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Overtired warning + fewer-naps recommendation */}
+            {sleepPlan.recommendFewerNaps && !(timer.active && timer.isNight) && (
+              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
+                style={{ background: 'rgba(196,120,45,0.12)', border: '1px solid rgba(196,120,45,0.3)' }}>
+                <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#C4782D' }} />
+                <p className="text-sm" style={{ color: 'var(--text)' }}>
+                  לפי החישוב הלילה יתחיל מאוחר מ-21:00 — כדאי לשקול
+                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ״צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`יגיע${genderSuffix} לעייפות יתר`}.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
 
       {/* Sleep Timer */}
-      <div className="card" style={sleepTimerActive
-        ? { background: 'rgba(92,122,106,0.1)', border: '1px solid rgba(92,122,106,0.3)' }
+      <div className="card" style={timer.active
+        ? { background: timer.isNight ? 'rgba(60,60,110,0.1)' : 'rgba(92,122,106,0.1)', border: `1px solid ${timer.isNight ? 'rgba(60,60,110,0.3)' : 'rgba(92,122,106,0.3)'}` }
         : { background: 'var(--surface)' }
       }>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: sleepTimerActive ? 'rgba(92,122,106,0.15)' : 'var(--bg)' }}>
-              <BedDouble className="w-5 h-5" style={{ color: '#5C7A6A' }} />
+              style={{ background: timer.active ? (timer.isNight ? 'rgba(60,60,110,0.15)' : 'rgba(92,122,106,0.15)') : 'var(--bg)' }}>
+              {timer.active && timer.isNight
+                ? <Moon className="w-5 h-5" style={{ color: '#3C3C6E' }} />
+                : <BedDouble className="w-5 h-5" style={{ color: '#5C7A6A' }} />
+              }
             </div>
             <div>
               <p className="text-sm font-semibold flex items-center gap-1" style={{ color: 'var(--text)' }}>
-                {sleepTimerActive
-                  ? <>{`יש${genderSuffix} עכשיו...`}<BedDouble className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} /></>
+                {timer.active
+                  ? timer.isNight
+                    ? <>{`שנת לילה...`}<Moon className="w-3.5 h-3.5" style={{ color: '#3C3C6E' }} /></>
+                    : <>{`יש${genderSuffix} עכשיו...`}<BedDouble className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} /></>
                   : 'טיימר שינה'
                 }
               </p>
-              {sleepTimerActive
-                ? <p className="text-lg font-mono font-bold" style={{ color: '#5C7A6A' }}>{formatTimer(sleepTimerElapsed)}</p>
+              {timer.active
+                ? <p className="text-lg font-mono font-bold" style={{ color: timer.isNight ? '#3C3C6E' : '#5C7A6A' }}>{timer.formatTimer(timer.elapsed)}</p>
                 : <p className="text-xs" style={{ color: 'var(--text-muted)' }}>לחצי start כשהתינוק נרדם</p>
               }
             </div>
           </div>
-          {sleepTimerActive ? (
-            <button onClick={stopSleepTimer}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: '#5C7A6A' }}>
+          {timer.active ? (
+            <button onClick={stopSleepTimer} disabled={timer.stopping}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: timer.isNight ? '#3C3C6E' : '#5C7A6A' }}>
               <Square className="w-4 h-4" fill="white" /> סיום שינה
             </button>
           ) : (
-            <button onClick={startSleepTimer}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: '#5C7A6A' }}>
-              <Play className="w-4 h-4" fill="white" /> Start
-            </button>
+            <div className="flex items-center gap-2">
+              <button onClick={() => timer.start({ night: true })} title="טיימר לילה — לא ישפיע על חישוב השנ״צ הבא"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold"
+                style={{ background: 'rgba(60,60,110,0.1)', color: '#3C3C6E', border: '1px solid rgba(60,60,110,0.25)' }}>
+                <Moon className="w-4 h-4" /> טיימר לילה
+              </button>
+              <button onClick={() => timer.start()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ background: '#5C7A6A' }}>
+                <Play className="w-4 h-4" fill="white" /> Start
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -565,7 +525,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
           const { label, color, bg, border, icon: Icon } = typeConfig[type]
           return (
             <button key={type}
-              onClick={() => { setStartTime(new Date().toISOString().slice(0, 16)); setShowForm(type) }}
+              onClick={() => { setStartTime(new Date().toISOString().slice(0, 16)); setWakeTime(''); setShowForm(type) }}
               className="card flex flex-col items-center gap-2 py-4 transition-all hover:scale-105"
               style={{ background: bg, border: `1px solid ${border}` }}>
               <Icon className="w-6 h-6" style={{ color }} />
@@ -594,7 +554,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             </div>
 
             <div>
-              <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}><Clock className="w-3 h-3" /> שעה</label>
+              <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                <Clock className="w-3 h-3" /> {showForm === 'sleep' ? 'נרדמה בשעה' : 'שעה'}
+              </label>
               <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)}
                 className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
                 style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
@@ -635,11 +597,24 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             )}
 
             {showForm === 'sleep' && (
-              <div>
-                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
-                <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="90"
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+              <div className="space-y-3">
+                <div>
+                  <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <Sunrise className="w-3 h-3" /> התעוררה בשעה (אופציונלי)
+                  </label>
+                  <input type="datetime-local" value={wakeTime} onChange={e => setWakeTime(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                  <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים — משך השינה יחושב אוטומטית</p>
+                </div>
+                {!wakeTime && (
+                  <div>
+                    <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
+                    <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="90"
+                      className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                      style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                  </div>
+                )}
               </div>
             )}
 
@@ -693,7 +668,21 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             <div className="space-y-3">
               {logs.map(log => {
                 const { icon: Icon, color, bg } = typeConfig[log.type]
-                const time = new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                const startLabel = new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                // For sleep logs, show a from–to range when we know when the
+                // sleep ended (explicit end_time, or start + duration_min).
+                let time = startLabel
+                if (log.type === 'sleep') {
+                  const endDate = log.end_time
+                    ? new Date(log.end_time)
+                    : log.duration_min
+                      ? new Date(new Date(log.start_time).getTime() + log.duration_min * 60000)
+                      : null
+                  if (endDate) {
+                    const endLabel = endDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                    time = `${startLabel}–${endLabel}`
+                  }
+                }
                 return (
                   <div key={log.id} className="flex items-start gap-3 group">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 z-10"
@@ -706,6 +695,12 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                           <p className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--text)' }}>
                             <Icon className="w-3.5 h-3.5" style={{ color }} />
                             {buildLogDescription(log)}
+                            {log.type === 'sleep' && log.is_night && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{ background: 'rgba(60,60,110,0.12)', color: '#3C3C6E' }}>
+                                <Moon className="w-2.5 h-2.5" /> לילה
+                              </span>
+                            )}
                           </p>
                           {log.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{log.notes}</p>}
                         </div>
@@ -728,460 +723,6 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
         )}
       </div>
     </>
-  )
-}
-
-// ─── Weaning Tab ──────────────────────────────────────────────
-function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
-  babyWeeks: number | null; babyName: string | null; genderSuffix: string
-}) {
-  const [checkedItems, setCheckedItems] = useState<string[]>([])
-  const [expandedStage, setExpandedStage] = useState<number | null>(null)
-  const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null)
-
-  const toggleCheck = (id: string) =>
-    setCheckedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-
-  const allChecked = READINESS_CHECKLIST.length === checkedItems.length
-
-  // Find current stage
-  const currentStage = babyWeeks !== null
-    ? WEANING_STAGES.find(s => babyWeeks >= s.fromWeek && babyWeeks <= s.toWeek)
-    : null
-
-  const notReadyYet = babyWeeks !== null && babyWeeks < 14
-
-  if (notReadyYet) {
-    const weeksLeft = 14 - babyWeeks!
-    return (
-      <div className="card text-center py-10">
-        <Sprout className="w-12 h-12 mx-auto mb-4" style={{ color: '#4A7C59' }} />
-        <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text)' }}>עוד קצת זמן</h2>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {babyName || 'התינוק'} יהי{genderSuffix} מוכן{genderSuffix} לטעימות ראשונות בעוד כ-{weeksLeft} שבועות (בגיל 4 חודשים).
-        </p>
-      </div>
-    )
-  }
-
-  if (babyWeeks === null) {
-    return (
-      <div className="card text-center py-8">
-        <AlertTriangle className="w-8 h-8 mx-auto mb-3" style={{ color: '#B8860B' }} />
-        <p className="font-medium mb-1" style={{ color: 'var(--text)' }}>תאריך לידה חסר</p>
-        <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          עדכני תאריך לידה בהגדרות כדי לראות את מדריך הטעימות המותאם.
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* Current stage banner */}
-      {currentStage && (
-        <div className="rounded-2xl p-4"
-          style={{ background: 'rgba(127,82,104,0.08)', border: '1px solid rgba(127,82,104,0.15)' }}>
-          <div className="flex items-center gap-3">
-            <currentStage.icon className="w-8 h-8" style={{ color: '#7F5268' }} />
-            <div>
-              <p className="font-bold" style={{ color: 'var(--text)' }}>
-                {babyName || 'התינוק'} נמצא{genderSuffix} כעת ב{currentStage.title}
-              </p>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                שבוע {babyWeeks} · {currentStage.subtitle}
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Readiness checklist */}
-      <div className="card">
-        <h2 className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
-          <CheckCircle2 className="w-4 h-4" style={{ color: '#4A7C59' }} /> רשימת מוכנות לטעימות
-        </h2>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-          מומלץ לוודא לפחות 3/4 סימנים לפני התחלה
-        </p>
-        <div className="space-y-3">
-          {READINESS_CHECKLIST.map(item => (
-            <button key={item.id} onClick={() => toggleCheck(item.id)}
-              className="w-full flex items-start gap-3 text-right">
-              {checkedItems.includes(item.id)
-                ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#4A7C59' }} />
-                : <Circle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--border)' }} />
-              }
-              <div>
-                <p className="text-sm font-medium text-right" style={{ color: 'var(--text)' }}>{item.label}</p>
-                <p className="text-xs text-right" style={{ color: 'var(--text-muted)' }}>{item.detail}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-        {allChecked && (
-          <div className="mt-4 rounded-xl p-3 text-center"
-            style={{ background: 'rgba(74,124,89,0.1)', border: '1px solid rgba(74,124,89,0.2)' }}>
-            <p className="text-sm font-semibold flex items-center justify-center gap-1.5" style={{ color: '#4A7C59' }}>
-              <PartyPopper className="w-4 h-4" /> {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות! קדימה!
-            </p>
-          </div>
-        )}
-      </div>
-
-      {/* Stages */}
-      <div className="space-y-3">
-        <h2 className="font-semibold flex items-center gap-1.5" style={{ color: 'var(--text)' }}><Calendar className="w-4 h-4" /> מדריך לפי שלב גיל</h2>
-        {WEANING_STAGES.map((stage, idx) => {
-          const isCurrent = currentStage === stage
-          const isPast = babyWeeks !== null && babyWeeks > stage.toWeek
-          const isExpanded = expandedStage === idx
-
-          return (
-            <div key={idx} className="card"
-              style={isCurrent ? { border: '1.5px solid #7F5268' } : {}}>
-              <button onClick={() => setExpandedStage(isExpanded ? null : idx)}
-                className="w-full flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <stage.icon className="w-6 h-6" style={{ color: '#7F5268' }} />
-                  <div className="text-right">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{stage.title}</p>
-                      {isCurrent && (
-                        <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                          style={{ background: '#7F5268', color: '#fff' }}>עכשיו</span>
-                      )}
-                      {isPast && (
-                        <span className="text-xs px-2 py-0.5 rounded-full"
-                          style={{ background: 'rgba(74,124,89,0.15)', color: '#4A7C59' }}>עבר</span>
-                      )}
-                    </div>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{stage.subtitle}</p>
-                  </div>
-                </div>
-                {isExpanded
-                  ? <ChevronUp className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  : <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                }
-              </button>
-
-              {isExpanded && (
-                <div className="mt-4 space-y-3 border-t pt-4" style={{ borderColor: 'var(--border)' }}>
-                  {/* Info grid */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { label: 'כמות', icon: Scale, val: stage.quantity },
-                      { label: 'תדירות', icon: Clock3, val: stage.frequency },
-                      { label: 'תזמון', icon: Clock, val: stage.timing },
-                      { label: 'מרקם', icon: Soup, val: stage.texture },
-                    ].map(({ label, icon: Icon, val }) => (
-                      <div key={label} className="rounded-xl p-2.5"
-                        style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
-                        <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Icon className="w-3 h-3" />{label}</p>
-                        <p className="text-sm font-medium mt-0.5" style={{ color: 'var(--text)' }}>{val}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Foods */}
-                  <div>
-                    <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text)' }}><CheckCircle2 className="w-3.5 h-3.5" style={{ color: '#4A7C59' }} /> מזונות מומלצים:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {stage.foods.map(food => (
-                        <span key={food} className="text-xs px-2.5 py-1 rounded-full font-medium"
-                          style={{ background: 'rgba(74,124,89,0.12)', color: '#4A7C59' }}>
-                          {food}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Avoid */}
-                  <div>
-                    <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: '#C0392B' }}><Ban className="w-3.5 h-3.5" /> להימנע:</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {stage.avoid.map(food => (
-                        <span key={food} className="text-xs px-2.5 py-1 rounded-full"
-                          style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }}>
-                          {food}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Allergens */}
-                  {stage.allergens.length > 0 && (
-                    <div className="rounded-xl p-3"
-                      style={{ background: 'rgba(184,134,11,0.08)', border: '1px solid rgba(184,134,11,0.2)' }}>
-                      <p className="text-xs font-semibold mb-1 flex items-center gap-1" style={{ color: '#B8860B' }}><AlertTriangle className="w-3.5 h-3.5" /> אלרגנים:</p>
-                      {stage.allergens.map(a => (
-                        <p key={a} className="text-xs" style={{ color: '#92400E' }}>• {a}</p>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Recipes */}
-                  <div>
-                    <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text)' }}><ChefHat className="w-3.5 h-3.5" /> מתכונים:</p>
-                    <div className="space-y-2">
-                      {stage.recipes.map(recipe => (
-                        <div key={recipe.name} className="rounded-xl overflow-hidden"
-                          style={{ border: '1px solid var(--border)' }}>
-                          <button
-                            onClick={() => setExpandedRecipe(expandedRecipe === recipe.name ? null : recipe.name)}
-                            className="w-full flex items-center justify-between px-3 py-2.5"
-                            style={{ background: 'var(--bg)' }}>
-                            <span className="text-sm font-medium flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
-                              <recipe.icon className="w-4 h-4" style={{ color: '#7F5268' }} />
-                              {recipe.name}
-                            </span>
-                            {expandedRecipe === recipe.name
-                              ? <ChevronUp className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                              : <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-                            }
-                          </button>
-                          {expandedRecipe === recipe.name && (
-                            <div className="px-3 pb-3 pt-1"
-                              style={{ background: 'var(--surface-2)' }}>
-                              <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>{recipe.steps}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-// ─── Health / Vaccinations Tab ────────────────────────────────
-function HealthTab({ healthEvents, setHealthEvents, userId, babyBirthdate, babyMonths }: {
-  healthEvents: HealthEvent[]
-  setHealthEvents: React.Dispatch<React.SetStateAction<HealthEvent[]>>
-  userId: string; babyBirthdate: string | null; babyMonths: number | null
-}) {
-  const supabase = createClient()
-  const [showForm, setShowForm] = useState(false)
-  const [saving, setSaving] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [newType, setNewType] = useState<'vaccine' | 'checkup' | 'other'>('vaccine')
-  const [newDate, setNewDate] = useState('')
-  const [newNotes, setNewNotes] = useState('')
-
-  // Compute suggested schedule
-  const suggestedVaccines = babyBirthdate ? VACCINE_SCHEDULE.map(v => {
-    const dueDate = new Date(babyBirthdate)
-    dueDate.setMonth(dueDate.getMonth() + v.month)
-    return { ...v, dueDate, dueDateStr: dueDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' }) }
-  }) : []
-
-  async function addEvent() {
-    if (!newTitle.trim() || !newDate) return
-    setSaving(true)
-
-    const payload = {
-      user_id: userId,
-      type: newType,
-      title: newTitle.trim(),
-      scheduled_date: newDate,
-      completed: false,
-      notes: newNotes || null,
-    }
-
-    const { data, error } = await supabase.from('health_events').insert(payload).select().single()
-    if (data) {
-      setHealthEvents(prev => [...prev, data].sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date)))
-    } else if (error) {
-      // Graceful fallback
-      const local: HealthEvent = { id: crypto.randomUUID(), ...payload }
-      setHealthEvents(prev => [...prev, local].sort((a, b) => a.scheduled_date.localeCompare(b.scheduled_date)))
-    }
-
-    setNewTitle(''); setNewDate(''); setNewNotes(''); setNewType('vaccine')
-    setShowForm(false)
-    setSaving(false)
-  }
-
-  async function toggleComplete(id: string) {
-    const event = healthEvents.find(e => e.id === id)
-    if (!event) return
-    await supabase.from('health_events').update({ completed: !event.completed }).eq('id', id)
-    setHealthEvents(prev => prev.map(e => e.id === id ? { ...e, completed: !e.completed } : e))
-  }
-
-  async function deleteEvent(id: string) {
-    await supabase.from('health_events').delete().eq('id', id)
-    setHealthEvents(prev => prev.filter(e => e.id !== id))
-  }
-
-  const today = new Date().toISOString().split('T')[0]
-  const upcoming = healthEvents.filter(e => !e.completed && e.scheduled_date >= today)
-  const past     = healthEvents.filter(e => e.completed || e.scheduled_date < today)
-
-  return (
-    <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-semibold flex items-center gap-1.5" style={{ color: 'var(--text)' }}><Syringe className="w-4 h-4" /> חיסונים ובדיקות</h2>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>לו״ז חיסונים לפי מזכ״ל משרד הבריאות</p>
-        </div>
-        <button onClick={() => setShowForm(true)} className="btn-brand text-sm px-3 py-1.5">
-          <CalendarPlus className="w-4 h-4" /> הוסיפי
-        </button>
-      </div>
-
-      {/* Add form */}
-      {showForm && (
-        <div className="card space-y-3">
-          <h3 className="font-semibold" style={{ color: 'var(--text)' }}>הוספת אירוע בריאות</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {([['vaccine', Syringe, 'חיסון'], ['checkup', Baby, 'בדיקה'], ['other', ClipboardList, 'אחר']] as const).map(([t, Icon, lbl]) => (
-              <button key={t} onClick={() => setNewType(t)}
-                className="py-2 rounded-xl text-xs font-medium flex flex-col items-center gap-1"
-                style={newType === t
-                  ? { background: '#7F5268', color: 'white' }
-                  : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-                }>
-                <Icon className="w-4 h-4" />{lbl}
-              </button>
-            ))}
-          </div>
-          <input value={newTitle} onChange={e => setNewTitle(e.target.value)} placeholder="שם החיסון / הבדיקה"
-            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
-          <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
-            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
-          <input value={newNotes} onChange={e => setNewNotes(e.target.value)} placeholder="הערות (אופציונלי)"
-            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
-          <div className="flex gap-2">
-            <button onClick={addEvent} disabled={saving || !newTitle.trim() || !newDate}
-              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white disabled:opacity-60"
-              style={{ background: '#7F5268' }}>
-              {saving ? 'שומרת...' : 'הוספה'}
-            </button>
-            <button onClick={() => setShowForm(false)}
-              className="px-4 py-2.5 rounded-xl text-sm"
-              style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-              ביטול
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Upcoming events */}
-      {upcoming.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text)' }}><Clock className="w-3.5 h-3.5" /> עתידיים ({upcoming.length})</p>
-          <div className="space-y-2">
-            {upcoming.map(event => (
-              <EventCard key={event.id} event={event} onToggle={toggleComplete} onDelete={deleteEvent} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Suggested schedule */}
-      {babyBirthdate && (
-        <div>
-          <p className="text-xs font-semibold mb-2 flex items-center gap-1" style={{ color: 'var(--text)' }}><ClipboardList className="w-3.5 h-3.5" /> לוח חיסונים מומלץ</p>
-          <div className="space-y-2">
-            {suggestedVaccines.map((v, i) => {
-              const isPast = v.dueDate < new Date()
-              const isSoon = !isPast && v.dueDate < new Date(Date.now() + 30 * 24 * 3600 * 1000)
-              return (
-                <div key={i} className="rounded-xl px-3 py-2.5 flex items-center gap-3"
-                  style={{
-                    background: isPast ? 'rgba(74,124,89,0.06)' : isSoon ? 'rgba(184,134,11,0.06)' : 'var(--surface)',
-                    border: `1px solid ${isPast ? 'rgba(74,124,89,0.2)' : isSoon ? 'rgba(184,134,11,0.2)' : 'var(--border)'}`,
-                  }}>
-                  {isPast
-                    ? <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: '#4A7C59' }} />
-                    : isSoon
-                      ? <Clock className="w-5 h-5 flex-shrink-0" style={{ color: '#B8860B' }} />
-                      : <Calendar className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  }
-                  <div className="flex-1">
-                    <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{v.title}</p>
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{v.dueDateStr}</p>
-                  </div>
-                  {isSoon && (
-                    <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{ background: 'rgba(184,134,11,0.15)', color: '#B8860B' }}>בקרוב</span>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Past events */}
-      {past.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold mb-2" style={{ color: 'var(--text-muted)' }}>היסטוריה ({past.length})</p>
-          <div className="space-y-2">
-            {past.map(event => (
-              <EventCard key={event.id} event={event} onToggle={toggleComplete} onDelete={deleteEvent} />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {healthEvents.length === 0 && !babyBirthdate && (
-        <div className="card text-center py-8">
-          <Syringe className="w-8 h-8 mx-auto mb-3" style={{ color: 'var(--text-muted)' }} />
-          <p className="font-medium" style={{ color: 'var(--text)' }}>אין אירועי בריאות עדיין</p>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            הוסיפי תאריך לידה בהגדרות לקבלת לוח חיסונים אוטומטי
-          </p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-function EventCard({ event, onToggle, onDelete }: {
-  event: HealthEvent
-  onToggle: (id: string) => void
-  onDelete: (id: string) => void
-}) {
-  const TypeIcon = { vaccine: Syringe, checkup: Baby, other: ClipboardList }[event.type]
-  const dateStr = new Date(event.scheduled_date + 'T00:00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })
-
-  return (
-    <div className="rounded-xl px-3 py-2.5 flex items-center gap-3 group"
-      style={{
-        background: event.completed ? 'rgba(74,124,89,0.06)' : 'var(--surface)',
-        border: `1px solid ${event.completed ? 'rgba(74,124,89,0.2)' : 'var(--border)'}`,
-        opacity: event.completed ? 0.7 : 1,
-      }}>
-      <button onClick={() => onToggle(event.id)}>
-        {event.completed
-          ? <CheckCircle2 className="w-5 h-5" style={{ color: '#4A7C59' }} />
-          : <Circle className="w-5 h-5" style={{ color: 'var(--border)' }} />
-        }
-      </button>
-      <TypeIcon className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium" style={{ color: 'var(--text)', textDecoration: event.completed ? 'line-through' : 'none' }}>
-          {event.title}
-        </p>
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{dateStr}</p>
-        {event.notes && <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{event.notes}</p>}
-      </div>
-      <button onClick={() => onDelete(event.id)} className="opacity-0 group-hover:opacity-100 transition-opacity">
-        <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
-      </button>
-    </div>
   )
 }
 

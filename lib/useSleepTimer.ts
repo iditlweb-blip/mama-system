@@ -9,6 +9,7 @@ import type { BabyLog } from '@/types/database'
 // that mount this hook stay in sync via a custom window event (same tab)
 // and the native `storage` event (other tabs).
 const KEY = 'mama_sleep_timer_start'
+const NIGHT_KEY = 'mama_sleep_timer_night'
 const EVT = 'mama-sleep-timer-change'
 
 function readStart(): number | null {
@@ -17,6 +18,11 @@ function readStart(): number | null {
   if (!v) return null
   const n = parseInt(v, 10)
   return Number.isNaN(n) ? null : n
+}
+
+function readNight(): boolean {
+  if (typeof window === 'undefined') return false
+  return window.localStorage.getItem(NIGHT_KEY) === '1'
 }
 
 export function formatTimer(secs: number): string {
@@ -30,13 +36,15 @@ export function formatTimer(secs: number): string {
 export function useSleepTimer(userId: string) {
   const supabase = createClient()
   const [startMs, setStartMs] = useState<number | null>(null)
+  const [isNight, setIsNight] = useState(false)
   const [elapsed, setElapsed] = useState(0)
   const [stopping, setStopping] = useState(false)
 
   // Hydrate from localStorage on mount + subscribe to changes.
   useEffect(() => {
     setStartMs(readStart())
-    const sync = () => setStartMs(readStart())
+    setIsNight(readNight())
+    const sync = () => { setStartMs(readStart()); setIsNight(readNight()) }
     window.addEventListener(EVT, sync)
     window.addEventListener('storage', sync)
     return () => {
@@ -57,36 +65,49 @@ export function useSleepTimer(userId: string) {
     return () => clearInterval(id)
   }, [startMs])
 
-  const start = useCallback(() => {
+  // Start the timer. Pass `night: true` for a "night timer" (good for
+  // newborns) — the resulting sleep log is tagged `is_night` so it's
+  // excluded from the daily nap count and doesn't drive next-nap predictions.
+  const start = useCallback((opts?: { night?: boolean }) => {
     const now = Date.now()
     window.localStorage.setItem(KEY, String(now))
+    window.localStorage.setItem(NIGHT_KEY, opts?.night ? '1' : '0')
     window.dispatchEvent(new Event(EVT))
     setStartMs(now)
+    setIsNight(!!opts?.night)
   }, [])
 
   // Discard the running timer without recording a log.
   const cancel = useCallback(() => {
     window.localStorage.removeItem(KEY)
+    window.localStorage.removeItem(NIGHT_KEY)
     window.dispatchEvent(new Event(EVT))
     setStartMs(null)
+    setIsNight(false)
   }, [])
 
   // Stop the timer and persist a sleep log spanning the elapsed time.
   const stop = useCallback(async (): Promise<BabyLog | null> => {
     const s = readStart()
     if (s == null) return null
+    const night = readNight()
     setStopping(true)
-    const durationMin = Math.max(1, Math.floor((Date.now() - s) / 60000))
+    const endMs = Date.now()
+    const durationMin = Math.max(1, Math.floor((endMs - s) / 60000))
     window.localStorage.removeItem(KEY)
+    window.localStorage.removeItem(NIGHT_KEY)
     window.dispatchEvent(new Event(EVT))
     setStartMs(null)
+    setIsNight(false)
     const { data } = await supabase
       .from('baby_logs')
       .insert({
         user_id: userId,
         type: 'sleep',
         start_time: new Date(s).toISOString(),
+        end_time: new Date(endMs).toISOString(),
         duration_min: durationMin,
+        is_night: night,
       })
       .select()
       .single()
@@ -97,6 +118,7 @@ export function useSleepTimer(userId: string) {
   return {
     active: startMs != null,
     startMs,
+    isNight,
     elapsed,
     stopping,
     start,

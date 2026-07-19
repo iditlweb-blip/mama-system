@@ -504,23 +504,26 @@ export default function DashboardClient({
       <div
         className="card"
         style={timer.active
-          ? { background: 'rgba(92,122,106,0.1)', border: '1px solid rgba(92,122,106,0.3)' }
+          ? { background: timer.isNight ? 'rgba(60,60,110,0.1)' : 'rgba(92,122,106,0.1)', border: `1px solid ${timer.isNight ? 'rgba(60,60,110,0.3)' : 'rgba(92,122,106,0.3)'}` }
           : {}}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div
               className="w-10 h-10 rounded-xl flex items-center justify-center"
-              style={{ background: timer.active ? 'rgba(92,122,106,0.15)' : 'var(--surface-2, #FAF4ED)' }}
+              style={{ background: timer.active ? (timer.isNight ? 'rgba(60,60,110,0.15)' : 'rgba(92,122,106,0.15)') : 'var(--surface-2, #FAF4ED)' }}
             >
-              <BedDouble className="w-5 h-5" style={{ color: '#5C7A6A' }} />
+              {timer.active && timer.isNight
+                ? <Moon className="w-5 h-5" style={{ color: '#3C3C6E' }} />
+                : <BedDouble className="w-5 h-5" style={{ color: '#5C7A6A' }} />
+              }
             </div>
             <div>
               <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
-                {timer.active ? 'התינוק ישן עכשיו' : 'טיימר שינה'}
+                {timer.active ? (timer.isNight ? 'שנת לילה מתועדת' : 'התינוק ישן עכשיו') : 'טיימר שינה'}
               </p>
               {timer.active ? (
-                <p className="text-lg font-mono font-bold" style={{ color: '#5C7A6A' }}>
+                <p className="text-lg font-mono font-bold" style={{ color: timer.isNight ? '#3C3C6E' : '#5C7A6A' }}>
                   {timer.formatTimer(timer.elapsed)}
                 </p>
               ) : (
@@ -535,18 +538,28 @@ export default function DashboardClient({
               onClick={handleTimerStop}
               disabled={timer.stopping}
               className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
-              style={{ background: '#5C7A6A' }}
+              style={{ background: timer.isNight ? '#3C3C6E' : '#5C7A6A' }}
             >
               <Square className="w-4 h-4" fill="white" /> {timer.stopping ? 'שומרת...' : 'סיום שינה'}
             </button>
           ) : (
-            <button
-              onClick={timer.start}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-              style={{ background: '#5C7A6A' }}
-            >
-              <Play className="w-4 h-4" fill="white" /> התחלה
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => timer.start({ night: true })}
+                title="טיימר לילה"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold"
+                style={{ background: 'rgba(60,60,110,0.1)', color: '#3C3C6E', border: '1px solid rgba(60,60,110,0.25)' }}
+              >
+                <Moon className="w-4 h-4" /> לילה
+              </button>
+              <button
+                onClick={() => timer.start()}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                style={{ background: '#5C7A6A' }}
+              >
+                <Play className="w-4 h-4" fill="white" /> התחלה
+              </button>
+            </div>
           )}
         </div>
       </div>

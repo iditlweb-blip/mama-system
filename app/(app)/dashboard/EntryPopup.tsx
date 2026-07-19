@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { X, BedDouble, Milk, Droplets, Play, Square, Check } from 'lucide-react'
+import { X, BedDouble, Milk, Droplets, Play, Square, Check, Moon } from 'lucide-react'
 import type { BabyLog } from '@/types/database'
 import { useSleepTimer } from '@/lib/useSleepTimer'
 
@@ -19,7 +19,7 @@ export default function EntryPopup({
   const [visible, setVisible] = useState(false)
   const [busy, setBusy] = useState<'feed' | 'diaper' | null>(null)
   const [done, setDone] = useState<'feed' | 'diaper' | 'sleep' | null>(null)
-  const { active, elapsed, stopping, start, stop, formatTimer } = useSleepTimer(userId)
+  const { active, isNight, elapsed, stopping, start, stop, formatTimer } = useSleepTimer(userId)
 
   useEffect(() => {
     // Show once per session, right as the app opens.
@@ -99,15 +99,18 @@ export default function EntryPopup({
             <div className="flex justify-center mb-3">
               <div
                 className="w-12 h-12 rounded-2xl flex items-center justify-center"
-                style={{ background: 'rgba(92,122,106,0.15)' }}
+                style={{ background: isNight ? 'rgba(60,60,110,0.15)' : 'rgba(92,122,106,0.15)' }}
               >
-                <BedDouble className="w-6 h-6" style={{ color: '#5C7A6A' }} />
+                {isNight
+                  ? <Moon className="w-6 h-6" style={{ color: '#3C3C6E' }} />
+                  : <BedDouble className="w-6 h-6" style={{ color: '#5C7A6A' }} />
+                }
               </div>
             </div>
             <h3 className="text-lg font-bold text-center mb-1" style={{ color: 'var(--text)' }}>
-              התינוק ישן עכשיו 😴
+              {isNight ? 'שנת לילה מתועדת 🌙' : 'התינוק ישן עכשיו 😴'}
             </h3>
-            <p className="text-3xl font-mono font-bold text-center mb-1" style={{ color: '#5C7A6A' }}>
+            <p className="text-3xl font-mono font-bold text-center mb-1" style={{ color: isNight ? '#3C3C6E' : '#5C7A6A' }}>
               {formatTimer(elapsed)}
             </p>
             <p className="text-xs text-center mb-5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
@@ -118,7 +121,7 @@ export default function EntryPopup({
                 onClick={handleStop}
                 disabled={stopping}
                 className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center flex items-center justify-center gap-1.5 disabled:opacity-60"
-                style={{ background: '#5C7A6A' }}
+                style={{ background: isNight ? '#3C3C6E' : '#5C7A6A' }}
               >
                 <Square className="w-4 h-4" fill="white" />
                 {stopping ? 'שומרת...' : 'סיום שינה ורישום'}
@@ -159,6 +162,16 @@ export default function EntryPopup({
             >
               <Play className="w-4 h-4" fill="white" />
               התחלת טיימר שינה
+            </button>
+            <button
+              onClick={() => {
+                start({ night: true })
+              }}
+              className="w-full py-2 rounded-xl text-xs font-semibold text-center flex items-center justify-center gap-1.5 mb-2"
+              style={{ background: 'rgba(60,60,110,0.1)', color: '#3C3C6E', border: '1px solid rgba(60,60,110,0.25)' }}
+            >
+              <Moon className="w-3.5 h-3.5" />
+              טיימר לילה (לניובורן)
             </button>
 
             <div className="grid grid-cols-2 gap-2">

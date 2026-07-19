@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
+import GlobalTimerBar from '@/components/layout/GlobalTimerBar'
 import PwaTracker from '@/components/PwaTracker'
 import PreloaderLottie from '@/components/PreloaderLottie'
 import BottomNav from '@/components/layout/BottomNav'
@@ -33,6 +34,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
         />
+        {profile?.tracking_type === 'baby' && <GlobalTimerBar userId={user.id} />}
         <main className="flex-1 overflow-y-auto">
           {/* Full-width content with symmetric side gutters (equal left/right)
               across every page, mobile + desktop. Extra bottom padding on
