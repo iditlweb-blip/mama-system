@@ -80,3 +80,32 @@ export async function streamGroqResponse(
     },
   })
 }
+
+// Non-streaming variant for server-to-server callers (e.g. the WhatsApp
+// webhook) that need one complete reply to forward as a single message,
+// rather than a token stream to render incrementally in the browser.
+export async function getGroqReply(
+  messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  mode: ChatMode
+): Promise<string> {
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) return '⚠️ שגיאת הגדרות: GROQ_API_KEY לא מוגדר.'
+
+  const groq = new Groq({ apiKey })
+
+  try {
+    const completion = await groq.chat.completions.create({
+      model: 'llama-3.3-70b-versatile',
+      messages: [
+        { role: 'system', content: systemPrompts[mode] },
+        ...messages,
+      ],
+      max_tokens: 1024,
+    })
+    return completion.choices[0]?.message?.content?.trim() || 'לא הצלחתי לייצר תשובה, נסי שוב.'
+  } catch (e) {
+    console.error('[groq reply error]', e)
+    const errMsg = e instanceof Error ? e.message : String(e)
+    return `שגיאה: ${errMsg}`
+  }
+}

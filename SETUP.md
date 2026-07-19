@@ -16,7 +16,38 @@
 1. לכי ל-[console.anthropic.com](https://console.anthropic.com)
 2. צרי API key → הכניסי כ-`ANTHROPIC_API_KEY`
 
-## 3. .env.local
+## 3. בוט וואטסאפ — העוזרת האישית "מאמא" (אופציונלי)
+
+הבוט מאפשר לאמא לכתוב בשפה חופשית בוואטסאפ ("התינוק נרדם", "האכלתי בקבוק 120",
+"כמה חיתולים היום?") והעוזרת מבצעת את הפעולה במעקב ועונה בעברית.
+
+### א. מסד הנתונים
+הריצי ב-**SQL Editor** את `supabase/migrations/010_whatsapp_bot.sql`
+(מוסיף `profiles.whatsapp_number`, את הטבלאות `active_sleep_timers`,
+`whatsapp_link_codes`, `whatsapp_documents`, ואת ה-Storage bucket `whatsapp-docs`).
+
+### ב. Groq API (מנוע ה-AI)
+1. לכי ל-[console.groq.com](https://console.groq.com) → צרי API key
+2. הכניסי כ-`GROQ_API_KEY` ב-`.env.local`
+
+### ג. WhatsApp Cloud API (Meta)
+1. לכי ל-[developers.facebook.com](https://developers.facebook.com) → צרי App מסוג **Business**
+2. הוסיפי את המוצר **WhatsApp** → **API Setup**:
+   - העתיקי את **Phone number ID** → `WHATSAPP_PHONE_NUMBER_ID`
+   - הפיקי **Access Token** (מומלץ System User token קבוע) → `WHATSAPP_ACCESS_TOKEN`
+3. **Settings → Basic** → העתיקי **App Secret** → `WHATSAPP_APP_SECRET`
+4. בחרי מחרוזת סודית כלשהי ל-`WHATSAPP_VERIFY_TOKEN`
+5. הזיני את מספר הבוט (בפורמט בינלאומי, למשל `972501234567`) ל-`NEXT_PUBLIC_WHATSAPP_BOT_NUMBER`
+6. **Configuration → Webhook** → הזיני:
+   - **Callback URL**: `https://yourdomain.com/api/whatsapp/webhook`
+   - **Verify Token**: אותה מחרוזת של `WHATSAPP_VERIFY_TOKEN`
+   - הירשמי (Subscribe) לשדה **messages**
+
+### ד. חיבור המספר של האמא
+באפליקציה: **הגדרות → חיבור וואטסאפ → יצירת קוד חיבור**, ואז לשלוח את הקוד
+לבוט בוואטסאפ. הקוד תקף ל-15 דקות.
+
+## 4. .env.local
 
 העתיקי את `.env.example` ל-`.env.local` ומלאי את הערכים:
 
@@ -25,14 +56,14 @@ cp .env.example .env.local
 # ערכי את .env.local עם הפרטים שלך
 ```
 
-## 4. הפעלה
+## 5. הפעלה
 
 ```bash
 npm run dev
 # פתחי http://localhost:3000
 ```
 
-## 5. Supabase — Auth Callback URL
+## 6. Supabase — Auth Callback URL
 
 ב-Supabase → **Authentication → URL Configuration** → הוסיפי:
 ```
