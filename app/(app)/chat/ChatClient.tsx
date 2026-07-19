@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Send, Baby, Clock, Briefcase, Heart, Loader2, Bot, ChevronRight } from 'lucide-react'
+import { Send, Baby, Clock, Heart, Loader2, Bot, ChevronRight } from 'lucide-react'
 import { ChatMode, ChatMessage } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -28,11 +28,6 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
     prompts: ['עזרי לי לתכנן את היום שלי', 'איך עובדים בנמנום קצר?', 'איך קובעים עדיפויות?', 'שיטת Pomodoro לאמא'],
   },
   {
-    id: 'business', label: 'עסק', icon: Briefcase, color: '#4A7C59',
-    description: 'פרילנס, לקוחות, שיווק, תמחור',
-    prompts: ['איך לתמחר שירות?', 'איך להגדיר גבולות עם לקוחות?', 'שיווק בסושיאל עם תינוק', 'איך לחפש לקוחות חדשים?'],
-  },
-  {
     id: 'emotional', label: 'תמיכה', icon: Heart, color: '#C4A0B4',
     description: 'הקשבה, חיזוק, רגשות',
     prompts: ['אני מרגישה אובדת ועייפה', 'מרגישה אשמה שאני עובדת', 'לא מצליחה לאהנות מהתינוק', 'צריכה לשחרר קצת'],
@@ -46,16 +41,45 @@ const modes: { id: ChatMode; label: string; icon: React.ElementType; color: stri
 
 interface Message { role: 'user' | 'assistant'; content: string }
 
-export default function ChatClient({ historyByMode }: { historyByMode: Partial<Record<ChatMode, ChatMessage[]>> }) {
+export default function ChatClient(
+  { historyByMode, trackingType }: {
+    historyByMode: Partial<Record<ChatMode, ChatMessage[]>>
+    trackingType: 'pregnancy' | 'baby'
+  }
+) {
   const supabase = createClient()
   const router = useRouter()
-  const [mode, setMode] = useState<ChatMode>('baby')
-  const [messages, setMessages] = useState<Message[]>(
-    () => (historyByMode['baby'] || []).map(h => ({ role: h.role, content: h.content }))
+
+  // Only show the mode tabs relevant to the mother's tracking choice:
+  // "תינוק" for baby-tracking, "הריון" for pregnancy-tracking. "ניהול זמן"
+  // and "תמיכה" always show. (The "עסק" mode was removed entirely.)
+  const visibleModes = modes.filter(m => {
+    if (m.id === 'baby') return trackingType === 'baby'
+    if (m.id === 'pregnancy') return trackingType === 'pregnancy'
+    return true
+  })
+
+  const [mode, setMode] = useState<ChatMode>(
+    trackingType === 'pregnancy' ? 'pregnancy' : 'baby'
   )
+
+  // Keep every tab's conversation in memory, keyed by mode, so switching
+  // tabs never wipes an in-session chat. Seeded from the server history.
+  const [messagesByMode, setMessagesByMode] = useState<Partial<Record<ChatMode, Message[]>>>(() => {
+    const rec: Partial<Record<ChatMode, Message[]>> = {}
+    for (const m of modes) {
+      rec[m.id] = (historyByMode[m.id] || []).map(h => ({ role: h.role, content: h.content }))
+    }
+    return rec
+  })
+  const messages = messagesByMode[mode] || []
+
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [streaming, setStreaming] = useState('')
+  // Which tab is currently generating — so a streaming reply only appears in
+  // its own tab, not whichever tab happens to be open.
+  const [busyMode, setBusyMode] = useState<ChatMode | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -63,29 +87,25 @@ export default function ChatClient({ historyByMode }: { historyByMode: Partial<R
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, streaming])
 
-  // When mode changes, load corresponding history and reset state
-  useEffect(() => {
-    setMessages((historyByMode[mode] || []).map(h => ({ role: h.role, content: h.content })))
-    setStreaming('')
-    setInput('')
-  }, [mode]) // eslint-disable-line react-hooks/exhaustive-deps
-
   const currentMode = modes.find(m => m.id === mode)!
 
   async function send(text?: string) {
     const content = (text || input).trim()
     if (!content || loading) return
+    const sendMode = mode // capture — the user may switch tabs mid-generation
     setInput('')
-    const newMessages: Message[] = [...messages, { role: 'user', content }]
-    setMessages(newMessages)
+    const base = messagesByMode[sendMode] || []
+    const newMessages: Message[] = [...base, { role: 'user', content }]
+    setMessagesByMode(prev => ({ ...prev, [sendMode]: newMessages }))
     setLoading(true)
+    setBusyMode(sendMode)
     setStreaming('')
 
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: newMessages, mode }),
+        body: JSON.stringify({ messages: newMessages, mode: sendMode }),
       })
 
       if (!res.ok) throw new Error('שגיאה בחיבור לצ\'אט')
@@ -103,20 +123,27 @@ export default function ChatClient({ historyByMode }: { historyByMode: Partial<R
         setStreaming(full)
       }
 
-      setMessages([...newMessages, { role: 'assistant', content: full }])
+      setMessagesByMode(prev => ({
+        ...prev,
+        [sendMode]: [...newMessages, { role: 'assistant', content: full }],
+      }))
       setStreaming('')
       // Save assistant message (non-blocking)
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         supabase.from('chat_messages').insert({
-          user_id: user.id, role: 'assistant', content: full, mode
+          user_id: user.id, role: 'assistant', content: full, mode: sendMode
         }).then(() => {})
       }
     } catch (e) {
-      setMessages([...newMessages, { role: 'assistant', content: 'אירעה שגיאה. אנא נסי שוב.' }])
+      setMessagesByMode(prev => ({
+        ...prev,
+        [sendMode]: [...newMessages, { role: 'assistant', content: 'אירעה שגיאה. אנא נסי שוב.' }],
+      }))
       setStreaming('')
     }
     setLoading(false)
+    setBusyMode(null)
   }
 
   function handleKey(e: React.KeyboardEvent) {
@@ -139,11 +166,11 @@ export default function ChatClient({ historyByMode }: { historyByMode: Partial<R
 
       {/* Mode Selector */}
       <div className="flex gap-2 mb-4 flex-wrap">
-        {modes.map(m => {
+        {visibleModes.map(m => {
           const Icon = m.icon
           const active = mode === m.id
           return (
-            <button key={m.id} onClick={() => setMode(m.id)}
+            <button key={m.id} onClick={() => { setMode(m.id); setInput('') }}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all"
               style={active
                 ? { background: m.color, color: 'white' }
@@ -159,7 +186,7 @@ export default function ChatClient({ historyByMode }: { historyByMode: Partial<R
 
       {/* Chat Area */}
       <div className="flex-1 overflow-y-auto space-y-4 pb-4">
-        {messages.length === 0 && !streaming && (
+        {messages.length === 0 && !(streaming && busyMode === mode) && (
           <div className="text-center py-8">
             <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
               style={{ background: `${currentMode.color}20` }}>
@@ -188,11 +215,11 @@ export default function ChatClient({ historyByMode }: { historyByMode: Partial<R
           <MessageBubble key={i} role={msg.role} content={msg.content} modeColor={currentMode.color} />
         ))}
 
-        {streaming && (
+        {streaming && busyMode === mode && (
           <MessageBubble role="assistant" content={streaming} modeColor={currentMode.color} />
         )}
 
-        {loading && !streaming && (
+        {loading && !streaming && busyMode === mode && (
           <div className="flex items-center gap-2 px-4">
             <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: `${currentMode.color}20` }}>
               <Bot className="w-4 h-4" style={{ color: currentMode.color }} />
