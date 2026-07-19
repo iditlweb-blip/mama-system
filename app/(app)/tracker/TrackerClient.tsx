@@ -121,12 +121,16 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
   }
 
   // Predicted bedtime: chain the remaining naps and wake windows from the
-  // last time the baby was awake (or an assumed 07:00 morning wake if no data).
-  const morning = new Date(now); morning.setHours(7, 0, 0, 0)
-  const anchor = lastWakeEnd || morning
+  // last time the baby was awake. We only predict once there's at least one
+  // real sleep logged today — without any data we'd otherwise assume a 07:00
+  // wake and confidently show a bedtime (e.g. 22:00) the mother never implied,
+  // which is confusing. No data → no prediction.
   const N = napsRemaining
-  let bedtime: Date | null = new Date(anchor.getTime() + ((N + 1) * band.wakeMin + N * band.napLenMin) * 60000)
-  if (bedtime.getTime() < now) bedtime = null // overdue → show "soon" instead of a stale time
+  let bedtime: Date | null = null
+  if (lastWakeEnd) {
+    bedtime = new Date(lastWakeEnd.getTime() + ((N + 1) * band.wakeMin + N * band.napLenMin) * 60000)
+    if (bedtime.getTime() < now) bedtime = null // overdue → show "soon" instead of a stale time
+  }
 
   // If the chained prediction lands after 21:00, suggest trimming naps so the
   // baby doesn't get overtired — find the largest remaining-nap count that
@@ -138,7 +142,7 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
     if (bedtime.getTime() > cutoff.getTime()) {
       let found: number | null = null
       for (let n = N - 1; n >= 0; n--) {
-        const trial = new Date(anchor.getTime() + ((n + 1) * band.wakeMin + n * band.napLenMin) * 60000)
+        const trial = new Date(lastWakeEnd!.getTime() + ((n + 1) * band.wakeMin + n * band.napLenMin) * 60000)
         if (trial.getTime() <= cutoff.getTime()) { found = n; break }
       }
       recommendFewerNaps = true
@@ -270,6 +274,11 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const supabase = createClient()
+
+  // Feminine when the baby is a girl (genderSuffix is 'ת' for girls, '' for
+  // boys). Some verbs inflect by prefix, not suffix (e.g. יגיע→תגיע), so we
+  // pick whole words rather than appending a suffix.
+  const isGirl = genderSuffix === 'ת'
 
   // Tick every 30s so the "time until next nap" countdown stays fresh.
   useEffect(() => {
@@ -428,7 +437,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                 {timer.active && timer.isNight
                   ? <>{`מתעד${genderSuffix === 'ת' ? 'ת' : ''} שינת לילה 🌙 — הטיימר רץ`}</>
                   : sleepPlan.sleeping
-                    ? <>{`יש${genderSuffix} עכשיו 😴 — הטיימר רץ`}</>
+                    ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 — הטיימר רץ`}</>
                     : !sleepPlan.hasWakeData
                       ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
                       : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
@@ -446,7 +455,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                 <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
                   {sleepPlan.bedtime
                     ? <>{`הלילה של ${babyName || 'התינוק'} יתחיל היום בערך ב-`}<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b></>
-                    : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
+                    : !sleepPlan.hasWakeData
+                      ? <span style={{ color: 'var(--text-muted)' }}>{`סמני שינה כדי לחזות מתי יתחיל הלילה של ${babyName || 'התינוק'}`}</span>
+                      : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
                   }
                 </p>
               </div>
@@ -459,7 +470,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#C4782D' }} />
                 <p className="text-sm" style={{ color: 'var(--text)' }}>
                   לפי החישוב הלילה יתחיל מאוחר מ-21:00 — כדאי לשקול
-                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ״צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`יגיע${genderSuffix} לעייפות יתר`}.
+                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ״צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`${isGirl ? 'תגיע' : 'יגיע'} לעייפות יתר`}.
                 </p>
               </div>
             )}
@@ -486,7 +497,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                 {timer.active
                   ? timer.isNight
                     ? <>{`שנת לילה...`}<Moon className="w-3.5 h-3.5" style={{ color: '#3C3C6E' }} /></>
-                    : <>{`יש${genderSuffix} עכשיו...`}<BedDouble className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} /></>
+                    : <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו...`}<BedDouble className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} /></>
                   : 'טיימר שינה'
                 }
               </p>

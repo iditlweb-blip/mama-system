@@ -54,7 +54,7 @@ export default function Sidebar({ userName, trackingType }: {
     { href: '/development',           icon: Baby,              label: 'התפתחות' },
     { href: '/products', customIcon: <ShoppingBagIcon />,      label: 'מוצרים ובעלי מקצוע' },
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
-    { href: '/chat',                  icon: MessageCircle,     label: "צ׳אט AI" },
+    { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },
     { href: '/settings',              icon: Settings,          label: 'הגדרות' },
   ]
   const pathname  = usePathname()
