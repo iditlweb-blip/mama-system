@@ -50,8 +50,8 @@ export default function Sidebar({ userName, trackingType }: {
       ? { href: '/pregnancy', customIcon: <PregnancyIcon />,   label: 'מעקב הריון' }
       : { href: '/tracker',           icon: Activity,          label: 'מעקב תינוק' },
     { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },
-    { href: '/business',              icon: Briefcase,         label: 'ניהול עבודה' },
-    { href: '/development',           icon: Baby,              label: 'התפתחות' },
+    { href: '/business',              icon: Briefcase,         label: 'ניהול' },
+    { href: '/development',           icon: Baby,              label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות' },
     { href: '/products', customIcon: <ShoppingBagIcon />,      label: 'מוצרים ובעלי מקצוע' },
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
     { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },

@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Briefcase, CheckSquare, Calendar, Link2, Plus, Trash2, Check,
-  Globe, ExternalLink, Clock,
+  Briefcase, CheckSquare, Calendar, Plus, Trash2, Check,
   ChevronDown, Loader2, X,
-  Baby, Flower2, Coffee, Camera, Users, AlertTriangle, PartyPopper,
-  Sparkles, CheckCircle2, Pencil, StickyNote
+  Baby, Flower2, Coffee, AlertTriangle, PartyPopper,
+  Sparkles, CheckCircle2, Pencil, StickyNote,
+  CalendarDays, Package, Wallet, Info
 } from 'lucide-react'
 import { Profile, Task, WeeklyScheduleItem } from '@/types/database'
 
@@ -32,9 +32,10 @@ const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
 
 export default function BusinessClient({ profile, tasks: initialTasks, schedule: initialSchedule, userId }: Props) {
   const supabase = createClient()
+  const isPregnancy = profile?.tracking_type === 'pregnancy'
   const [tasks, setTasks] = useState(initialTasks)
   const [schedule, setSchedule] = useState(initialSchedule)
-  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'links'>('tasks')
+  const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'leave' | 'equipment'>('tasks')
 
   // Task form
   const [showTaskForm, setShowTaskForm] = useState(false)
@@ -127,14 +128,6 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
     setSchedule(prev => prev.filter(s => s.id !== id))
   }
 
-  const links = [
-    { label: 'אתר אינטרנט', url: profile?.website_url, icon: Globe },
-    { label: 'אינסטגרם', url: profile?.instagram_url, icon: Camera },
-    { label: 'פייסבוק', url: profile?.facebook_url, icon: Users },
-    { label: 'לינקדאין', url: profile?.linkedin_url, icon: Briefcase },
-    { label: 'Google Calendar', url: profile?.google_calendar_url, icon: Calendar },
-  ].filter(l => l.url)
-
   const doneTasks = tasks.filter(t => t.status === 'done')
   const openTasks = tasks.filter(t => t.status !== 'done')
 
@@ -145,11 +138,11 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              {profile?.business_name || 'ניהול עבודה'}
+              {profile?.business_name || 'ניהול'}
               <Briefcase size={18} style={{ color: '#7F5268' }} />
             </h1>
             <p className="text-sm mt-0.5" style={{ color: 'var(--text-muted)' }}>
-              {profile?.business_type ? businessTypeLabel(profile.business_type) : 'לוז, משימות וקישורים מהירים'}
+              {profile?.business_type ? businessTypeLabel(profile.business_type) : 'לוז ומשימות'}
             </p>
           </div>
           <div className="text-right">
@@ -160,16 +153,19 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)' }}>
+      <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: 'var(--surface)' }}>
         {([
           { id: 'tasks', label: 'משימות', icon: CheckSquare },
           { id: 'schedule', label: 'לוז שבועי', icon: Calendar },
-          { id: 'links', label: 'קישורים מהירים', icon: Link2 },
+          ...(isPregnancy ? [
+            { id: 'leave', label: 'חופשת לידה', icon: CalendarDays },
+            { id: 'equipment', label: 'ציוד לחדר לידה', icon: Package },
+          ] as const : []),
         ] as const).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-sm font-medium transition-all"
+            className="flex-1 flex-shrink-0 whitespace-nowrap flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all"
             style={activeTab === id
               ? { background: '#7F5268', color: 'white' }
               : { color: 'var(--text-muted)' }
@@ -426,57 +422,286 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
         </div>
       )}
 
-      {/* LINKS TAB */}
-      {activeTab === 'links' && (
-        <div className="space-y-3">
-          {links.length === 0 ? (
-            <div className="card text-center py-10">
-              <div className="flex justify-center mb-2">
-                <Link2 size={32} style={{ color: '#7F5268' }} />
-              </div>
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>אין קישורים</p>
-              <p className="text-sm mt-1 mb-4" style={{ color: 'var(--text-muted)' }}>הוסיפי קישורים בעמוד ההגדרות</p>
-              <a href="/settings"
-                className="inline-block px-4 py-2 rounded-xl text-white text-sm font-medium"
-                style={{ background: '#7F5268' }}>
-                לעמוד הגדרות
-              </a>
+      {/* MATERNITY LEAVE TAB (pregnancy only) */}
+      {activeTab === 'leave' && isPregnancy && (
+        <MaternityLeave dueDate={profile?.due_date ?? null} />
+      )}
+
+      {/* DELIVERY-ROOM EQUIPMENT TAB (pregnancy only) */}
+      {activeTab === 'equipment' && isPregnancy && (
+        <DeliveryEquipment userId={userId} />
+      )}
+    </div>
+  )
+}
+
+// ── Maternity-leave calculator ──────────────────────────────────────────────
+// Israeli "דמי לידה" (Bituach Leumi maternity allowance) rough estimate:
+//   daily benefit ≈ average of the 3 months' salary before the leave / 90,
+//   capped at the legal daily maximum, paid across the entitlement period
+//   (15 weeks = 105 days for the full grant, 8 weeks = 56 days for the partial).
+// This is an estimate only — the exact sum depends on Bituach Leumi records.
+const DAILY_CAP = 1651.25 // approx. legal daily maximum (2025), updated yearly
+
+function MaternityLeave({ dueDate }: { dueDate: string | null }) {
+  const [salary, setSalary] = useState('')
+  const [fullGrant, setFullGrant] = useState(true)
+
+  const monthly = parseFloat(salary) || 0
+  const rawDaily = monthly / 30
+  const daily = Math.min(rawDaily, DAILY_CAP)
+  const capped = rawDaily > DAILY_CAP
+  const days = fullGrant ? 105 : 56
+  const total = Math.round(daily * days)
+
+  // Earliest leave start: up to 7 weeks before the due date.
+  const earliestStart = dueDate
+    ? new Date(new Date(dueDate).getTime() - 49 * 86400000)
+    : null
+
+  return (
+    <div className="space-y-4">
+      {/* When to go on leave */}
+      <div className="card">
+        <h3 className="font-semibold text-sm mb-2 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+          <CalendarDays className="w-4 h-4" style={{ color: '#7F5268' }} />
+          מתי לצאת לחופשת לידה?
+        </h3>
+        {earliestStart ? (
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+            ניתן להתחיל את חופשת הלידה החל מ־
+            <strong style={{ color: '#7F5268' }}> {earliestStart.toLocaleDateString('he-IL')} </strong>
+            (עד 7 שבועות לפני תאריך הלידה המשוער
+            {dueDate && <> — {new Date(dueDate).toLocaleDateString('he-IL')}</>}).
+            את חייבת לצאת לכל המאוחר ביום הלידה עצמו.
+          </p>
+        ) : (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+            הזיני תאריך לידה משוער בהגדרות כדי לחשב את התאריך המוקדם ביותר לחופשת לידה.
+          </p>
+        )}
+      </div>
+
+      {/* Salary → allowance calculator */}
+      <div className="card space-y-3">
+        <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+          <Wallet className="w-4 h-4" style={{ color: '#7F5268' }} />
+          מחשבון דמי לידה
+        </h3>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>שכר ברוטו חודשי ממוצע (₪)</label>
+          <input
+            type="number"
+            inputMode="numeric"
+            value={salary}
+            onChange={e => setSalary(e.target.value)}
+            placeholder="לדוגמה: 12000"
+            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+          />
+        </div>
+        <div>
+          <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>תקופת הזכאות</label>
+          <div className="grid grid-cols-2 gap-2">
+            {([[true, '15 שבועות (מלא)'], [false, '8 שבועות (חלקי)']] as const).map(([val, lbl]) => (
+              <button
+                key={String(val)}
+                onClick={() => setFullGrant(val)}
+                className="py-2.5 rounded-xl text-sm font-medium transition-all"
+                style={fullGrant === val
+                  ? { background: '#7F5268', color: 'white' }
+                  : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+              >
+                {lbl}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {monthly > 0 && (
+          <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(127,82,104,0.08)' }}>
+            <div className="flex items-center justify-between text-sm">
+              <span style={{ color: 'var(--text-muted)' }}>דמי לידה ליום</span>
+              <span className="font-semibold" style={{ color: 'var(--text)' }}>₪{Math.round(daily).toLocaleString()}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span style={{ color: 'var(--text-muted)' }}>מספר ימים</span>
+              <span className="font-semibold" style={{ color: 'var(--text)' }}>{days}</span>
+            </div>
+            <div className="h-px my-1" style={{ background: 'rgba(127,82,104,0.2)' }} />
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>סה״כ מוערך</span>
+              <span className="text-xl font-bold" style={{ color: '#4A7C59' }}>₪{total.toLocaleString()}</span>
+            </div>
+            {capped && (
+              <p className="text-xs flex items-start gap-1" style={{ color: '#B8860B' }}>
+                <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                השכר חורג מהתקרה — החישוב הוגבל לתקרת דמי הלידה המקסימלית ליום.
+              </p>
+            )}
+          </div>
+        )}
+
+        <p className="text-xs flex items-start gap-1.5 leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+          <Info className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+          זהו אומדן בלבד. דמי הלידה מחושבים לפי ההכנסות שבתיק הביטוח הלאומי שלך בשלושת החודשים
+          שקדמו להפסקת העבודה. לפרטים המדויקים פני לביטוח הלאומי.
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// ── Delivery-room equipment checklist ───────────────────────────────────────
+// Persisted in localStorage (per user) so it works without an extra DB table /
+// migration. Items are editable, addable and deletable.
+interface EquipItem { id: string; text: string; done: boolean }
+
+const DEFAULT_EQUIPMENT: string[] = [
+  'תעודת זהות + טופס קופת חולים',
+  'מסמכי הריון ובדיקות',
+  'מטען לטלפון (כבל ארוך)',
+  'בגדים נוחים לאמא',
+  'כתונת/חלוק ונעלי בית',
+  'כלי רחצה ומגבת',
+  'חטיפים ובקבוק מים',
+  'בגד גוף + חיתולים לתינוק',
+  'שמיכה/חיתול קפוצ׳ון לתינוק',
+  'סלקל (כיסא בטיחות) לרכב',
+  'רשימת טלפונים חשובים',
+  'כרית הנקה (אופציונלי)',
+]
+
+function DeliveryEquipment({ userId }: { userId: string }) {
+  const storageKey = `mama-delivery-equipment-${userId}`
+  const [items, setItems] = useState<EquipItem[]>([])
+  const [loaded, setLoaded] = useState(false)
+  const [newItem, setNewItem] = useState('')
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editText, setEditText] = useState('')
+
+  // Load once on mount (client-side only).
+  useEffect(() => {
+    let initial: EquipItem[] = []
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (raw) initial = JSON.parse(raw)
+    } catch { /* ignore */ }
+    if (initial.length === 0) {
+      initial = DEFAULT_EQUIPMENT.map((text, i) => ({ id: `d${i}`, text, done: false }))
+    }
+    setItems(initial)
+    setLoaded(true)
+  }, [storageKey])
+
+  // Persist on every change (after initial load).
+  useEffect(() => {
+    if (!loaded) return
+    try { localStorage.setItem(storageKey, JSON.stringify(items)) } catch { /* ignore */ }
+  }, [items, loaded, storageKey])
+
+  function toggle(id: string) {
+    setItems(prev => prev.map(it => it.id === id ? { ...it, done: !it.done } : it))
+  }
+  function remove(id: string) {
+    setItems(prev => prev.filter(it => it.id !== id))
+  }
+  function add() {
+    const t = newItem.trim()
+    if (!t) return
+    setItems(prev => [...prev, { id: `${Date.now()}`, text: t, done: false }])
+    setNewItem('')
+  }
+  function saveEdit(id: string) {
+    const t = editText.trim()
+    if (!t) return
+    setItems(prev => prev.map(it => it.id === id ? { ...it, text: t } : it))
+    setEditingId(null)
+    setEditText('')
+  }
+
+  const packed = items.filter(i => i.done).length
+
+  return (
+    <div className="space-y-4">
+      <div className="card" style={{ background: 'rgba(127,82,104,0.06)' }}>
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <Package className="w-4 h-4" style={{ color: '#7F5268' }} />
+            תיק ללידה
+          </h3>
+          <span className="text-sm font-bold" style={{ color: '#4A7C59' }}>{packed}/{items.length}</span>
+        </div>
+        <div className="w-full h-2 rounded-full overflow-hidden mt-2" style={{ background: 'var(--border)' }}>
+          <div className="h-full rounded-full transition-all duration-500"
+            style={{ width: `${items.length > 0 ? (packed / items.length) * 100 : 0}%`, background: 'linear-gradient(90deg, #7F5268, #C4A0B4)' }} />
+        </div>
+      </div>
+
+      {/* Add item */}
+      <div className="flex gap-2">
+        <input
+          value={newItem}
+          onChange={e => setNewItem(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && add()}
+          placeholder="הוספת פריט..."
+          className="flex-1 px-3 py-2.5 rounded-xl border text-sm outline-none"
+          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+        />
+        <button
+          onClick={add}
+          disabled={!newItem.trim()}
+          className="px-4 rounded-xl text-white text-sm font-semibold flex items-center gap-1 disabled:opacity-50"
+          style={{ background: '#7F5268' }}
+        >
+          <Plus className="w-4 h-4" /> הוספה
+        </button>
+      </div>
+
+      {/* List */}
+      <div className="card space-y-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>הרשימה ריקה — הוסיפי פריטים למעלה</p>
+        ) : items.map(item => (
+          editingId === item.id ? (
+            <div key={item.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid rgba(127,82,104,0.3)' }}>
+              <input
+                value={editText}
+                onChange={e => setEditText(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') saveEdit(item.id); if (e.key === 'Escape') setEditingId(null) }}
+                autoFocus
+                className="flex-1 px-3 py-1.5 rounded-lg border text-sm outline-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
+              <button onClick={() => saveEdit(item.id)} className="px-3 py-1.5 rounded-lg text-white text-xs font-medium" style={{ background: '#4A7C59' }}>
+                <Check className="w-3.5 h-3.5" />
+              </button>
+              <button onClick={() => setEditingId(null)} className="px-3 py-1.5 rounded-lg text-xs" style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                <X className="w-3.5 h-3.5" />
+              </button>
             </div>
           ) : (
-            <>
-              <p className="text-xs px-1" style={{ color: 'var(--text-muted)' }}>
-                לפתיחה בלשונית חדשה — לחצי על הקישור
-              </p>
-              <div className="grid gap-3">
-                {links.map(({ label, url, icon: Icon }) => (
-                  <a
-                    key={label}
-                    href={url!}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="card flex items-center gap-4 hover:opacity-90 transition-opacity group"
-                  >
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                      style={{ background: 'rgba(127,82,104,0.1)' }}>
-                      <Icon className="w-5 h-5" style={{ color: 'var(--primary)' }} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm" style={{ color: 'var(--text)' }}>{label}</p>
-                      <p className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{url}</p>
-                    </div>
-                    <ExternalLink className="w-4 h-4 opacity-40 group-hover:opacity-100 transition-opacity" style={{ color: 'var(--primary)' }} />
-                  </a>
-                ))}
-              </div>
-              <a href="/settings"
-                className="block text-center text-sm font-medium mt-2"
-                style={{ color: 'var(--primary)' }}>
-                + עריכת קישורים בהגדרות
-              </a>
-            </>
-          )}
-        </div>
-      )}
+            <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl transition-all group" style={{ background: 'var(--surface)', opacity: item.done ? 0.6 : 1 }}>
+              <button
+                onClick={() => toggle(item.id)}
+                className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                style={item.done ? { background: '#4A7C59', borderColor: '#4A7C59' } : { borderColor: '#7F5268' }}
+              >
+                {item.done && <Check className="w-3 h-3 text-white" />}
+              </button>
+              <span className="flex-1 text-sm" style={{ color: 'var(--text)', textDecoration: item.done ? 'line-through' : 'none' }}>
+                {item.text}
+              </span>
+              <button onClick={() => { setEditingId(item.id); setEditText(item.text) }} title="עריכה" className="opacity-30 group-hover:opacity-100 transition-opacity">
+                <Pencil className="w-3.5 h-3.5" style={{ color: '#7F5268' }} />
+              </button>
+              <button onClick={() => remove(item.id)} title="מחיקה" className="opacity-30 hover:opacity-100 transition-opacity">
+                <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
+              </button>
+            </div>
+          )
+        ))}
+      </div>
     </div>
   )
 }

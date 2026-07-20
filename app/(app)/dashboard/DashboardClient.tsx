@@ -3,12 +3,24 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock } from 'lucide-react'
 import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
+import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
+
+export interface PregnancyTest {
+  id: string
+  test_name: string
+  scheduled_week: number | null
+  file_url: string | null
+  notes: string | null
+  completed: boolean
+  completed_at: string | null
+  created_at: string
+}
 
 function NavBabyIcon() {
   return (
@@ -48,6 +60,9 @@ interface Props {
   lastSleepAgo: string | null
   todayLogs: BabyLog[]
   todaySchedule: WeeklyScheduleItem[]
+  isPregnancy: boolean
+  dueDate: string | null
+  pregnancyTests: PregnancyTest[]
 }
 
 const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
@@ -70,10 +85,38 @@ const TRACK = [
 export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
   nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
-  todaySchedule: initialSchedule,
+  todaySchedule: initialSchedule, isPregnancy, dueDate,
+  pregnancyTests: initialPregnancyTests,
 }: Props) {
   const supabase = createClient()
   const timer = useSleepTimer(userId)
+
+  // ── Pregnancy mode state ──
+  const pregnancyWeek = calcPregnancyWeek(dueDate)
+  const [pregTests, setPregTests] = useState<PregnancyTest[]>(initialPregnancyTests)
+  const [addingTest, setAddingTest] = useState<string | null>(null)
+
+  // Standard tests coming up from the current week onward that the woman hasn't
+  // added to her personal list yet — these are what "quick add" offers.
+  const addedNames = new Set(pregTests.map(t => t.test_name))
+  const upcomingStandard = STANDARD_TESTS.filter(
+    st => st.week >= Math.max(0, pregnancyWeek - 2) && !addedNames.has(st.name),
+  )
+  // Her own upcoming (not-yet-completed) tests, nearest week first.
+  const myUpcoming = [...pregTests]
+    .filter(t => !t.completed)
+    .sort((a, b) => (a.scheduled_week ?? 99) - (b.scheduled_week ?? 99))
+
+  async function quickAddTest(name: string, week: number) {
+    setAddingTest(name)
+    const { data } = await supabase.from('pregnancy_tests')
+      .insert({ user_id: userId, test_name: name, scheduled_week: week, completed: false })
+      .select().single()
+    if (data) setPregTests(prev => [...prev, data as PregnancyTest])
+    setAddingTest(null)
+    setSavedFlash(true)
+    setTimeout(() => setSavedFlash(false), 2000)
+  }
 
   // Local mutable lists for optimistic deletion / editing
   const [localLogs,  setLocalLogs]  = useState<BabyLog[]>(initialLogs)
@@ -326,41 +369,86 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* ── Status ───────────────────────────────── */}
-      <div className="card">
-        <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-          <Moon className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-          סטטוס אחרון
-        </h2>
-        <div className="space-y-2">
-          {[
-            { icon: Milk, label: 'האכלה אחרונה', value: lastFeedAgo, color: '#7F5268' },
-            { icon: BedDouble, label: 'שינה אחרונה', value: lastSleepAgo, color: '#5C7A6A' },
-          ].map(({ icon: Icon, label, value, color }) => (
-            <div
-              key={label}
-              className="flex items-center justify-between p-3 rounded-xl"
-              style={{ background: 'var(--surface-2, #FAF4ED)' }}
+      {/* ── Status (baby) / Upcoming tests (pregnancy) ─── */}
+      {isPregnancy ? (
+        <div className="card">
+          <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <CalendarClock className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+            בדיקות קרובות
+          </h2>
+          <div className="space-y-2">
+            {myUpcoming.length === 0 ? (
+              <p className="text-sm font-light text-center py-3" style={{ color: 'var(--text-muted)' }}>
+                אין בדיקות קרובות רשומות — הוסיפי מהרשימה למטה 👇
+              </p>
+            ) : (
+              myUpcoming.slice(0, 4).map(test => {
+                const overdue = test.scheduled_week != null && test.scheduled_week < pregnancyWeek
+                return (
+                  <div
+                    key={test.id}
+                    className="flex items-center justify-between p-3 rounded-xl"
+                    style={{ background: 'var(--surface-2, #FAF4ED)' }}
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Stethoscope className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#7F5268' }} />
+                      <span className="text-sm font-light truncate" style={{ color: 'var(--text)' }}>{test.test_name}</span>
+                    </div>
+                    {test.scheduled_week != null && (
+                      <span className="text-xs font-medium flex-shrink-0" style={{ color: overdue ? '#C0392B' : '#7F5268' }}>
+                        שבוע {test.scheduled_week}
+                      </span>
+                    )}
+                  </div>
+                )
+              })
+            )}
+            <Link
+              href="/pregnancy"
+              className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
+              style={{ color: 'var(--primary)' }}
             >
-              <div className="flex items-center gap-2">
-                <Icon className="w-3.5 h-3.5" style={{ color }} />
-                <span className="text-sm font-light" style={{ color: 'var(--text)' }}>{label}</span>
-              </div>
-              <span className="text-sm font-medium" style={{ color: value ? color : 'var(--text-muted)' }}>
-                {value || 'לא נרשם'}
-              </span>
-            </div>
-          ))}
-          <Link
-            href="/tracker"
-            className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
-            style={{ color: 'var(--primary)' }}
-          >
-            לטרקר המלא
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </Link>
+              לכל הבדיקות
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="card">
+          <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <Moon className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+            סטטוס אחרון
+          </h2>
+          <div className="space-y-2">
+            {[
+              { icon: Milk, label: 'האכלה אחרונה', value: lastFeedAgo, color: '#7F5268' },
+              { icon: BedDouble, label: 'שינה אחרונה', value: lastSleepAgo, color: '#5C7A6A' },
+            ].map(({ icon: Icon, label, value, color }) => (
+              <div
+                key={label}
+                className="flex items-center justify-between p-3 rounded-xl"
+                style={{ background: 'var(--surface-2, #FAF4ED)' }}
+              >
+                <div className="flex items-center gap-2">
+                  <Icon className="w-3.5 h-3.5" style={{ color }} />
+                  <span className="text-sm font-light" style={{ color: 'var(--text)' }}>{label}</span>
+                </div>
+                <span className="text-sm font-medium" style={{ color: value ? color : 'var(--text-muted)' }}>
+                  {value || 'לא נרשם'}
+                </span>
+              </div>
+            ))}
+            <Link
+              href="/tracker"
+              className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
+              style={{ color: 'var(--primary)' }}
+            >
+              לטרקר המלא
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* ── Today's schedule ───────────────────────── */}
       {localSchedule.length > 0 && (
@@ -520,7 +608,8 @@ export default function DashboardClient({
         )}
       </div>
 
-      {/* ── Sleep timer shortcut ─────────────────── */}
+      {/* ── Sleep timer shortcut (baby only) ─────── */}
+      {!isPregnancy && (
       <div
         className="card"
         style={timer.active
@@ -583,8 +672,60 @@ export default function DashboardClient({
           )}
         </div>
       </div>
+      )}
 
-      {/* ── Quick Log ────────────────────────────── */}
+      {/* ── Quick add tests (pregnancy only) ─────── */}
+      {isPregnancy && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Plus className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+              הוספה מהירה של בדיקות
+            </h2>
+            {savedFlash && (
+              <span className="text-xs flex items-center gap-1" style={{ color: '#4A7C59' }}>
+                <Check className="w-3 h-3" /> נוסף!
+              </span>
+            )}
+          </div>
+          {upcomingStandard.length === 0 ? (
+            <p className="text-sm font-light text-center py-3" style={{ color: 'var(--text-muted)' }}>
+              כל הבדיקות הקרובות כבר ברשימה שלך ✓
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {upcomingStandard.slice(0, 5).map(st => (
+                <div
+                  key={st.name}
+                  className="flex items-center justify-between p-3 rounded-xl gap-2"
+                  style={{ background: 'var(--surface-2, #FAF4ED)' }}
+                >
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                      style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}
+                    >
+                      {st.week}
+                    </span>
+                    <span className="text-sm font-light truncate" style={{ color: 'var(--text)' }}>{st.name}</span>
+                  </div>
+                  <button
+                    onClick={() => quickAddTest(st.name, st.week)}
+                    disabled={addingTest === st.name}
+                    className="text-xs font-medium px-3 py-1.5 rounded-lg flex-shrink-0 disabled:opacity-60"
+                    style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}
+                  >
+                    {addingTest === st.name ? '...' : '+ הוסיפי'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── Quick Log (baby only) ────────────────── */}
+      {!isPregnancy && (
       <div className="card">
         <div className="flex items-center justify-between mb-3">
           <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
@@ -703,6 +844,7 @@ export default function DashboardClient({
           </div>
         </div>
       </div>
+      )}
 
       {/* ── Log entry modal (full, like the tracker) ── */}
       {showForm && (() => {
@@ -852,7 +994,7 @@ export default function DashboardClient({
       {/* ── Quick nav links ────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { href: '/development', label: 'התפתחות', Icon: NavBabyIcon },
+          { href: '/development', label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות', Icon: NavBabyIcon },
           { href: '/chat',        label: "AI",      Icon: NavChatIcon },
           { href: '/tasks',       label: 'משימות',  Icon: NavTaskIcon },
           { href: '/tracker',     label: 'מעקב',    Icon: null },

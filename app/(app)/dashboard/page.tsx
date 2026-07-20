@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import { getDailyMotivation } from '@/lib/motivations'
-import DashboardClient from './DashboardClient'
+import DashboardClient, { type PregnancyTest } from './DashboardClient'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -18,6 +18,19 @@ export default async function DashboardPage() {
   ])
 
   const motivation = getDailyMotivation()
+
+  // Pregnancy mode: fetch the woman's tests so the dashboard can show upcoming
+  // tests + quick-add instead of the baby feed/sleep widgets.
+  const isPregnancy = profile?.tracking_type === 'pregnancy'
+  let pregnancyTests: PregnancyTest[] = []
+  if (isPregnancy) {
+    const { data } = await supabase
+      .from('pregnancy_tests')
+      .select('*')
+      .eq('user_id', userId!)
+      .order('scheduled_week', { ascending: true })
+    pregnancyTests = (data as PregnancyTest[]) || []
+  }
 
   // Compute baby age
   let babyWeeks = 0
@@ -86,6 +99,9 @@ export default async function DashboardPage() {
       lastSleepAgo={lastSleepAgo}
       todayLogs={logs || []}
       todaySchedule={todaySchedule || []}
+      isPregnancy={isPregnancy}
+      dueDate={profile?.due_date ?? null}
+      pregnancyTests={pregnancyTests}
     />
   )
 }

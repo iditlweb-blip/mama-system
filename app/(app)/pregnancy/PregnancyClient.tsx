@@ -6,8 +6,9 @@ import { createBrowserClient } from '@supabase/ssr'
 import BackButton from '@/components/layout/BackButton'
 import GaveBirthModal from '@/components/GaveBirthModal'
 import {
-  PartyPopper, Baby, ClipboardList, Paperclip, Upload, X, Lightbulb, Check,
+  PartyPopper, Baby, ClipboardList, Upload, X, Lightbulb, Check,
   Sprout, Grape, Cherry, Citrus, Apple, Banana,
+  FileText, Download, Share2, ZoomIn,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -112,6 +113,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
   const fileInputRef              = useRef<HTMLInputElement>(null)
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
   const [newNote, setNewNote]     = useState('')
+  const [lightbox, setLightbox]   = useState<{ url: string; name: string } | null>(null)
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -139,15 +141,41 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
 
   async function handleFileUpload(testId: string, file: File) {
     setUploading(testId)
-    const ext  = file.name.split('.').pop()
-    const path = `${userId}/pregnancy/${testId}.${ext}`
-    const { error } = await supabase.storage.from('pregnancy-tests').upload(path, file, { upsert: true })
-    if (error) { showMsg('שגיאה בהעלאה — ודאי שאחסון ה-storage מוגדר'); setUploading(null); return }
+    const ext  = (file.name.split('.').pop() || 'dat').toLowerCase()
+    // Include a timestamp so re-uploads always get a fresh, cache-busted URL.
+    const path = `${userId}/pregnancy/${testId}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage
+      .from('pregnancy-tests')
+      .upload(path, file, { upsert: true, contentType: file.type || undefined })
+    if (error) {
+      // Most common cause: the `pregnancy-tests` bucket / policies haven't been
+      // created yet (run migration 011_pregnancy_storage.sql in Supabase).
+      const notFound = /bucket|not found|exist/i.test(error.message)
+      showMsg(notFound
+        ? 'האחסון עדיין לא הוגדר — יש להריץ את מיגרציה 011 ב-Supabase'
+        : `שגיאה בהעלאה: ${error.message}`)
+      setUploading(null)
+      return
+    }
     const { data: url } = supabase.storage.from('pregnancy-tests').getPublicUrl(path)
     await supabase.from('pregnancy_tests').update({ file_url: url.publicUrl }).eq('id', testId)
     setTests(prev => prev.map(t => t.id === testId ? { ...t, file_url: url.publicUrl } : t))
     setUploading(null)
     showMsg('הקובץ הועלה בהצלחה!')
+  }
+
+  // Is this attachment an image we can render as a thumbnail?
+  function isImage(url: string): boolean {
+    return /\.(png|jpe?g|gif|webp|heic|heif|bmp)(\?|$)/i.test(url)
+  }
+
+  // Share the file to WhatsApp (native share sheet if available, else wa.me).
+  async function shareFile(url: string, name: string) {
+    const text = `תוצאת בדיקה: ${name}\n${url}`
+    if (navigator.share) {
+      try { await navigator.share({ title: name, text, url }); return } catch { /* fall through */ }
+    }
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
   }
 
   async function addStandardTest(name: string, week: number) {
@@ -343,9 +371,39 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                       </p>
                       {test.scheduled_week && <p style={{ margin: 0, fontSize: '0.73rem', color: '#bbb' }}>שבוע {test.scheduled_week}</p>}
                       {test.file_url && (
-                        <a href={test.file_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.78rem', color: '#7F5268', display: 'flex', alignItems: 'center', gap: 4, marginTop: 4 }}>
-                          <Paperclip size={13} /> צפי בקובץ
-                        </a>
+                        <button
+                          onClick={() => setLightbox({ url: test.file_url!, name: test.test_name })}
+                          title="להגדלה"
+                          style={{
+                            marginTop: 8, padding: 0, border: 'none', background: 'transparent',
+                            cursor: 'pointer', display: 'inline-block', position: 'relative',
+                          }}
+                        >
+                          {isImage(test.file_url) ? (
+                            <span style={{ position: 'relative', display: 'inline-block' }}>
+                              <img
+                                src={test.file_url}
+                                alt={test.test_name}
+                                style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 10, border: '1px solid rgba(127,82,104,0.2)', display: 'block' }}
+                              />
+                              <span style={{
+                                position: 'absolute', bottom: 3, left: 3, background: 'rgba(0,0,0,0.55)',
+                                borderRadius: 6, width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                <ZoomIn size={11} color="#fff" />
+                              </span>
+                            </span>
+                          ) : (
+                            <span style={{
+                              width: 60, height: 60, borderRadius: 10, background: 'rgba(127,82,104,0.08)',
+                              border: '1px solid rgba(127,82,104,0.2)', display: 'flex', flexDirection: 'column',
+                              alignItems: 'center', justifyContent: 'center', gap: 2, color: '#7F5268',
+                            }}>
+                              <FileText size={20} />
+                              <span style={{ fontSize: '0.6rem' }}>מסמך</span>
+                            </span>
+                          )}
+                        </button>
                       )}
                     </div>
                     <button
@@ -428,6 +486,73 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
           e.target.value = ''
         }}
       />
+
+      {/* Lightbox — enlarge, share, download */}
+      {lightbox && (
+        <div
+          onClick={() => setLightbox(null)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(0,0,0,0.8)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 16,
+          }}
+        >
+          {/* Close */}
+          <button
+            onClick={() => setLightbox(null)}
+            style={{
+              position: 'absolute', top: 16, left: 16, width: 40, height: 40, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={20} />
+          </button>
+
+          <div onClick={e => e.stopPropagation()} style={{ maxWidth: 640, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            {isImage(lightbox.url) ? (
+              <img
+                src={lightbox.url}
+                alt={lightbox.name}
+                style={{ maxWidth: '100%', maxHeight: '70vh', objectFit: 'contain', borderRadius: 12, background: '#fff' }}
+              />
+            ) : (
+              <div style={{ background: '#fff', borderRadius: 12, padding: 32, textAlign: 'center', color: '#7F5268', width: '100%' }}>
+                <FileText size={56} style={{ margin: '0 auto 12px' }} />
+                <p style={{ margin: 0, fontWeight: 600 }}>{lightbox.name}</p>
+                <a href={lightbox.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 12, color: '#7F5268', fontSize: '0.85rem' }}>
+                  פתחי את המסמך בכרטיסייה חדשה
+                </a>
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 10, width: '100%', maxWidth: 360 }}>
+              <button
+                onClick={() => shareFile(lightbox.url, lightbox.name)}
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 12, border: 'none', cursor: 'pointer',
+                  background: '#25D366', color: '#fff', fontWeight: 600, fontSize: '0.88rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font-body)',
+                }}
+              >
+                <Share2 size={16} /> שיתוף
+              </button>
+              <a
+                href={`${lightbox.url}${lightbox.url.includes('?') ? '&' : '?'}download`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  flex: 1, padding: '11px 0', borderRadius: 12, cursor: 'pointer', textDecoration: 'none',
+                  background: '#7F5268', color: '#fff', fontWeight: 600, fontSize: '0.88rem',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontFamily: 'var(--font-body)',
+                }}
+              >
+                <Download size={16} /> הורדה
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast */}
       {toast && (

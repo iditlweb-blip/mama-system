@@ -4,8 +4,8 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
-  User, Baby, Briefcase, Link, Check, Loader2, Camera, AlertTriangle, X, Heart,
-  Globe, Users, Calendar, UserRound, LogOut, MessageCircle, Copy
+  User, Baby, Check, Loader2, Camera, AlertTriangle, X, Heart,
+  UserRound, LogOut, MessageCircle, Copy
 } from 'lucide-react'
 
 function PregnancyIcon({ className }: { className?: string }) {
@@ -65,13 +65,6 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     (profile?.baby_gender as 'boy' | 'girl') || ''
   )
 
-  // ── Quick links
-  const [websiteUrl,   setWebsiteUrl]   = useState(profile?.website_url || '')
-  const [instagramUrl, setInstagramUrl] = useState(profile?.instagram_url || '')
-  const [facebookUrl,  setFacebookUrl]  = useState(profile?.facebook_url || '')
-  const [linkedinUrl,  setLinkedinUrl]  = useState(profile?.linkedin_url || '')
-  const [calendarUrl,  setCalendarUrl]  = useState(profile?.google_calendar_url || '')
-
   // ── Photo upload
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
@@ -113,11 +106,6 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       baby_birthdate:      babyBirthdate  || null,
       baby_gender:         babyGender     || null,
       profile_picture_url: profilePicUrl  || null,
-      website_url:         websiteUrl     || null,
-      instagram_url:       instagramUrl   || null,
-      facebook_url:        facebookUrl    || null,
-      linkedin_url:        linkedinUrl    || null,
-      google_calendar_url: calendarUrl    || null,
     }
 
     const { error: saveErr } = await supabase.from('profiles').upsert(payload)
@@ -287,16 +275,6 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
             </div>
           </div>
         )}
-      </Section>
-
-      {/* ── Links ─────────────────────────────────────────────────── */}
-      <Section icon={Link} title="קישורים מהירים" color="#5C7A6A">
-        <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>מופיעים בעמוד ניהול העסק לגישה מהירה</p>
-        <Field label={<><Globe className="w-3.5 h-3.5" /> אתר אינטרנט</>}    value={websiteUrl}   onChange={setWebsiteUrl}   placeholder="https://www.yoursite.com"      type="url" />
-        <Field label={<><Camera className="w-3.5 h-3.5" /> אינסטגרם</>}        value={instagramUrl} onChange={setInstagramUrl} placeholder="https://instagram.com/yourname" type="url" />
-        <Field label={<><Users className="w-3.5 h-3.5" /> פייסבוק</>}         value={facebookUrl}  onChange={setFacebookUrl}  placeholder="https://facebook.com/yourpage" type="url" />
-        <Field label={<><Briefcase className="w-3.5 h-3.5" /> לינקדאין</>}        value={linkedinUrl}  onChange={setLinkedinUrl}  placeholder="https://linkedin.com/in/yourname" type="url" />
-        <Field label={<><Calendar className="w-3.5 h-3.5" /> Google Calendar</>} value={calendarUrl}  onChange={setCalendarUrl}  placeholder="https://calendar.google.com/..." type="url" />
       </Section>
 
       {/* ── WhatsApp linking ──────────────────────────────────────── */}
