@@ -1,17 +1,20 @@
 import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import { getDailyMotivation } from '@/lib/motivations'
 import DashboardClient from './DashboardClient'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userId = await getAuthUserId()
 
   const todayDow = new Date().getDay()
-  const [{ data: profile }, { data: tasks }, { data: logs }, { data: todaySchedule }] = await Promise.all([
-    supabase.from('profiles').select('*').eq('id', user!.id).single(),
-    supabase.from('tasks').select('*').eq('user_id', user!.id).in('status', ['todo', 'inprogress']).order('created_at', { ascending: false }).limit(5),
-    supabase.from('baby_logs').select('*').eq('user_id', user!.id).gte('start_time', new Date().toISOString().split('T')[0]).order('start_time', { ascending: false }).limit(10),
-    supabase.from('weekly_schedule').select('*').eq('user_id', user!.id).eq('day_of_week', todayDow).order('start_time'),
+  // `profile` reuses the request-cached row already fetched by the layout, so
+  // it costs nothing extra here. The rest run in parallel.
+  const [profile, { data: tasks }, { data: logs }, { data: todaySchedule }] = await Promise.all([
+    getProfile(),
+    supabase.from('tasks').select('*').eq('user_id', userId!).in('status', ['todo', 'inprogress']).order('created_at', { ascending: false }).limit(5),
+    supabase.from('baby_logs').select('*').eq('user_id', userId!).gte('start_time', new Date().toISOString().split('T')[0]).order('start_time', { ascending: false }).limit(10),
+    supabase.from('weekly_schedule').select('*').eq('user_id', userId!).eq('day_of_week', todayDow).order('start_time'),
   ])
 
   const motivation = getDailyMotivation()
@@ -72,7 +75,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardClient
-      userId={user!.id}
+      userId={userId!}
       profile={profile}
       tasks={tasks || []}
       motivation={motivation}

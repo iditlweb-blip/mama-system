@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
 import GlobalTimerBar from '@/components/layout/GlobalTimerBar'
@@ -9,15 +9,10 @@ import BottomNav from '@/components/layout/BottomNav'
 import PageTimeTracker from '@/components/PageTimeTracker'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/auth')
+  const userId = await getAuthUserId()
+  if (!userId) redirect('/auth')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('name, baby_name, baby_gender, profile_picture_url, tracking_type, setup_complete')
-    .eq('id', user.id)
-    .single()
+  const profile = await getProfile()
 
   // New users must finish the onboarding questionnaire before reaching any
   // in-app page. The wizard lives outside this layout, so redirecting there
@@ -34,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
         />
-        {profile?.tracking_type === 'baby' && <GlobalTimerBar userId={user.id} />}
+        {profile?.tracking_type === 'baby' && <GlobalTimerBar userId={userId} />}
         <main className="flex-1 overflow-y-auto">
           {/* Full-width content with symmetric side gutters (equal left/right)
               across every page, mobile + desktop. Extra bottom padding on

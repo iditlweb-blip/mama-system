@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import ChatClient from './ChatClient'
 import { ChatMode, ChatMessage } from '@/types/database'
 
@@ -6,20 +7,16 @@ const ALL_MODES: ChatMode[] = ['baby', 'time', 'emotional', 'pregnancy']
 
 export default async function ChatPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userId = await getAuthUserId()
 
-  const [{ data: allMessages }, { data: profile }] = await Promise.all([
+  const [{ data: allMessages }, profile] = await Promise.all([
     supabase
       .from('chat_messages')
       .select('*')
-      .eq('user_id', user!.id)
+      .eq('user_id', userId!)
       .order('created_at', { ascending: false })
       .limit(100),
-    supabase
-      .from('profiles')
-      .select('tracking_type')
-      .eq('id', user!.id)
-      .single(),
+    getProfile(),
   ])
 
   const messages = (allMessages || []) as ChatMessage[]

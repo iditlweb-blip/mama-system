@@ -1,9 +1,11 @@
-import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId, getAuthEmail, getProfile } from '@/lib/supabase/auth'
 import SettingsClient from './SettingsClient'
 
 export default async function SettingsPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  const { data: profile } = await supabase.from('profiles').select('*').eq('id', user!.id).single()
-  return <SettingsClient profile={profile} userId={user!.id} userEmail={user!.email || ''} />
+  const [userId, userEmail, profile] = await Promise.all([
+    getAuthUserId(),
+    getAuthEmail(),
+    getProfile(),
+  ])
+  return <SettingsClient profile={profile} userId={userId!} userEmail={userEmail} />
 }

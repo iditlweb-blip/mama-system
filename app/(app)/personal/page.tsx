@@ -1,9 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
+import { getAuthUserId } from '@/lib/supabase/auth'
 import PersonalClient from './PersonalClient'
 
 export default async function PersonalPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const userId = await getAuthUserId()
 
   // Try to load personal logs; gracefully handle missing table
   let logs: unknown[] = []
@@ -11,7 +12,7 @@ export default async function PersonalPage() {
     const { data } = await supabase
       .from('personal_logs')
       .select('*')
-      .eq('user_id', user!.id)
+      .eq('user_id', userId!)
       .order('created_at', { ascending: false })
       .limit(50)
     logs = data || []
@@ -19,5 +20,5 @@ export default async function PersonalPage() {
     logs = []
   }
 
-  return <PersonalClient userId={user!.id} initialLogs={logs as Parameters<typeof PersonalClient>[0]['initialLogs']} />
+  return <PersonalClient userId={userId!} initialLogs={logs as Parameters<typeof PersonalClient>[0]['initialLogs']} />
 }
