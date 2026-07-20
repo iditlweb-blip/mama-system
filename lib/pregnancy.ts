@@ -37,3 +37,39 @@ export function upcomingTests(currentWeek: number, count = 3): StandardTest[] {
   const from = Math.max(0, currentWeek - 1)
   return STANDARD_TESTS.filter(t => t.week >= from).slice(0, count)
 }
+
+// Whole weeks left until the due date (0 once week 40 is reached).
+export function weeksRemaining(currentWeek: number): number {
+  return Math.max(0, 40 - currentWeek)
+}
+
+// Fruit-size-per-week, as a plain name + emoji so it can be shown anywhere
+// (dashboard, tracker) without pulling in icon components.
+const BABY_SIZE_TABLE: Record<number, { name: string; emoji: string }> = {
+  6:  { name: 'גרגיר אפון', emoji: '🫛' },
+  8:  { name: 'פטל',        emoji: '🫐' },
+  10: { name: 'תות',        emoji: '🍓' },
+  12: { name: 'ליים',       emoji: '🟢' },
+  14: { name: 'תפוח',       emoji: '🍎' },
+  16: { name: 'אגס',        emoji: '🍐' },
+  18: { name: 'מנגו',       emoji: '🥭' },
+  20: { name: 'בננה',       emoji: '🍌' },
+  22: { name: 'פפאיה',      emoji: '🫐' },
+  24: { name: 'תירס',       emoji: '🌽' },
+  26: { name: 'בצל',        emoji: '🧅' },
+  28: { name: 'ברוקולי',     emoji: '🥦' },
+  30: { name: 'כרוב',       emoji: '🥬' },
+  32: { name: 'קוקוס',      emoji: '🥥' },
+  34: { name: 'כרובית',     emoji: '🥬' },
+  36: { name: 'אבוקדו',     emoji: '🥑' },
+  38: { name: 'אבטיח קטן',  emoji: '🍈' },
+  40: { name: 'תינוק!',     emoji: '👶' },
+}
+
+// The baby's size for the given week (rounds down to the nearest listed week).
+export function babySizeForWeek(week: number): { name: string; emoji: string } | null {
+  if (week <= 0) return null
+  const keys = Object.keys(BABY_SIZE_TABLE).map(Number).sort((a, b) => b - a)
+  for (const k of keys) if (week >= k) return BABY_SIZE_TABLE[k]
+  return null
+}

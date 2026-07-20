@@ -9,7 +9,7 @@ import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
-import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
+import { STANDARD_TESTS, calcPregnancyWeek, weeksRemaining, babySizeForWeek } from '@/lib/pregnancy'
 
 export interface PregnancyTest {
   id: string
@@ -372,6 +372,43 @@ export default function DashboardClient({
           </p>
         </div>
       )}
+
+      {/* ── Pregnancy progress (week / remaining / baby size) ─── */}
+      {isPregnancy && pregnancyWeek > 0 && (() => {
+        const remaining = weeksRemaining(pregnancyWeek)
+        const size = babySizeForWeek(pregnancyWeek)
+        const pct = Math.min(100, Math.round((pregnancyWeek / 40) * 100))
+        return (
+          <div className="card">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Baby className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+                <span className="font-medium text-sm" style={{ color: 'var(--text)' }}>
+                  שבוע {pregnancyWeek}
+                </span>
+              </div>
+              <span
+                className="text-xs font-medium px-3 py-1 rounded-full"
+                style={{ background: 'rgba(127,82,104,0.1)', color: 'var(--purple)' }}
+              >
+                {remaining > 0 ? `עוד ${remaining} שבועות` : 'כמעט זמן! 🎉'}
+              </span>
+            </div>
+            <div className="w-full h-2 rounded-full overflow-hidden mb-2" style={{ background: 'var(--cream-dark, #EEE0D0)' }}>
+              <div
+                className="h-full rounded-full transition-all duration-700"
+                style={{ width: `${pct}%`, background: 'var(--purple)' }}
+              />
+            </div>
+            {size && (
+              <p className="text-sm font-light flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                <span className="text-lg leading-none">{size.emoji}</span>
+                גודל התינוק/ת השבוע: <strong style={{ color: 'var(--text)' }}>{size.name}</strong>
+              </p>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ── Status (baby) / Upcoming tests (pregnancy) ─── */}
       {isPregnancy ? (
