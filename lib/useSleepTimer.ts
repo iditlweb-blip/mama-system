@@ -13,6 +13,10 @@ import type { BabyLog } from '@/types/database'
 const KEY = 'mama_sleep_timer_start'
 const NIGHT_KEY = 'mama_sleep_timer_night'
 const EVT = 'mama-sleep-timer-change'
+// Broadcast when stop() records a new sleep log, so any mounted screen
+// (tracker, dashboard) can add it to its list immediately — even when the
+// timer was stopped from the always-mounted global bar, not that screen.
+export const LOG_ADDED_EVT = 'mama-baby-log-added'
 const DB_POLL_MS = 15000
 
 function readStart(): number | null {
@@ -154,6 +158,11 @@ export function useSleepTimer(userId: string) {
       .select()
       .single()
     setStopping(false)
+    if (data) {
+      // Notify every mounted screen in this tab so the new log appears
+      // instantly, regardless of which component triggered the stop.
+      window.dispatchEvent(new CustomEvent(LOG_ADDED_EVT, { detail: data }))
+    }
     return (data as BabyLog) ?? null
   }, [supabase, userId, writeLocal])
 

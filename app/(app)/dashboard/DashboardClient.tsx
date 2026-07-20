@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle } from 'lucide-react'
@@ -8,7 +8,7 @@ import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
-import { useSleepTimer } from '@/lib/useSleepTimer'
+import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
 
 function NavBabyIcon() {
   return (
@@ -214,9 +214,29 @@ export default function DashboardClient({
   }
 
   async function handleTimerStop() {
-    const log = await timer.stop()
-    if (log) addLogToState(log)
+    await timer.stop()
   }
+
+  // A stopped timer (from here OR the always-mounted global bar) broadcasts
+  // its new sleep log; add it here so it appears immediately. Dedupe by id
+  // so a stop triggered from this screen isn't counted twice.
+  useEffect(() => {
+    const onLogAdded = (e: Event) => {
+      const log = (e as CustomEvent<BabyLog>).detail
+      if (!log) return
+      setLocalLogs(prev => {
+        if (prev.some(l => l.id === log.id)) return prev
+        if (log.type === 'feed')   setFeedCount(c => c + 1)
+        if (log.type === 'sleep')  setSleepCount(c => c + 1)
+        if (log.type === 'diaper') setDiaperCount(c => c + 1)
+        setSavedFlash(true)
+        setTimeout(() => setSavedFlash(false), 2000)
+        return [log, ...prev]
+      })
+    }
+    window.addEventListener(LOG_ADDED_EVT, onLogAdded)
+    return () => window.removeEventListener(LOG_ADDED_EVT, onLogAdded)
+  }, [])
 
   const progressPercent = Math.min((babyWeeks / 52) * 100, 100)
 

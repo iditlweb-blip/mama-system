@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
-import { useSleepTimer } from '@/lib/useSleepTimer'
+import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
 import dynamic from 'next/dynamic'
 import type { HealthEvent } from './HealthTab'
 
@@ -292,9 +292,21 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
       : null
   ), [babyWeeks, logs, now, timer.active, timer.isNight])
 
+  // A stopped timer (from here OR the always-mounted global bar) broadcasts
+  // its new sleep log; add it to the list here so it appears immediately.
+  // Dedupe by id so a stop triggered from this screen isn't shown twice.
+  useEffect(() => {
+    const onLogAdded = (e: Event) => {
+      const log = (e as CustomEvent<BabyLog>).detail
+      if (!log) return
+      setLogs(prev => (prev.some(l => l.id === log.id) ? prev : [log, ...prev]))
+    }
+    window.addEventListener(LOG_ADDED_EVT, onLogAdded)
+    return () => window.removeEventListener(LOG_ADDED_EVT, onLogAdded)
+  }, [setLogs])
+
   async function stopSleepTimer() {
-    const log = await timer.stop()
-    if (log) setLogs(prev => [log, ...prev])
+    await timer.stop()
   }
 
   async function saveLog() {
