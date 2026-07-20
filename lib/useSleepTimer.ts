@@ -136,6 +136,14 @@ export function useSleepTimer(userId: string) {
   }, [supabase, userId, writeLocal])
 
   // Stop the timer and persist a sleep log spanning the elapsed time.
+  //
+  // Recording the log MUST succeed even if the caller's DB is missing the
+  // `is_night` column (migration 009 not yet applied): the whole point of the
+  // timer is that the mother doesn't have to remember to log the sleep herself.
+  // So we capture the insert error and, if it looks like a missing/unknown
+  // `is_night` column, retry the insert without that field. Only after a log
+  // row is actually written do we clear the running timer — that way a genuine
+  // failure keeps the timer visible instead of silently discarding the sleep.
   const stop = useCallback(async (): Promise<BabyLog | null> => {
     const s = readStart()
     if (s == null) return null
@@ -143,27 +151,50 @@ export function useSleepTimer(userId: string) {
     setStopping(true)
     const endMs = Date.now()
     const durationMin = Math.max(1, Math.floor((endMs - s) / 60000))
-    writeLocal(null, false)
-    await supabase.from('active_sleep_timers').delete().eq('user_id', userId)
-    const { data } = await supabase
+
+    const baseRow = {
+      user_id: userId,
+      type: 'sleep' as const,
+      start_time: new Date(s).toISOString(),
+      end_time: new Date(endMs).toISOString(),
+      duration_min: durationMin,
+    }
+
+    // First attempt: include is_night (day/night distinction).
+    let { data, error } = await supabase
       .from('baby_logs')
-      .insert({
-        user_id: userId,
-        type: 'sleep',
-        start_time: new Date(s).toISOString(),
-        end_time: new Date(endMs).toISOString(),
-        duration_min: durationMin,
-        is_night: night,
-      })
+      .insert({ ...baseRow, is_night: night })
       .select()
       .single()
-    setStopping(false)
-    if (data) {
-      // Notify every mounted screen in this tab so the new log appears
-      // instantly, regardless of which component triggered the stop.
-      window.dispatchEvent(new CustomEvent(LOG_ADDED_EVT, { detail: data }))
+
+    // If the failure is about the is_night column not existing in this DB,
+    // record the sleep anyway without it — recording the log matters more
+    // than the night flag.
+    if (error && /is_night/i.test(`${error.message} ${error.details ?? ''}`)) {
+      ;({ data, error } = await supabase
+        .from('baby_logs')
+        .insert(baseRow)
+        .select()
+        .single())
     }
-    return (data as BabyLog) ?? null
+
+    if (error || !data) {
+      // Couldn't write the log — keep the timer running so the mother can
+      // retry rather than losing the sleep entirely, and surface the reason.
+      setStopping(false)
+      console.error('[sleep-timer] failed to record sleep log:', error)
+      return null
+    }
+
+    // Log persisted — now it's safe to clear the running timer everywhere.
+    writeLocal(null, false)
+    await supabase.from('active_sleep_timers').delete().eq('user_id', userId)
+    setStopping(false)
+
+    // Notify every mounted screen in this tab so the new log appears
+    // instantly, regardless of which component triggered the stop.
+    window.dispatchEvent(new CustomEvent(LOG_ADDED_EVT, { detail: data }))
+    return data as BabyLog
   }, [supabase, userId, writeLocal])
 
   return {

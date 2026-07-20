@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import BackButton from '@/components/layout/BackButton'
@@ -263,6 +264,24 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
           </div>
         ))}
       </div>
+
+      {/* Contraction timer entry point */}
+      <Link
+        href="/contractions"
+        style={{
+          display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
+          background: 'linear-gradient(135deg,#B24592 0%,#c86ca9 100%)', color: '#fff',
+          borderRadius: 16, padding: '14px 18px', marginBottom: 20,
+          boxShadow: '0 2px 10px rgba(178,69,146,0.25)',
+        }}
+      >
+        <span style={{ fontSize: '1.6rem', lineHeight: 1 }}>⏱️</span>
+        <span style={{ flex: 1 }}>
+          <span style={{ display: 'block', fontWeight: 700, fontSize: '1rem' }}>מד צירים</span>
+          <span style={{ display: 'block', fontSize: '0.8rem', opacity: 0.9 }}>תזמון הצירים ומתי לצאת לבית החולים</span>
+        </span>
+        <span style={{ fontSize: '1.2rem' }}>‹</span>
+      </Link>
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: 'rgba(127,82,104,0.06)', borderRadius: 12, padding: 4 }}>

@@ -257,7 +257,10 @@ export default function DashboardClient({
   }
 
   async function handleTimerStop() {
-    await timer.stop()
+    const log = await timer.stop()
+    if (!log) {
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+    }
   }
 
   // A stopped timer (from here OR the always-mounted global bar) broadcasts
@@ -286,8 +289,9 @@ export default function DashboardClient({
   return (
     <div className="space-y-5 max-w-5xl">
 
-      {/* Entry popup — sleep timer status + quick feed/diaper marking */}
-      <EntryPopup userId={userId} onLog={addLogToState} />
+      {/* Entry popup — sleep timer status + quick feed/diaper marking.
+          Baby-tracking only; irrelevant (and hidden) in pregnancy mode. */}
+      {!isPregnancy && <EntryPopup userId={userId} onLog={addLogToState} />}
 
       {/* Birthday milestone popup — at 6 months & 1 year */}
       {profile?.baby_name && (

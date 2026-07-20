@@ -306,7 +306,10 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   }, [setLogs])
 
   async function stopSleepTimer() {
-    await timer.stop()
+    const log = await timer.stop()
+    if (!log) {
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+    }
   }
 
   async function saveLog() {

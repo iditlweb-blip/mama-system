@@ -20,7 +20,11 @@ export default function GlobalTimerBar({ userId }: { userId: string }) {
   if (!timer.active || dismissed) return null
 
   async function handleStop() {
-    await timer.stop()
+    const log = await timer.stop()
+    if (!log) {
+      // The log couldn't be saved (timer stays running so nothing is lost).
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+    }
   }
 
   const accent = timer.isNight ? '#3C3C6E' : '#5C7A6A'

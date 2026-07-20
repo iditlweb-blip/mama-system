@@ -32,6 +32,17 @@ export interface Profile {
   setup_step: number | null
   user_goal: string | null
   pwa_installed_at: string | null
+  // Pregnancy delivery hospital (migration 013) — feeds the Waze button.
+  hospital_address: string | null
+}
+
+export interface Contraction {
+  id: string
+  user_id: string
+  start_time: string
+  end_time: string
+  duration_sec: number
+  created_at: string
 }
 
 export interface Task {

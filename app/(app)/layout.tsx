@@ -3,6 +3,7 @@ import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import Sidebar from '@/components/layout/Sidebar'
 import TopBar from '@/components/layout/TopBar'
 import GlobalTimerBar from '@/components/layout/GlobalTimerBar'
+import ContractionTimerBar from '@/components/layout/ContractionTimerBar'
 import PwaTracker from '@/components/PwaTracker'
 import PreloaderLottie from '@/components/PreloaderLottie'
 import BottomNav from '@/components/layout/BottomNav'
@@ -30,6 +31,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           profilePicUrl={profile?.profile_picture_url}
         />
         {profile?.tracking_type === 'baby' && <GlobalTimerBar userId={userId} />}
+        {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId} />}
         <main className="flex-1 overflow-y-auto">
           {/* Full-width content with symmetric side gutters (equal left/right)
               across every page, mobile + desktop. Extra bottom padding on

@@ -33,6 +33,7 @@ interface ProfileFull {
   google_calendar_url?: string | null
   tracking_type?: 'pregnancy' | 'baby' | null
   due_date?: string | null
+  hospital_address?: string | null
   whatsapp_number?: string | null
 }
 
@@ -57,6 +58,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     (profile?.tracking_type as 'pregnancy' | 'baby') || 'baby'
   )
   const [dueDate,       setDueDate]       = useState(profile?.due_date || '')
+  const [hospitalAddress, setHospitalAddress] = useState(profile?.hospital_address || '')
 
   // ── Baby
   const [babyName,      setBabyName]      = useState(profile?.baby_name || '')
@@ -102,6 +104,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
       name:                name           || null,
       tracking_type:       trackingType,
       due_date:            trackingType === 'pregnancy' ? (dueDate || null) : null,
+      hospital_address:    trackingType === 'pregnancy' ? (hospitalAddress || null) : null,
       baby_name:           babyName       || null,
       baby_birthdate:      babyBirthdate  || null,
       baby_gender:         babyGender     || null,
@@ -238,12 +241,23 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
 
         {/* Pregnancy — due date */}
         {trackingType === 'pregnancy' && (
-          <Field
-            label="תאריך לידה משוער (דד-ליין)"
-            value={dueDate}
-            onChange={setDueDate}
-            type="date"
-          />
+          <div className="space-y-4">
+            <Field
+              label="תאריך לידה משוער (דד-ליין)"
+              value={dueDate}
+              onChange={setDueDate}
+              type="date"
+            />
+            <Field
+              label="כתובת בית החולים ללידה"
+              value={hospitalAddress}
+              onChange={setHospitalAddress}
+              placeholder="לדוגמה: בית חולים איכילוב, תל אביב"
+            />
+            <p className="text-xs -mt-2" style={{ color: 'var(--text-muted)' }}>
+              הכתובת תשמש את כפתור הניווט ב-Waze בעמוד מד הצירים.
+            </p>
+          </div>
         )}
 
         {/* Baby — baby info */}

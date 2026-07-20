@@ -49,6 +49,9 @@ export default function Sidebar({ userName, trackingType }: {
     isPregnancy
       ? { href: '/pregnancy', customIcon: <PregnancyIcon />,   label: 'מעקב הריון' }
       : { href: '/tracker',           icon: Activity,          label: 'מעקב תינוק' },
+    ...(isPregnancy
+      ? [{ href: '/contractions',     icon: Activity,          label: 'מד צירים' } as NavItem]
+      : []),
     { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },
     { href: '/business',              icon: Briefcase,         label: 'ניהול' },
     { href: '/development',           icon: Baby,              label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות' },
