@@ -380,7 +380,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
           </button>
         ) : (
           <p className="text-sm px-1 py-1" style={{ color: 'var(--text-muted)' }}>
-            עוד לא כתבת כלום. לחצי על ״כתיבה״ כדי להתחיל פתק אישי.
+            עוד לא כתבת כלום. לחצי על ”כתיבה” כדי להתחיל פתק אישי.
           </p>
         )}
       </div>
@@ -419,7 +419,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
                       {log.duration_min && (
                         <span className="text-xs px-2 py-0.5 rounded-full"
                           style={{ background: `${act.color}15`, color: act.color }}>
-                          {log.duration_min} דק׳
+                          {log.duration_min} דק’
                         </span>
                       )}
                     </div>

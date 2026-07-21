@@ -136,8 +136,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     const hours = Math.floor(diff / 3600000)
     const days  = Math.floor(diff / 86400000)
     if (mins < 2)   return 'עכשיו'
-    if (mins < 60)  return `לפני ${mins} דק׳`
-    if (hours < 24) return `לפני ${hours} ש׳`
+    if (mins < 60)  return `לפני ${mins} דק’`
+    if (hours < 24) return `לפני ${hours} ש’`
     if (days < 7)   return `לפני ${days} ימים`
     return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
   }
@@ -148,18 +148,18 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     if (days === 1) return 'יום'
     if (days < 7)   return `${days} ימים`
     const weeks = Math.floor(days / 7)
-    if (weeks < 5)  return `${weeks} שב׳`
+    if (weeks < 5)  return `${weeks} שב’`
     const months = Math.floor(days / 30)
-    if (months < 12) return `${months} חוד׳`
+    if (months < 12) return `${months} חוד’`
     return `${Math.floor(days / 365)} שנים`
   }
 
   function fmtHours(seconds: number): string {
-    if (seconds < 60)  return '<1 דק׳'
+    if (seconds < 60)  return '<1 דק’'
     const mins = Math.floor(seconds / 60)
-    if (mins < 60)     return `${mins} דק׳`
+    if (mins < 60)     return `${mins} דק’`
     const hrs = (seconds / 3600).toFixed(1)
-    return `${hrs} ש׳`
+    return `${hrs} ש’`
   }
 
   function fmtPage(page: string | null): React.ReactNode {
@@ -168,7 +168,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
       '/dashboard':   { icon: Home,           label: 'בית' },
       '/tracker':     { icon: Baby,           label: 'מעקב' },
       '/pregnancy':   { icon: Baby,           label: 'הריון' },
-      '/chat':        { icon: MessageCircle,  label: 'צ׳אט' },
+      '/chat':        { icon: MessageCircle,  label: 'צ’אט' },
       '/products':    { icon: ShoppingCart,   label: 'מוצרים' },
       '/development': { icon: BookOpen,       label: 'פיתוח' },
       '/personal':    { icon: User,           label: 'אישי' },

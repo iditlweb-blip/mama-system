@@ -7,7 +7,7 @@ import { useRef, useEffect } from 'react'
 const RIGHT_ANNOTS = [
   { text: 'תמונת פרופיל שלך',                                      arrow: 'annot-arrow-0', flip: true },
   { text: 'מעבר מהיר לכל\nהעמודים במערכת',                         arrow: 'annot-arrow-1', flip: true },
-  { text: "קודם כל את ׳את לא חייבת\nלהיות הכי טובה׳",             arrow: 'annot-arrow-2', flip: true },
+  { text: "קודם כל את ’את לא חייבת\nלהיות הכי טובה’",             arrow: 'annot-arrow-2', flip: true },
   { text: 'מה שתרשמי יופיע מיד\nבעמוד הראשון',                    arrow: 'annot-arrow-3', flip: true },
 ]
 

@@ -255,7 +255,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
       <div style={{ display: 'flex', gap: 12, marginBottom: 20 }}>
         {[
           { label: 'בדיקות הושלמו', value: completed, color: '#4A7C59' },
-          { label: 'סה״כ בדיקות', value: tests.length, color: '#7F5268' },
+          { label: 'סה”כ בדיקות', value: tests.length, color: '#7F5268' },
           { label: 'שבוע הריון', value: weeks || '—', color: '#5C7A8A' },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 10px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
@@ -364,7 +364,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
           {tests.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 40, color: '#aaa' }}>
               <ClipboardList size={40} style={{ margin: '0 auto 10px' }} />
-              <p>עדיין לא הוספת בדיקות.<br/>לחצי על ״לוח בדיקות״ כדי להוסיף</p>
+              <p>עדיין לא הוספת בדיקות.<br/>לחצי על ”לוח בדיקות” כדי להוסיף</p>
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
@@ -486,7 +486,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
               <Lightbulb size={14} /> ניתן לצלם ולהעלות תוצאות בדיקה ישירות מהגלריה
             </span>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
-              מתוך לשונית ״הבדיקות שלי״ לחצי על ״<Upload size={13} /> צרפי״
+              מתוך לשונית ”הבדיקות שלי” לחצי על ”<Upload size={13} /> צרפי”
             </span>
           </p>
         </div>

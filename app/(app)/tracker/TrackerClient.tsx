@@ -74,62 +74,62 @@ interface SleepRow {
 const SLEEP_MAP: SleepRow[] = [
   {
     maxWeeks: 6, label: '0–6 שבועות', wwMin: 30, wwMax: 60,
-    napsForCalc: 5, napsLabel: '4–6', napLenMin: 60, napLenLabel: '20 דק׳ – 3 ש׳',
-    dayLabel: '4–8 ש׳', nightLabel: '8–10 ש׳', bedtime: '21:00–00:00',
+    napsForCalc: 5, napsLabel: '4–6', napLenMin: 60, napLenLabel: '20 דק’ – 3 ש’',
+    dayLabel: '4–8 ש’', nightLabel: '8–10 ש’', bedtime: '21:00–00:00',
     note: 'בשלב הזה היממה מתחלקת בעיקר בין שינה, אכילה, החתלה וקרבה. עדיין אין הפרדה של ממש בין יום ללילה.',
   },
   {
     maxWeeks: 13, label: '6 שבועות – 3 חודשים', wwMin: 40, wwMax: 90,
-    napsForCalc: 4, napsLabel: '4–5', napLenMin: 75, napLenLabel: '½ ש׳ – 2 ש׳',
-    dayLabel: '4–5 ש׳', nightLabel: '9–11 ש׳', bedtime: '20:00–22:00',
+    napsForCalc: 4, napsLabel: '4–5', napLenMin: 75, napLenLabel: '½ ש’ – 2 ש’',
+    dayLabel: '4–5 ש’', nightLabel: '9–11 ש’', bedtime: '20:00–22:00',
     note: 'לאט לאט נבנית ההבחנה בין יום ללילה. שכיבה על הבטן בזמן ערות וחשיפה לאור טבעי מסייעות לייצב את השגרה היומית.',
   },
   {
     maxWeeks: 22, label: '3–5 חודשים', wwMin: 60, wwMax: 150,
-    napsForCalc: 4, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש׳ – 2 ש׳',
-    dayLabel: '3–4½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    napsForCalc: 4, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש’ – 2 ש’',
+    dayLabel: '3–4½ ש’', nightLabel: '10–12 ש’', bedtime: '18:30–20:00',
     note: 'בסביבות גיל 4 חודשים חלה תמורה בשינה — מחזורי השינה נעשים בשלים יותר, ולעיתים הרגלים שעבדו קודם כבר פחות מתאימים.',
   },
   {
     maxWeeks: 26, label: '5–6 חודשים', wwMin: 105, wwMax: 165,
-    napsForCalc: 3, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש׳ – 2 ש׳',
-    dayLabel: '3–4 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    napsForCalc: 3, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש’ – 2 ש’',
+    dayLabel: '3–4 ש’', nightLabel: '10–12 ש’', bedtime: '18:30–20:00',
     note: 'מעבר מדורג מארבע תנומות לשלוש. לא פעם דווקא התנומה של אחר הצהריים הולכת ומתקצרת עד שנעלמת.',
   },
   {
     maxWeeks: 35, label: '6–8 חודשים', wwMin: 135, wwMax: 210,
-    napsForCalc: 3, napsLabel: '2–3', napLenMin: 90, napLenLabel: '1–2 ש׳',
-    dayLabel: '3–3½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    napsForCalc: 3, napsLabel: '2–3', napLenMin: 90, napLenLabel: '1–2 ש’',
+    dayLabel: '3–3½ ש’', nightLabel: '10–12 ש’', bedtime: '18:30–20:00',
     note: 'תקופת מעבר משלוש תנומות לשתיים. קפיצות מוטוריות ותרגול יכולות שרכשו זה עתה עשויים לשבש את השינה באופן זמני.',
   },
   {
     maxWeeks: 43, label: '8–10 חודשים', wwMin: 180, wwMax: 240,
-    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש׳',
-    dayLabel: '2–3 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש’',
+    dayLabel: '2–3 ש’', nightLabel: '10–12 ש’', bedtime: '18:30–19:30',
     note: 'בדרך כלל כבר קיימות שתי תנומות יציבות. חרדת פרידה וזינוקים התפתחותיים עלולים להקשות על ההירדמות.',
   },
   {
     maxWeeks: 52, label: '10–12 חודשים', wwMin: 210, wwMax: 270,
-    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש׳',
-    dayLabel: '2–3 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש’',
+    dayLabel: '2–3 ש’', nightLabel: '10–12 ש’', bedtime: '18:30–19:30',
     note: 'יש תינוקות שמתחילים לסרב לתנומה השנייה, אך התנגדות כזו לא בהכרח מעידה שהם מוכנים לוותר עליה.',
   },
   {
     maxWeeks: 78, label: '12–18 חודשים', wwMin: 210, wwMax: 300,
-    napsForCalc: 2, napsLabel: '1–2', napLenMin: 105, napLenLabel: '1–2½ ש׳',
-    dayLabel: '1–2½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    napsForCalc: 2, napsLabel: '1–2', napLenMin: 105, napLenLabel: '1–2½ ש’',
+    dayLabel: '1–2½ ש’', nightLabel: '10–12 ש’', bedtime: '18:30–19:30',
     note: 'מגיל 14 חודשים לרוב מתחיל מעבר איטי לתנומה יחידה. בימים עם תנומה אחת בלבד כדאי לפעמים להשכיב מעט מוקדם יותר.',
   },
   {
     maxWeeks: 104, label: '18–24 חודשים', wwMin: 270, wwMax: 390,
-    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש׳',
-    dayLabel: '1–2 ש׳', nightLabel: '10–12 ש׳', bedtime: '19:00–20:00',
+    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש’',
+    dayLabel: '1–2 ש’', nightLabel: '10–12 ש’', bedtime: '19:00–20:00',
     note: 'בשלב זה בדרך כלל נותרה תנומת צהריים אחת קבועה. עדיין חשוב לשים לב לסימני עייפות יתר לקראת שעות הערב.',
   },
   {
     maxWeeks: 9999, label: '24–36 חודשים', wwMin: 300, wwMax: 420,
-    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש׳',
-    dayLabel: '1–2 ש׳', nightLabel: '10–12 ש׳', bedtime: '19:00–20:00',
+    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש’',
+    dayLabel: '1–2 ש’', nightLabel: '10–12 ש’', bedtime: '19:00–20:00',
     note: 'לקראת גיל 3 חלק מהילדים מתחילים לזנוח את שנת הצהריים. ביום ללא תנומה ייתכן שתידרש השכבה מוקדמת יותר בלילה.',
   },
 ]
@@ -252,19 +252,19 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
 function fmtDur(min: number): string {
   if (min <= 0) return 'עכשיו'
   const h = Math.floor(min / 60), m = min % 60
-  if (h > 0) return m > 0 ? `${h} ש׳ ו-${m} דק׳` : `${h} ש׳`
-  return `${m} דק׳`
+  if (h > 0) return m > 0 ? `${h} ש’ ו-${m} דק’` : `${h} ש’`
+  return `${m} דק’`
 }
 
 function fmtTime(d: Date): string {
   return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
 }
 
-// Compact wake-window duration for the age card, e.g. "45 דק׳" or "2:30 ש׳".
+// Compact wake-window duration for the age card, e.g. "45 דק’" or "2:30 ש’".
 function fmtWW(min: number): string {
   const h = Math.floor(min / 60), m = min % 60
-  if (h === 0) return `${m} דק׳`
-  return m === 0 ? `${h} ש׳` : `${h}:${String(m).padStart(2, '0')} ש׳`
+  if (h === 0) return `${m} דק’`
+  return m === 0 ? `${h} ש’` : `${h}:${String(m).padStart(2, '0')} ש’`
 }
 
 // datetime-local inputs expect LOCAL wall-clock time. new Date().toISOString()
@@ -506,9 +506,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={Milk} color="#7F5268" label="האכלות" value={feedLogs.length}
-          sub={totalFeedMl > 0 ? `${totalFeedMl} מ"ל` : `${feedLogs.filter(l => l.duration_min).reduce((s, l) => s + (l.duration_min || 0), 0)} דק׳`} />
+          sub={totalFeedMl > 0 ? `${totalFeedMl} מ"ל` : `${feedLogs.filter(l => l.duration_min).reduce((s, l) => s + (l.duration_min || 0), 0)} דק’`} />
         <StatCard icon={BedDouble} color="#5C7A6A" label="שינה" value={sleepLogs.length}
-          sub={totalSleepMin > 0 ? `${Math.floor(totalSleepMin / 60)}:${String(totalSleepMin % 60).padStart(2, '0')}ש׳` : '—'} />
+          sub={totalSleepMin > 0 ? `${Math.floor(totalSleepMin / 60)}:${String(totalSleepMin % 60).padStart(2, '0')}ש’` : '—'} />
         <StatCard icon={Droplets} color="#4A7C59" label="חיתולים" value={diaperLogs.length}
           sub={`${diaperLogs.filter(l => l.diaper_type === 'dirty' || l.diaper_type === 'both').length} מלוכלך`} />
       </div>
@@ -553,8 +553,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
               <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
               <p className="text-sm" style={{ color: 'var(--text)' }}>
                 {sleepPlan.napsRemaining > 0
-                  ? <>נותרו עוד <b>{sleepPlan.napsRemaining}</b> שנ״צים עד הלילה <span style={{ color: 'var(--text-muted)' }}>({sleepPlan.napsTaken} כבר סומנו)</span></>
-                  : <>כל השנ״צים להיום הושלמו — נשארה רק שנת הלילה 🌙</>
+                  ? <>נותרו עוד <b>{sleepPlan.napsRemaining}</b> שנ”צים עד הלילה <span style={{ color: 'var(--text-muted)' }}>({sleepPlan.napsTaken} כבר סומנו)</span></>
+                  : <>כל השנ”צים להיום הושלמו — נשארה רק שנת הלילה 🌙</>
                 }
               </p>
             </div>
@@ -571,10 +571,10 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                     : sleepPlan.sleeping
                       ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 — הטיימר רץ`}</>
                       : !sleepPlan.hasWakeData
-                        ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
+                        ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ”צ הבא</span>
                         : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
-                          ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
-                          : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
+                          ? <>השנ”צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
+                          : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ”צ 💤</span>
                   }
                 </p>
               </div>
@@ -603,7 +603,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#C4782D' }} />
                 <p className="text-sm" style={{ color: 'var(--text)' }}>
                   לפי החישוב הלילה יתחיל מאוחר מ-21:00 — כדאי לשקול
-                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ״צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`${isGirl ? 'תגיע' : 'יגיע'} לעייפות יתר`}.
+                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ”צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`${isGirl ? 'תגיע' : 'יגיע'} לעייפות יתר`}.
                 </p>
               </div>
             )}
@@ -648,7 +648,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             </button>
           ) : (
             <div className="flex items-center gap-2">
-              <button onClick={() => timer.start({ night: true })} title="טיימר לילה — לא ישפיע על חישוב השנ״צ הבא"
+              <button onClick={() => timer.start({ night: true })} title="טיימר לילה — לא ישפיע על חישוב השנ”צ הבא"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold"
                 style={{ background: 'rgba(60,60,110,0.1)', color: '#3C3C6E', border: '1px solid rgba(60,60,110,0.25)' }}>
                 <Moon className="w-4 h-4" /> טיימר לילה
@@ -1012,14 +1012,14 @@ function buildLogDescription(log: BabyLog): string {
     const parts = []
     if (log.feed_type) parts.push(log.feed_type === 'breast' ? 'שד' : 'בקבוק')
     if (log.amount_ml) parts.push(`${log.amount_ml} מ"ל`)
-    if (log.duration_min) parts.push(`${log.duration_min} דק׳`)
+    if (log.duration_min) parts.push(`${log.duration_min} דק’`)
     return `האכלה${parts.length ? ' — ' + parts.join(', ') : ''}`
   }
   if (log.type === 'sleep') {
     if (log.duration_min) {
       const h = Math.floor(log.duration_min / 60)
       const m = log.duration_min % 60
-      return `שינה — ${h > 0 ? h + 'ש׳ ' : ''}${m > 0 ? m + 'ד׳' : ''}`
+      return `שינה — ${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}`
     }
     return 'שינה'
   }

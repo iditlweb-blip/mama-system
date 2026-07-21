@@ -18,12 +18,12 @@ function fmtTime(iso: string) {
 }
 function fmtDur(sec: number) {
   const m = Math.floor(sec / 60), s = sec % 60
-  return m > 0 ? `${m} דק׳ ${pad(s)} שנ׳` : `${s} שנ׳`
+  return m > 0 ? `${m} דק’ ${pad(s)} שנ’` : `${s} שנ’`
 }
 function fmtInterval(min: number) {
   if (min < 1) return 'פחות מדקה'
   const h = Math.floor(min / 60), m = Math.round(min % 60)
-  return h > 0 ? `${h} שע׳ ${m} דק׳` : `${m} דק׳`
+  return h > 0 ? `${h} שע’ ${m} דק’` : `${m} דק’`
 }
 
 type Guidance = {

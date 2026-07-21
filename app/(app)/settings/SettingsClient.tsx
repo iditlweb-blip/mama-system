@@ -317,7 +317,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
               </div>
             </div>
             <ol className="text-sm space-y-1.5 pr-4 list-decimal" style={{ color: 'var(--text)' }}>
-              <li>שמרי את מספר הבוט{botNumber && <> <span dir="ltr" className="font-medium">{botNumber}</span></>} באנשי הקשר, או פתחי צ׳אט חדש אליו.</li>
+              <li>שמרי את מספר הבוט{botNumber && <> <span dir="ltr" className="font-medium">{botNumber}</span></>} באנשי הקשר, או פתחי צ’אט חדש אליו.</li>
               <li>שלחי לבוט את הקוד <span dir="ltr" className="font-medium">{linkCode}</span> כהודעה.</li>
               <li>זהו! הבוט יאשר שהמספר חובר ותוכלי להתחיל לכתוב לו.</li>
             </ol>

@@ -94,7 +94,7 @@ export default function SelfCarePopup() {
             className="w-full py-2.5 rounded-xl text-sm font-bold text-white text-center flex items-center justify-center gap-1"
             style={{ background: '#7F5268' }}
           >
-            לעמוד ״לעצמי״ <ChevronLeft className="w-3.5 h-3.5" />
+            לעמוד ”לעצמי” <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
           <button
             onClick={() => setVisible(false)}

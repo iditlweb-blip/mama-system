@@ -19,7 +19,7 @@ interface Props {
 }
 
 const DAYS = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
-const DAYS_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const DAYS_SHORT = ['א’', 'ב’', 'ג’', 'ד’', 'ה’', 'ו’', 'ש’']
 
 const scheduleTypeColors = {
   work: { bg: '#7F526820', border: '#7F526840', text: '#7F5268', label: 'עבודה', icon: Briefcase },
@@ -533,7 +533,7 @@ function MaternityLeave({ dueDate }: { dueDate: string | null }) {
             </div>
             <div className="h-px my-1" style={{ background: 'rgba(127,82,104,0.2)' }} />
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>סה״כ מוערך</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>סה”כ מוערך</span>
               <span className="text-xl font-bold" style={{ color: '#4A7C59' }}>₪{total.toLocaleString()}</span>
             </div>
             {capped && (
@@ -569,7 +569,7 @@ const DEFAULT_EQUIPMENT: string[] = [
   'כלי רחצה ומגבת',
   'חטיפים ובקבוק מים',
   'בגד גוף + חיתולים לתינוק',
-  'שמיכה/חיתול קפוצ׳ון לתינוק',
+  'שמיכה/חיתול קפוצ’ון לתינוק',
   'סלקל (כיסא בטיחות) לרכב',
   'רשימת טלפונים חשובים',
   'כרית הנקה (אופציונלי)',

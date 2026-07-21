@@ -89,7 +89,7 @@ const tools: Groq.Chat.Completions.ChatCompletionTool[] = [
         type: 'object',
         properties: {
           feed_type: { type: 'string', enum: ['breast', 'bottle'], description: 'שד או בקבוק' },
-          amount_ml: { type: 'number', description: 'כמות במ״ל (רק אם בקבוק וצוינה)' },
+          amount_ml: { type: 'number', description: 'כמות במ”ל (רק אם בקבוק וצוינה)' },
         },
       },
     },

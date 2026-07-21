@@ -14,7 +14,7 @@ export interface FetalWeek {
 
 export const FETAL_WEEKS: FetalWeek[] = [
   {
-    week: 4, size: 'זרע פרג', length: 'כ-2 מ״מ',
+    week: 4, size: 'זרע פרג', length: 'כ-2 מ”מ',
     title: 'ההשתרשות מתחילה',
     summary: 'הביצית המופרית השתרשה ברחם והתחילה להתפתח לשלושה רבדים שמהם ייווצרו כל האיברים.',
     highlights: [
@@ -24,7 +24,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 5, size: 'גרגיר שומשום', length: 'כ-3 מ״מ',
+    week: 5, size: 'גרגיר שומשום', length: 'כ-3 מ”מ',
     title: 'צינור העצבים נסגר',
     summary: 'מתחיל להיווצר צינור העצבים — הבסיס למוח ולחוט השדרה.',
     highlights: [
@@ -34,7 +34,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 6, size: 'גרגיר עדשה', length: 'כ-5 מ״מ',
+    week: 6, size: 'גרגיר עדשה', length: 'כ-5 מ”מ',
     title: 'הלב מתחיל לפעום',
     summary: 'ניתן לעיתים לזהות פעימות לב ראשונות באולטרסאונד.',
     highlights: [
@@ -44,7 +44,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 8, size: 'פטל', length: 'כ-1.6 ס״מ',
+    week: 8, size: 'פטל', length: 'כ-1.6 ס”מ',
     title: 'מעובר לאיברים',
     summary: 'כל האיברים העיקריים כבר החלו להיווצר, והעובר מתחיל לזוז.',
     highlights: [
@@ -54,7 +54,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 10, size: 'תות שדה', length: 'כ-3 ס״מ',
+    week: 10, size: 'תות שדה', length: 'כ-3 ס”מ',
     title: 'הופך לעובר רשמי',
     summary: 'תום שלב האיברים הקריטי — מכאן העובר בעיקר גדל ומשתכלל.',
     highlights: [
@@ -64,7 +64,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 12, size: 'ליים', length: 'כ-5.4 ס״מ',
+    week: 12, size: 'ליים', length: 'כ-5.4 ס”מ',
     title: 'סוף השליש הראשון',
     summary: 'הרפלקסים מתחילים לעבוד והעובר זז הרבה, גם אם עדיין לא מרגישים.',
     highlights: [
@@ -74,7 +74,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 14, size: 'תפוח', length: 'כ-8.5 ס״מ',
+    week: 14, size: 'תפוח', length: 'כ-8.5 ס”מ',
     title: 'הבעות פנים ראשונות',
     summary: 'שרירי הפנים מתפתחים והעובר יכול לעוות פרצוף ולמצמץ.',
     highlights: [
@@ -84,7 +84,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 16, size: 'אבוקדו', length: 'כ-11.6 ס״מ',
+    week: 16, size: 'אבוקדו', length: 'כ-11.6 ס”מ',
     title: 'שומע ומגיב',
     summary: 'העצמות מתחזקות והעובר מתחיל לשמוע קולות מבחוץ.',
     highlights: [
@@ -94,17 +94,17 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 18, size: 'פלפל', length: 'כ-14 ס״מ',
+    week: 18, size: 'פלפל', length: 'כ-14 ס”מ',
     title: 'תנועות ראשונות מורגשות',
     summary: 'רבות מהאימהות מתחילות להרגיש בעיטות עדינות בשבועות אלו.',
     highlights: [
-      'ייתכן שתתחילי להרגיש תנועות (״ריפרוף״ בבטן)',
+      'ייתכן שתתחילי להרגיש תנועות (”ריפרוף” בבטן)',
       'טביעות האצבע הייחודיות נוצרות',
       'האוזניים במיקומן הסופי ובולטות מהראש',
     ],
   },
   {
-    week: 20, size: 'בננה', length: 'כ-25 ס״מ',
+    week: 20, size: 'בננה', length: 'כ-25 ס”מ',
     title: 'אמצע הדרך',
     summary: 'חצי מההריון מאחורייך — זה השבוע של סקירת המערכות המורחבת.',
     highlights: [
@@ -114,7 +114,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 24, size: 'תירס', length: 'כ-30 ס״מ',
+    week: 24, size: 'תירס', length: 'כ-30 ס”מ',
     title: 'סיכויי חיות',
     summary: 'הריאות מתפתחות והעובר מגיב לקולות ולמגע.',
     highlights: [
@@ -124,7 +124,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 28, size: 'חציל', length: 'כ-37 ס״מ',
+    week: 28, size: 'חציל', length: 'כ-37 ס”מ',
     title: 'תחילת השליש השלישי',
     summary: 'המוח מתפתח במהירות והעיניים יכולות להיפתח ולהיסגר.',
     highlights: [
@@ -134,7 +134,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 32, size: 'כרוב', length: 'כ-42 ס״מ',
+    week: 32, size: 'כרוב', length: 'כ-42 ס”מ',
     title: 'צובר שומן ומשקל',
     summary: 'העובר מתעגל, והציפורניים והשיער ממשיכים לצמוח.',
     highlights: [
@@ -144,17 +144,17 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 36, size: 'חסה', length: 'כ-47 ס״מ',
+    week: 36, size: 'חסה', length: 'כ-47 ס”מ',
     title: 'מתכונן ללידה',
     summary: 'העובר יורד לאגן והריאות כמעט בשלות לחלוטין.',
     highlights: [
-      'העובר מתחיל לרדת לתוך האגן (״התקבעות״)',
+      'העובר מתחיל לרדת לתוך האגן (”התקבעות”)',
       'הלאנוגו והורניקס נושרים בהדרגה',
-      'מערכת העיכול מתמלאת ב״מקוניום״ (הצואה הראשונה)',
+      'מערכת העיכול מתמלאת ב”מקוניום” (הצואה הראשונה)',
     ],
   },
   {
-    week: 38, size: 'דלעת קטנה', length: 'כ-50 ס״מ',
+    week: 38, size: 'דלעת קטנה', length: 'כ-50 ס”מ',
     title: 'כמעט מוכן',
     summary: 'העובר נחשב כמעט בשל — כל האיברים ערוכים לחיים בחוץ.',
     highlights: [
@@ -164,7 +164,7 @@ export const FETAL_WEEKS: FetalWeek[] = [
     ],
   },
   {
-    week: 40, size: 'אבטיח', length: 'כ-51 ס״מ',
+    week: 40, size: 'אבטיח', length: 'כ-51 ס”מ',
     title: 'זמן לפגוש אותך!',
     summary: 'הגעת לתאריך הלידה המשוער — התינוק/ת מוכן/ה להיוולד.',
     highlights: [

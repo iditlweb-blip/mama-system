@@ -100,7 +100,7 @@ export default function HealthTab({ healthEvents, setHealthEvents, userId, babyB
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-semibold flex items-center gap-1.5" style={{ color: 'var(--text)' }}><Syringe className="w-4 h-4" /> חיסונים ובדיקות</h2>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>לו״ז חיסונים לפי מזכ״ל משרד הבריאות</p>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>לו”ז חיסונים לפי מזכ”ל משרד הבריאות</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-brand text-sm px-3 py-1.5">
           <CalendarPlus className="w-4 h-4" /> הוסיפי

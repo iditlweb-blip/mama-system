@@ -811,61 +811,59 @@ export default function DashboardClient({
                 return (
                   <div
                     key={log.id}
-                    className="flex items-center justify-between px-3 py-1.5 rounded-lg"
-                    style={{ background: `${track.color}0d`, position: 'relative' }}
+                    className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg"
+                    style={{ background: `${track.color}0d` }}
                   >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-3.5 h-3.5" style={{ color: track.color }} />
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Icon className="w-3.5 h-3.5" style={{ color: track.color, flexShrink: 0 }} />
                       <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
                       {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
                     </div>
-                    <button
-                      onClick={() => editLog(log)}
-                      title="ערוך רישום"
-                      style={{
-                        position: 'absolute',
-                        top: 6,
-                        right: 30,
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        background: 'rgba(127,82,104,0.1)',
-                        color: '#7F5268',
-                        border: 'none',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.1)')}
-                    >
-                      <Pencil className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => deleteLog(log.id)}
-                      title="מחק רישום"
-                      style={{
-                        position: 'absolute',
-                        top: 6,
-                        right: 6,
-                        width: 20,
-                        height: 20,
-                        borderRadius: '50%',
-                        background: 'rgba(200,50,50,0.1)',
-                        color: '#cc3333',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: 12,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
-                    >
-                      ×
-                    </button>
+                    {/* Edit + delete live on the far (left) side so they never
+                        sit on top of the label/time text on narrow screens. */}
+                    <div className="flex items-center gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => editLog(log)}
+                        title="ערוך רישום"
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: 'rgba(127,82,104,0.1)',
+                          color: '#7F5268',
+                          border: 'none',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(127,82,104,0.1)')}
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => deleteLog(log.id)}
+                        title="מחק רישום"
+                        style={{
+                          width: 20,
+                          height: 20,
+                          borderRadius: '50%',
+                          background: 'rgba(200,50,50,0.1)',
+                          color: '#cc3333',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: 12,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                      >
+                        ×
+                      </button>
+                    </div>
                   </div>
                 )
               })}
