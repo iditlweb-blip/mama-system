@@ -49,24 +49,72 @@ const typeConfig = {
   diaper: { label: 'חיתול', icon: Droplets,  color: '#7A6A3C', bg: 'rgba(122,106,60,0.1)',  border: 'rgba(122,106,60,0.25)' },
 }
 
-// ─── Age-based wake windows & naps ────────────────────────────
-// Each band: max age (weeks) it applies to, typical awake window between
-// sleeps (minutes), total daytime naps, and a typical nap length (minutes).
-const SLEEP_CONFIG = [
-  { maxWeek: 6,    label: '0–6 שבועות',    wakeMin: 60,  naps: 5, napLenMin: 45 },
-  { maxWeek: 12,   label: '6–12 שבועות',   wakeMin: 80,  naps: 4, napLenMin: 50 },
-  { maxWeek: 17,   label: '3–4 חודשים',    wakeMin: 105, naps: 4, napLenMin: 60 },
-  { maxWeek: 26,   label: '4–6 חודשים',    wakeMin: 135, naps: 3, napLenMin: 75 },
-  { maxWeek: 34,   label: '6–8 חודשים',    wakeMin: 165, naps: 3, napLenMin: 80 },
-  { maxWeek: 52,   label: '8–12 חודשים',   wakeMin: 210, naps: 2, napLenMin: 90 },
-  { maxWeek: 78,   label: '12–18 חודשים',  wakeMin: 270, naps: 2, napLenMin: 90 },
-  { maxWeek: 9999, label: '18 חודשים+',    wakeMin: 330, naps: 1, napLenMin: 120 },
+// ─── Age-based wake windows & naps (per month) ────────────────
+// Per-MONTH data (not broad ranges) so predictions track the fast changes of
+// the first year. Wake windows are progressive across the day: the window
+// after the morning wake-up is the shortest, growing to the longest window
+// right before night sleep — matching how infant sleep pressure builds.
+// wwStart = first (morning) wake window, wwEnd = last window before bedtime.
+// Sources: Huckleberry, Taking Cara Babies, Cleveland Clinic, Baby Sleep Site.
+const MONTH_SLEEP = [
+  { month: 0,  naps: 5, wwStart: 40,  wwEnd: 60,  napLenMin: 45 },
+  { month: 1,  naps: 5, wwStart: 50,  wwEnd: 75,  napLenMin: 45 },
+  { month: 2,  naps: 4, wwStart: 60,  wwEnd: 90,  napLenMin: 50 },
+  { month: 3,  naps: 4, wwStart: 75,  wwEnd: 100, napLenMin: 55 },
+  { month: 4,  naps: 3, wwStart: 90,  wwEnd: 120, napLenMin: 60 },
+  { month: 5,  naps: 3, wwStart: 105, wwEnd: 135, napLenMin: 70 },
+  { month: 6,  naps: 3, wwStart: 120, wwEnd: 150, napLenMin: 75 },
+  { month: 7,  naps: 2, wwStart: 150, wwEnd: 195, napLenMin: 80 },
+  { month: 8,  naps: 2, wwStart: 158, wwEnd: 205, napLenMin: 85 },
+  { month: 9,  naps: 2, wwStart: 165, wwEnd: 210, napLenMin: 90 },
+  { month: 10, naps: 2, wwStart: 180, wwEnd: 225, napLenMin: 90 },
+  { month: 11, naps: 2, wwStart: 190, wwEnd: 235, napLenMin: 90 },
+  { month: 12, naps: 2, wwStart: 195, wwEnd: 240, napLenMin: 90 },
+  { month: 13, naps: 2, wwStart: 205, wwEnd: 250, napLenMin: 90 },
+  { month: 14, naps: 2, wwStart: 210, wwEnd: 260, napLenMin: 90 },
+  { month: 15, naps: 1, wwStart: 240, wwEnd: 300, napLenMin: 120 },
+  { month: 16, naps: 1, wwStart: 255, wwEnd: 315, napLenMin: 120 },
+  { month: 17, naps: 1, wwStart: 270, wwEnd: 330, napLenMin: 120 },
+  { month: 18, naps: 1, wwStart: 300, wwEnd: 360, napLenMin: 120 },
 ] as const
 
-type SleepBand = typeof SLEEP_CONFIG[number]
+// Build the progressive list of wake windows for a day: naps+1 windows,
+// linearly growing from wwStart (first) to wwEnd (last before bed).
+function makeWindows(start: number, end: number, naps: number): number[] {
+  const count = Math.max(1, naps + 1)
+  if (count === 1) return [Math.round((start + end) / 2)]
+  const step = (end - start) / (count - 1)
+  return Array.from({ length: count }, (_, i) => Math.round(start + step * i))
+}
+
+interface SleepBand {
+  label: string
+  naps: number
+  windows: number[]   // progressive wake windows (minutes), length = naps + 1
+  napLenMin: number
+  wwMin: number       // first (shortest) window
+  wwMax: number       // last (longest) window before bedtime
+}
+
+function monthLabel(m: number): string {
+  if (m <= 0) return 'עד חודש'
+  if (m === 1) return 'חודש'
+  if (m >= 18) return '18 חודשים+'
+  return `${m} חודשים`
+}
 
 function getSleepBand(weeks: number): SleepBand {
-  return SLEEP_CONFIG.find(c => weeks <= c.maxWeek) || SLEEP_CONFIG[SLEEP_CONFIG.length - 1]
+  const months = Math.max(0, Math.floor(weeks / 4.345))
+  const row = MONTH_SLEEP.find(r => r.month === months) || MONTH_SLEEP[MONTH_SLEEP.length - 1]
+  const windows = makeWindows(row.wwStart, row.wwEnd, row.naps)
+  return {
+    label: monthLabel(months),
+    naps: row.naps,
+    windows,
+    napLenMin: row.napLenMin,
+    wwMin: windows[0],
+    wwMax: windows[windows.length - 1],
+  }
 }
 
 interface SleepPlan {
@@ -113,22 +161,31 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
   }
   const hasWakeData = lastWakeEnd !== null
 
+  // The wake window to use right now depends on how many naps already happened
+  // today: after the morning wake it's windows[0] (shortest), after nap 1 it's
+  // windows[1], and so on — so the countdown lengthens as the day goes on.
+  const winIdx = Math.min(napsTaken, band.windows.length - 1)
+  const nextWindow = band.windows[winIdx]
+
   let nextNapAt: Date | null = null
   let minutesToNextNap: number | null = null
   if (!sleeping && !nightSleeping && lastWakeEnd) {
-    nextNapAt = new Date(lastWakeEnd.getTime() + band.wakeMin * 60000)
+    nextNapAt = new Date(lastWakeEnd.getTime() + nextWindow * 60000)
     minutesToNextNap = Math.round((nextNapAt.getTime() - now) / 60000)
   }
 
-  // Predicted bedtime: chain the remaining naps and wake windows from the
-  // last time the baby was awake. We only predict once there's at least one
-  // real sleep logged today — without any data we'd otherwise assume a 07:00
-  // wake and confidently show a bedtime (e.g. 22:00) the mother never implied,
-  // which is confusing. No data → no prediction.
+  // Predicted bedtime: chain the remaining naps and their (progressive) wake
+  // windows from the last time the baby was awake. We only predict once there's
+  // at least one real sleep logged today — without any data we'd otherwise
+  // assume a 07:00 wake and confidently show a bedtime the mother never
+  // implied, which is confusing. No data → no prediction.
   const N = napsRemaining
+  // Remaining windows from now until bedtime = windows[napsTaken..end]
+  // (that's napsRemaining + 1 windows, the last one being the pre-bed window).
+  const remainingWindowsSum = band.windows.slice(napsTaken).reduce((a, b) => a + b, 0)
   let bedtime: Date | null = null
   if (lastWakeEnd) {
-    bedtime = new Date(lastWakeEnd.getTime() + ((N + 1) * band.wakeMin + N * band.napLenMin) * 60000)
+    bedtime = new Date(lastWakeEnd.getTime() + (remainingWindowsSum + N * band.napLenMin) * 60000)
     if (bedtime.getTime() < now) bedtime = null // overdue → show "soon" instead of a stale time
   }
 
@@ -142,7 +199,9 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
     if (bedtime.getTime() > cutoff.getTime()) {
       let found: number | null = null
       for (let n = N - 1; n >= 0; n--) {
-        const trial = new Date(lastWakeEnd!.getTime() + ((n + 1) * band.wakeMin + n * band.napLenMin) * 60000)
+        // n naps from now → windows[napsTaken .. napsTaken+n] plus n nap lengths
+        const winsSum = band.windows.slice(napsTaken, napsTaken + n + 1).reduce((a, b) => a + b, 0)
+        const trial = new Date(lastWakeEnd!.getTime() + (winsSum + n * band.napLenMin) * 60000)
         if (trial.getTime() <= cutoff.getTime()) { found = n; break }
       }
       recommendFewerNaps = true
@@ -162,6 +221,21 @@ function fmtDur(min: number): string {
 
 function fmtTime(d: Date): string {
   return d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+}
+
+// Compact wake-window duration for the age card, e.g. "45 דק׳" or "2:30 ש׳".
+function fmtWW(min: number): string {
+  const h = Math.floor(min / 60), m = min % 60
+  if (h === 0) return `${m} דק׳`
+  return m === 0 ? `${h} ש׳` : `${h}:${String(m).padStart(2, '0')} ש׳`
+}
+
+// datetime-local inputs expect LOCAL wall-clock time. new Date().toISOString()
+// returns UTC, which shifts the value by the timezone offset (e.g. 16:00 →
+// 13:00 in Israel summer). Format against the local offset instead.
+function toLocalInput(d: Date): string {
+  const off = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - off).toISOString().slice(0, 16)
 }
 
 // ─── Main Component ───────────────────────────────────────────
@@ -270,7 +344,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   const [wakeTime, setWakeTime] = useState('')
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
   const [notes, setNotes] = useState('')
-  const [startTime, setStartTime] = useState(() => new Date().toISOString().slice(0, 16))
+  const [startTime, setStartTime] = useState(() => toLocalInput(new Date()))
   const [editingId, setEditingId] = useState<string | null>(null)
   const [now, setNow] = useState(() => Date.now())
   const supabase = createClient()
@@ -364,14 +438,14 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
     setEditingId(null)
     setAmount(''); setDuration(''); setNotes(''); setWakeTime('')
     setFeedType('breast'); setDiaperType('wet')
-    setStartTime(new Date().toISOString().slice(0, 16))
+    setStartTime(toLocalInput(new Date()))
   }
 
   function editLog(log: BabyLog) {
     setEditingId(log.id)
     setShowForm(log.type)
-    setStartTime(new Date(log.start_time).toISOString().slice(0, 16))
-    setWakeTime(log.end_time ? new Date(log.end_time).toISOString().slice(0, 16) : '')
+    setStartTime(toLocalInput(new Date(log.start_time)))
+    setWakeTime(log.end_time ? toLocalInput(new Date(log.end_time)) : '')
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
@@ -422,7 +496,11 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
               <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                 <Sunrise className="w-3 h-3" /> חלון ערות
               </p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>{fmtDur(sleepPlan.band.wakeMin)}</p>
+              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>
+                {sleepPlan.band.wwMin === sleepPlan.band.wwMax
+                  ? fmtWW(sleepPlan.band.wwMin)
+                  : `${fmtWW(sleepPlan.band.wwMin)}–${fmtWW(sleepPlan.band.wwMax)}`}
+              </p>
             </div>
             <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
               <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
@@ -445,22 +523,26 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
               </p>
             </div>
 
-            {/* Time until next nap */}
-            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
-              <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
-              <p className="text-sm" style={{ color: 'var(--text)' }}>
-                {timer.active && timer.isNight
-                  ? <>{`מתעד${genderSuffix === 'ת' ? 'ת' : ''} שינת לילה 🌙 — הטיימר רץ`}</>
-                  : sleepPlan.sleeping
-                    ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 — הטיימר רץ`}</>
-                    : !sleepPlan.hasWakeData
-                      ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
-                      : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
-                        ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
-                        : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
-                }
-              </p>
-            </div>
+            {/* Time until next nap — hidden once all naps for the day are done
+                (and no timer running), since the bedtime row already covers
+                when the night sleep should start. */}
+            {(timer.active || sleepPlan.napsRemaining > 0) && (
+              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+                <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
+                <p className="text-sm" style={{ color: 'var(--text)' }}>
+                  {timer.active && timer.isNight
+                    ? <>{`מתעד${genderSuffix === 'ת' ? 'ת' : ''} שינת לילה 🌙 — הטיימר רץ`}</>
+                    : sleepPlan.sleeping
+                      ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 — הטיימר רץ`}</>
+                      : !sleepPlan.hasWakeData
+                        ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ״צ הבא</span>
+                        : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
+                          ? <>השנ״צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
+                          : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ״צ 💤</span>
+                  }
+                </p>
+              </div>
+            )}
 
             {/* Predicted bedtime */}
             {!(timer.active && timer.isNight) && (
@@ -545,13 +627,18 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
         </div>
       </div>
 
+      {/* During a running NIGHT sleep, let the mother log a feed (with its own
+          nested nursing/bottle timer) and a diaper without stopping the sleep
+          timer — night wakings for feeds/changes are part of the same sleep. */}
+      {timer.active && timer.isNight && <NightExtras userId={userId} />}
+
       {/* Quick Add */}
       <div className="grid grid-cols-3 gap-3">
         {(['feed', 'sleep', 'diaper'] as LogType[]).map(type => {
           const { label, color, bg, border, icon: Icon } = typeConfig[type]
           return (
             <button key={type}
-              onClick={() => { setStartTime(new Date().toISOString().slice(0, 16)); setWakeTime(''); setShowForm(type) }}
+              onClick={() => { setStartTime(toLocalInput(new Date())); setWakeTime(''); setShowForm(type) }}
               className="card flex flex-col items-center gap-2 py-4 transition-all hover:scale-105"
               style={{ background: bg, border: `1px solid ${border}` }}>
               <Icon className="w-6 h-6" style={{ color }} />
@@ -749,6 +836,137 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
         )}
       </div>
     </>
+  )
+}
+
+// ─── Night extras: nested feed timer + quick diaper ───────────
+// Rendered only while a night sleep timer is running. Logs go straight into
+// baby_logs and broadcast LOG_ADDED_EVT so the timeline updates — the sleep
+// timer itself is never touched, so it keeps running underneath.
+function NightExtras({ userId }: { userId: string }) {
+  const supabase = createClient()
+  const [feedStart, setFeedStart] = useState<number | null>(null)
+  const [feedType, setFeedType] = useState<'breast' | 'bottle'>('breast')
+  const [tick, setTick] = useState(() => Date.now())
+  const [busy, setBusy] = useState(false)
+  const [flash, setFlash] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (feedStart == null) return
+    const id = setInterval(() => setTick(Date.now()), 1000)
+    return () => clearInterval(id)
+  }, [feedStart])
+
+  function fmtClock(ms: number): string {
+    const s = Math.max(0, Math.floor(ms / 1000))
+    const m = Math.floor(s / 60), sec = s % 60
+    return `${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`
+  }
+
+  function showFlash(key: string) {
+    setFlash(key)
+    setTimeout(() => setFlash(null), 1600)
+  }
+
+  async function stopFeed() {
+    if (feedStart == null || busy) return
+    setBusy(true)
+    const end = Date.now()
+    const durationMin = Math.max(1, Math.round((end - feedStart) / 60000))
+    const { data } = await supabase.from('baby_logs').insert({
+      user_id: userId, type: 'feed', feed_type: feedType,
+      start_time: new Date(feedStart).toISOString(),
+      end_time: new Date(end).toISOString(),
+      duration_min: durationMin,
+    }).select().single()
+    setBusy(false)
+    setFeedStart(null)
+    if (data) {
+      window.dispatchEvent(new CustomEvent(LOG_ADDED_EVT, { detail: data }))
+      showFlash('feed')
+    }
+  }
+
+  async function addDiaper(dt: 'wet' | 'dirty' | 'both') {
+    if (busy) return
+    setBusy(true)
+    const { data } = await supabase.from('baby_logs').insert({
+      user_id: userId, type: 'diaper', diaper_type: dt,
+      start_time: new Date().toISOString(),
+    }).select().single()
+    setBusy(false)
+    if (data) {
+      window.dispatchEvent(new CustomEvent(LOG_ADDED_EVT, { detail: data }))
+      showFlash('diaper-' + dt)
+    }
+  }
+
+  const diaperOpts = [
+    ['wet', Droplet, 'פיפי'],
+    ['dirty', Circle, 'קקי'],
+    ['both', Sparkles, 'שניהם'],
+  ] as const
+
+  return (
+    <div className="card" style={{ background: 'rgba(60,60,110,0.06)', border: '1px solid rgba(60,60,110,0.2)' }}>
+      <p className="text-xs font-semibold mb-3 flex items-center gap-1.5" style={{ color: '#3C3C6E' }}>
+        <Moon className="w-3.5 h-3.5" /> תיעוד תוך כדי שנת הלילה — הטיימר ממשיך לרוץ
+      </p>
+
+      {/* Nested feed timer */}
+      <div className="rounded-xl p-3 mb-3" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+            <Milk className="w-4 h-4" style={{ color: '#7F5268' }} /> האכלת לילה
+          </span>
+          {flash === 'feed' && <span className="text-xs font-semibold flex items-center gap-1" style={{ color: '#5C7A6A' }}><Check className="w-3.5 h-3.5" /> נרשמה</span>}
+        </div>
+
+        {feedStart == null ? (
+          <>
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              {([['breast', Baby, 'שד'], ['bottle', Milk, 'בקבוק']] as const).map(([ft, Icon, lbl]) => (
+                <button key={ft} onClick={() => setFeedType(ft)}
+                  className="py-2 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5"
+                  style={feedType === ft
+                    ? { background: '#7F5268', color: 'white' }
+                    : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                  }><Icon className="w-3.5 h-3.5" />{lbl}</button>
+              ))}
+            </div>
+            <button onClick={() => { setTick(Date.now()); setFeedStart(Date.now()) }}
+              className="w-full py-2 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-1.5"
+              style={{ background: '#7F5268' }}>
+              <Play className="w-4 h-4" fill="white" /> התחלת טיימר האכלה
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-2xl font-mono font-bold" style={{ color: '#7F5268' }}>{fmtClock(tick - feedStart)}</p>
+            <button onClick={stopFeed} disabled={busy}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
+              style={{ background: '#7F5268' }}>
+              <Square className="w-4 h-4" fill="white" /> {busy ? 'שומרת...' : 'סיום ורישום'}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Quick diaper */}
+      <div className="grid grid-cols-3 gap-2">
+        {diaperOpts.map(([dt, Icon, lbl]) => (
+          <button key={dt} onClick={() => addDiaper(dt)} disabled={busy}
+            className="py-2.5 rounded-lg text-xs font-medium transition-all flex flex-col items-center gap-1 disabled:opacity-60"
+            style={flash === 'diaper-' + dt
+              ? { background: '#4A7C59', color: 'white' }
+              : { background: 'var(--surface)', color: 'var(--text)', border: '1px solid var(--border)' }
+            }>
+            {flash === 'diaper-' + dt ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" fill={dt === 'dirty' ? 'currentColor' : 'none'} style={{ color: '#4A7C59' }} />}
+            {lbl}
+          </button>
+        ))}
+      </div>
+    </div>
   )
 }
 

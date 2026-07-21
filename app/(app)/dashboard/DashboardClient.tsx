@@ -190,13 +190,19 @@ export default function DashboardClient({
   }
 
   // Add a freshly-inserted log to local state + bump the matching counter.
+  // Deduped by id: a stopped sleep timer both broadcasts LOG_ADDED_EVT (picked
+  // up by the listener below) AND may be handed here via onLog — without this
+  // guard the same log would be added, and counted, twice.
   function addLogToState(log: BabyLog) {
-    setLocalLogs(prev => [log, ...prev])
-    if (log.type === 'feed')   setFeedCount(c => c + 1)
-    if (log.type === 'sleep')  setSleepCount(c => c + 1)
-    if (log.type === 'diaper') setDiaperCount(c => c + 1)
-    setSavedFlash(true)
-    setTimeout(() => setSavedFlash(false), 2000)
+    setLocalLogs(prev => {
+      if (prev.some(l => l.id === log.id)) return prev
+      if (log.type === 'feed')   setFeedCount(c => c + 1)
+      if (log.type === 'sleep')  setSleepCount(c => c + 1)
+      if (log.type === 'diaper') setDiaperCount(c => c + 1)
+      setSavedFlash(true)
+      setTimeout(() => setSavedFlash(false), 2000)
+      return [log, ...prev]
+    })
   }
 
   function resetForm() {

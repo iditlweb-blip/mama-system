@@ -128,8 +128,11 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
     setSchedule(prev => prev.filter(s => s.id !== id))
   }
 
-  const doneTasks = tasks.filter(t => t.status === 'done')
-  const openTasks = tasks.filter(t => t.status !== 'done')
+  // In pregnancy mode there's no baby yet, so baby-category tasks are noise —
+  // hide them here (they still live in the DB for when tracking switches).
+  const visibleTasks = isPregnancy ? tasks.filter(t => t.category !== 'baby') : tasks
+  const doneTasks = visibleTasks.filter(t => t.status === 'done')
+  const openTasks = visibleTasks.filter(t => t.status !== 'done')
 
   return (
     <div className="space-y-5 max-w-3xl">
@@ -179,7 +182,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
       {/* TASKS TAB */}
       {activeTab === 'tasks' && (
-        <div className="space-y-3">
+        <div className="space-y-3 pb-24 md:pb-0">
           {/* Add task */}
           {!showTaskForm ? (
             <button
@@ -285,7 +288,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
       {/* SCHEDULE TAB */}
       {activeTab === 'schedule' && (
-        <div className="space-y-4">
+        <div className="space-y-4 pb-24 md:pb-0">
           {!showScheduleForm ? (
             <button
               onClick={() => setShowScheduleForm(true)}
@@ -424,12 +427,12 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
       {/* MATERNITY LEAVE TAB (pregnancy only) */}
       {activeTab === 'leave' && isPregnancy && (
-        <MaternityLeave dueDate={profile?.due_date ?? null} />
+        <div className="pb-24 md:pb-0"><MaternityLeave dueDate={profile?.due_date ?? null} /></div>
       )}
 
       {/* DELIVERY-ROOM EQUIPMENT TAB (pregnancy only) */}
       {activeTab === 'equipment' && isPregnancy && (
-        <DeliveryEquipment userId={userId} />
+        <div className="pb-24 md:pb-0"><DeliveryEquipment userId={userId} /></div>
       )}
     </div>
   )

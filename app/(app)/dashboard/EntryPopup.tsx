@@ -175,7 +175,7 @@ export default function EntryPopup({
               style={{ background: 'rgba(60,60,110,0.1)', color: '#3C3C6E', border: '1px solid rgba(60,60,110,0.25)' }}
             >
               <Moon className="w-3.5 h-3.5" />
-              טיימר לילה (לניובורן)
+              טיימר לילה
             </button>
 
             <div className="grid grid-cols-2 gap-2">
