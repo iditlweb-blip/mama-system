@@ -49,37 +49,93 @@ const typeConfig = {
   diaper: { label: 'חיתול', icon: Droplets,  color: '#7A6A3C', bg: 'rgba(122,106,60,0.1)',  border: 'rgba(122,106,60,0.25)' },
 }
 
-// ─── Age-based wake windows & naps (per month) ────────────────
-// Per-MONTH data (not broad ranges) so predictions track the fast changes of
-// the first year. Wake windows are progressive across the day: the window
-// after the morning wake-up is the shortest, growing to the longest window
-// right before night sleep — matching how infant sleep pressure builds.
-// wwStart = first (morning) wake window, wwEnd = last window before bedtime.
-// Sources: Huckleberry, Taking Cara Babies, Cleveland Clinic, Baby Sleep Site.
-const MONTH_SLEEP = [
-  { month: 0,  naps: 5, wwStart: 40,  wwEnd: 60,  napLenMin: 45 },
-  { month: 1,  naps: 5, wwStart: 50,  wwEnd: 75,  napLenMin: 45 },
-  { month: 2,  naps: 4, wwStart: 60,  wwEnd: 90,  napLenMin: 50 },
-  { month: 3,  naps: 4, wwStart: 75,  wwEnd: 100, napLenMin: 55 },
-  { month: 4,  naps: 3, wwStart: 90,  wwEnd: 120, napLenMin: 60 },
-  { month: 5,  naps: 3, wwStart: 105, wwEnd: 135, napLenMin: 70 },
-  { month: 6,  naps: 3, wwStart: 120, wwEnd: 150, napLenMin: 75 },
-  { month: 7,  naps: 2, wwStart: 150, wwEnd: 195, napLenMin: 80 },
-  { month: 8,  naps: 2, wwStart: 158, wwEnd: 205, napLenMin: 85 },
-  { month: 9,  naps: 2, wwStart: 165, wwEnd: 210, napLenMin: 90 },
-  { month: 10, naps: 2, wwStart: 180, wwEnd: 225, napLenMin: 90 },
-  { month: 11, naps: 2, wwStart: 190, wwEnd: 235, napLenMin: 90 },
-  { month: 12, naps: 2, wwStart: 195, wwEnd: 240, napLenMin: 90 },
-  { month: 13, naps: 2, wwStart: 205, wwEnd: 250, napLenMin: 90 },
-  { month: 14, naps: 2, wwStart: 210, wwEnd: 260, napLenMin: 90 },
-  { month: 15, naps: 1, wwStart: 240, wwEnd: 300, napLenMin: 120 },
-  { month: 16, naps: 1, wwStart: 255, wwEnd: 315, napLenMin: 120 },
-  { month: 17, naps: 1, wwStart: 270, wwEnd: 330, napLenMin: 120 },
-  { month: 18, naps: 1, wwStart: 300, wwEnd: 360, napLenMin: 120 },
-] as const
+// ─── Age-based sleep map (0–36 months) ────────────────────────
+// Values mirror a pediatric infant-sleep chart by age band. Within each band
+// the recommended wake window is a range (wwMin→wwMax); we spread it
+// progressively across the day so the first morning window is the shortest and
+// the pre-bedtime window is the longest, matching how sleep pressure builds.
+// The extra fields (nap length, naps/day, day & night sleep, bedtime, note)
+// are shown as reference so the mother gets the full picture for the age.
+interface SleepRow {
+  maxWeeks: number        // upper bound of the band, in weeks of age
+  label: string
+  wwMin: number           // recommended wake window — min (minutes)
+  wwMax: number           // recommended wake window — max (minutes)
+  napsForCalc: number     // representative daily naps used by the predictions
+  napsLabel: string       // naps/day as shown in the chart (e.g. "4–6")
+  napLenMin: number       // representative nap length for chaining (minutes)
+  napLenLabel: string     // average nap length as shown
+  dayLabel: string        // total daytime sleep
+  nightLabel: string      // total nighttime sleep
+  bedtime: string         // recommended bedtime range
+  note: string
+}
+
+const SLEEP_MAP: SleepRow[] = [
+  {
+    maxWeeks: 6, label: '0–6 שבועות', wwMin: 30, wwMax: 60,
+    napsForCalc: 5, napsLabel: '4–6', napLenMin: 60, napLenLabel: '20 דק׳ – 3 ש׳',
+    dayLabel: '4–8 ש׳', nightLabel: '8–10 ש׳', bedtime: '21:00–00:00',
+    note: 'בשלב הזה היממה מתחלקת בעיקר בין שינה, אכילה, החתלה וקרבה. עדיין אין הפרדה של ממש בין יום ללילה.',
+  },
+  {
+    maxWeeks: 13, label: '6 שבועות – 3 חודשים', wwMin: 40, wwMax: 90,
+    napsForCalc: 4, napsLabel: '4–5', napLenMin: 75, napLenLabel: '½ ש׳ – 2 ש׳',
+    dayLabel: '4–5 ש׳', nightLabel: '9–11 ש׳', bedtime: '20:00–22:00',
+    note: 'לאט לאט נבנית ההבחנה בין יום ללילה. שכיבה על הבטן בזמן ערות וחשיפה לאור טבעי מסייעות לייצב את השגרה היומית.',
+  },
+  {
+    maxWeeks: 22, label: '3–5 חודשים', wwMin: 60, wwMax: 150,
+    napsForCalc: 4, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש׳ – 2 ש׳',
+    dayLabel: '3–4½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    note: 'בסביבות גיל 4 חודשים חלה תמורה בשינה — מחזורי השינה נעשים בשלים יותר, ולעיתים הרגלים שעבדו קודם כבר פחות מתאימים.',
+  },
+  {
+    maxWeeks: 26, label: '5–6 חודשים', wwMin: 105, wwMax: 165,
+    napsForCalc: 3, napsLabel: '3–4', napLenMin: 60, napLenLabel: '½ ש׳ – 2 ש׳',
+    dayLabel: '3–4 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    note: 'מעבר מדורג מארבע תנומות לשלוש. לא פעם דווקא התנומה של אחר הצהריים הולכת ומתקצרת עד שנעלמת.',
+  },
+  {
+    maxWeeks: 35, label: '6–8 חודשים', wwMin: 135, wwMax: 210,
+    napsForCalc: 3, napsLabel: '2–3', napLenMin: 90, napLenLabel: '1–2 ש׳',
+    dayLabel: '3–3½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–20:00',
+    note: 'תקופת מעבר משלוש תנומות לשתיים. קפיצות מוטוריות ותרגול יכולות שרכשו זה עתה עשויים לשבש את השינה באופן זמני.',
+  },
+  {
+    maxWeeks: 43, label: '8–10 חודשים', wwMin: 180, wwMax: 240,
+    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש׳',
+    dayLabel: '2–3 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    note: 'בדרך כלל כבר קיימות שתי תנומות יציבות. חרדת פרידה וזינוקים התפתחותיים עלולים להקשות על ההירדמות.',
+  },
+  {
+    maxWeeks: 52, label: '10–12 חודשים', wwMin: 210, wwMax: 270,
+    napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1–2 ש׳',
+    dayLabel: '2–3 ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    note: 'יש תינוקות שמתחילים לסרב לתנומה השנייה, אך התנגדות כזו לא בהכרח מעידה שהם מוכנים לוותר עליה.',
+  },
+  {
+    maxWeeks: 78, label: '12–18 חודשים', wwMin: 210, wwMax: 300,
+    napsForCalc: 2, napsLabel: '1–2', napLenMin: 105, napLenLabel: '1–2½ ש׳',
+    dayLabel: '1–2½ ש׳', nightLabel: '10–12 ש׳', bedtime: '18:30–19:30',
+    note: 'מגיל 14 חודשים לרוב מתחיל מעבר איטי לתנומה יחידה. בימים עם תנומה אחת בלבד כדאי לפעמים להשכיב מעט מוקדם יותר.',
+  },
+  {
+    maxWeeks: 104, label: '18–24 חודשים', wwMin: 270, wwMax: 390,
+    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש׳',
+    dayLabel: '1–2 ש׳', nightLabel: '10–12 ש׳', bedtime: '19:00–20:00',
+    note: 'בשלב זה בדרך כלל נותרה תנומת צהריים אחת קבועה. עדיין חשוב לשים לב לסימני עייפות יתר לקראת שעות הערב.',
+  },
+  {
+    maxWeeks: 9999, label: '24–36 חודשים', wwMin: 300, wwMax: 420,
+    napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1–2 ש׳',
+    dayLabel: '1–2 ש׳', nightLabel: '10–12 ש׳', bedtime: '19:00–20:00',
+    note: 'לקראת גיל 3 חלק מהילדים מתחילים לזנוח את שנת הצהריים. ביום ללא תנומה ייתכן שתידרש השכבה מוקדמת יותר בלילה.',
+  },
+]
 
 // Build the progressive list of wake windows for a day: naps+1 windows,
-// linearly growing from wwStart (first) to wwEnd (last before bed).
+// linearly growing from wwMin (first, morning) to wwMax (last before bed).
 function makeWindows(start: number, end: number, naps: number): number[] {
   const count = Math.max(1, naps + 1)
   if (count === 1) return [Math.round((start + end) / 2)]
@@ -87,34 +143,15 @@ function makeWindows(start: number, end: number, naps: number): number[] {
   return Array.from({ length: count }, (_, i) => Math.round(start + step * i))
 }
 
-interface SleepBand {
-  label: string
-  naps: number
+interface SleepBand extends SleepRow {
+  naps: number        // = napsForCalc, used by the prediction engine
   windows: number[]   // progressive wake windows (minutes), length = naps + 1
-  napLenMin: number
-  wwMin: number       // first (shortest) window
-  wwMax: number       // last (longest) window before bedtime
-}
-
-function monthLabel(m: number): string {
-  if (m <= 0) return 'עד חודש'
-  if (m === 1) return 'חודש'
-  if (m >= 18) return '18 חודשים+'
-  return `${m} חודשים`
 }
 
 function getSleepBand(weeks: number): SleepBand {
-  const months = Math.max(0, Math.floor(weeks / 4.345))
-  const row = MONTH_SLEEP.find(r => r.month === months) || MONTH_SLEEP[MONTH_SLEEP.length - 1]
-  const windows = makeWindows(row.wwStart, row.wwEnd, row.naps)
-  return {
-    label: monthLabel(months),
-    naps: row.naps,
-    windows,
-    napLenMin: row.napLenMin,
-    wwMin: windows[0],
-    wwMax: windows[windows.length - 1],
-  }
+  const row = SLEEP_MAP.find(r => weeks <= r.maxWeeks) || SLEEP_MAP[SLEEP_MAP.length - 1]
+  const windows = makeWindows(row.wwMin, row.wwMax, row.napsForCalc)
+  return { ...row, naps: row.napsForCalc, windows }
 }
 
 interface SleepPlan {
@@ -490,24 +527,23 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             </span>
           </div>
 
-          {/* Wake window + total naps for age */}
+          {/* Full sleep map for the age band (mirrors the pediatric chart) */}
           <div className="grid grid-cols-2 gap-2 mb-3">
-            <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                <Sunrise className="w-3 h-3" /> חלון ערות
-              </p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>
-                {sleepPlan.band.wwMin === sleepPlan.band.wwMax
-                  ? fmtWW(sleepPlan.band.wwMin)
-                  : `${fmtWW(sleepPlan.band.wwMin)}–${fmtWW(sleepPlan.band.wwMax)}`}
-              </p>
-            </div>
-            <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-              <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                <BedDouble className="w-3 h-3" /> שנ״צים ביום
-              </p>
-              <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>{sleepPlan.band.naps}</p>
-            </div>
+            <InfoTile icon={Sunrise} label="חלון ערות מומלץ"
+              value={sleepPlan.band.wwMin === sleepPlan.band.wwMax
+                ? fmtWW(sleepPlan.band.wwMin)
+                : `${fmtWW(sleepPlan.band.wwMin)}–${fmtWW(sleepPlan.band.wwMax)}`} />
+            <InfoTile icon={BedDouble} label="תנומות ביום" value={`${sleepPlan.band.napsLabel} תנומות`} />
+            <InfoTile icon={Clock3} label="אורך תנומה ממוצע" value={sleepPlan.band.napLenLabel} />
+            <InfoTile icon={Sunrise} label="שינה ביום" value={sleepPlan.band.dayLabel} />
+            <InfoTile icon={Moon} label="שינה בלילה" value={sleepPlan.band.nightLabel} />
+            <InfoTile icon={Moon} label="שעת השכבה מומלצת" value={sleepPlan.band.bedtime} />
+          </div>
+
+          {/* Age-band note (general guidance for the stage) */}
+          <div className="rounded-xl px-3 py-2.5 mb-3 text-xs leading-relaxed"
+            style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.15)', color: 'var(--text-muted)' }}>
+            {sleepPlan.band.note}
           </div>
 
           {/* Live insights based on what was marked today */}
@@ -992,6 +1028,20 @@ function buildLogDescription(log: BabyLog): string {
     return `חיתול${log.diaper_type ? ' — ' + labels[log.diaper_type] : ''}`
   }
   return ''
+}
+
+function InfoTile({ icon: Icon, label, value }: {
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>
+  label: string; value: string
+}) {
+  return (
+    <div className="rounded-xl p-2.5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <p className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+        <Icon className="w-3 h-3" /> {label}
+      </p>
+      <p className="text-sm font-semibold mt-0.5" style={{ color: 'var(--text)' }}>{value}</p>
+    </div>
+  )
 }
 
 function StatCard({ icon: Icon, color, label, value, sub }: {
