@@ -24,6 +24,9 @@ const WeaningTab = dynamic(() => import('./WeaningTab'), {
 const HealthTab = dynamic(() => import('./HealthTab'), {
   loading: () => <TabLoading />,
 })
+const SleepArchiveTab = dynamic(() => import('./SleepArchiveTab'), {
+  loading: () => <TabLoading />,
+})
 
 function TabLoading() {
   return (
@@ -278,7 +281,7 @@ function toLocalInput(d: Date): string {
 // ─── Main Component ───────────────────────────────────────────
 export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents }: Props) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<'daily' | 'weaning' | 'health'>('daily')
+  const [activeTab, setActiveTab] = useState<'daily' | 'archive' | 'weaning' | 'health'>('daily')
   const [logs, setLogs] = useState(initialLogs)
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>(initialHealthEvents)
   const supabase = createClient()
@@ -318,13 +321,14 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
       <div className="flex gap-1 p-1 rounded-2xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
         {([
           { key: 'daily',   label: 'יומי',     icon: ClipboardList },
+          { key: 'archive', label: 'ארכיון', icon: Moon },
           { key: 'weaning', label: 'טעימות',   icon: Carrot },
           { key: 'health',  label: 'חיסונים',  icon: Syringe },
         ] as const).map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className="flex-1 py-2 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-1.5"
+            className="flex-1 py-2 rounded-xl text-xs font-medium transition-all flex items-center justify-center gap-1"
             style={activeTab === tab.key
               ? { background: '#7F5268', color: '#fff' }
               : { color: 'var(--text-muted)' }
@@ -345,6 +349,11 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
           babyWeeks={babyWeeks}
           babyName={babyName}
         />
+      )}
+
+      {/* Tab: Sleep archive */}
+      {activeTab === 'archive' && (
+        <SleepArchiveTab babyName={babyName} />
       )}
 
       {/* Tab: Weaning */}
