@@ -55,12 +55,12 @@ const WEANING_STAGES = [
     quantity: '1/4–1/2 כוס לארוחה',
     frequency: '2–3 ארוחות ביום',
     timing: 'ארוחת בוקר, צהריים, ערב',
-    texture: 'פירה גס, מרוסק, או BLW — אצבעות רכות',
+    texture: 'פירה גס, מרוסק, או אצבעות מזון רכות להאכלה עצמאית',
     foods: ['עוף מבושל', 'דג (סלמון/קרפיון)', 'עדשים', 'יוגורט', 'גבינה בולגרית'],
     avoid: ['דבש', 'מלח', 'סוכר', 'אוכל ים (שרימפס/לובסטר)', 'פטריות נא'],
     allergens: ['ביצה (חלמון קודם)', 'דגים (אחת בשבוע)', 'חלב מוצרים (לא חלב פרה נוזלי)'],
     recipes: [
-      { name: 'עוף+ירקות', icon: Drumstick, steps: 'בשלי עוף+גזר+תפו"א, מרסקי לפירה. מניחי גוש עוף לBLW.' },
+      { name: 'עוף וירקות', icon: Drumstick, steps: 'בשלי עוף, גזר ותפוחי אדמה, ומרסקי לפירה. אפשר להניח גם גוש עוף רך לאחיזה עצמאית.' },
       { name: 'סלמון מאודה', icon: Fish, steps: 'אדי סלמון 10 דק’, פרקי לחתיכות קטנות. בדקי עצמות!' },
       { name: 'חביתה ביצה', icon: Egg, steps: 'חלמון+חלבון, מטגנת בכפית שמן זית, חתכי לרצועות.' },
     ],
@@ -75,8 +75,8 @@ const WEANING_STAGES = [
     timing: 'תבנית ארוחות קבועה',
     texture: 'גושים רכים, אצבעות, אוכל "משפחתי" מרוסק',
     foods: ['פסטה', 'אורז', 'לחם רך', 'גבינות', 'כל ירק/פרי', 'קטניות'],
-    avoid: ['דבש', 'מלח מוסף', 'סוכר', 'אוכל חד-מרגנרין', 'אגוזים שלמים (בטחון)'],
-    allergens: ['ניתן כבר לאכול רוב האלרגנים — כולל אגוהי קשיו (טחון)'],
+    avoid: ['דבש', 'מלח מוסף', 'סוכר', 'מרגרינה', 'אגוזים שלמים (סכנת חנק)'],
+    allergens: ['ניתן כבר לאכול רוב האלרגנים — כולל אגוזי קשיו (טחונים)'],
     recipes: [
       { name: 'פסטה+ציר', icon: Wheat, steps: 'פסטה קצרה + ציר ירקות/עוף ביתי. ללא מלח.' },
       { name: 'עדשות+תרד', icon: Soup, steps: 'עדשות כתומות + תרד + גזר. בישול 20 דק’.' },
@@ -98,11 +98,15 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
   const [checkedItems, setCheckedItems] = useState<string[]>([])
   const [expandedStage, setExpandedStage] = useState<number | null>(null)
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null)
+  // Once the readiness list is fully checked it collapses into a small "done"
+  // accordion so it stops taking up space; tapping it re-opens the full list.
+  const [checklistOpen, setChecklistOpen] = useState(false)
 
   const toggleCheck = (id: string) =>
     setCheckedItems(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
 
   const allChecked = READINESS_CHECKLIST.length === checkedItems.length
+  const checklistCollapsed = allChecked && !checklistOpen
 
   // Find current stage
   const currentStage = babyWeeks !== null
@@ -156,38 +160,56 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
         </div>
       )}
 
-      {/* Readiness checklist */}
-      <div className="card">
-        <h2 className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
-          <CheckCircle2 className="w-4 h-4" style={{ color: '#4A7C59' }} /> רשימת מוכנות לטעימות
-        </h2>
-        <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-          מומלץ לוודא לפחות 3/4 סימנים לפני התחלה
-        </p>
-        <div className="space-y-3">
-          {READINESS_CHECKLIST.map(item => (
-            <button key={item.id} onClick={() => toggleCheck(item.id)}
-              className="w-full flex items-start gap-3 text-right">
-              {checkedItems.includes(item.id)
-                ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#4A7C59' }} />
-                : <Circle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--border)' }} />
-              }
-              <div>
-                <p className="text-sm font-medium text-right" style={{ color: 'var(--text)' }}>{item.label}</p>
-                <p className="text-xs text-right" style={{ color: 'var(--text-muted)' }}>{item.detail}</p>
-              </div>
-            </button>
-          ))}
-        </div>
-        {allChecked && (
-          <div className="mt-4 rounded-xl p-3 text-center"
-            style={{ background: 'rgba(74,124,89,0.1)', border: '1px solid rgba(74,124,89,0.2)' }}>
-            <p className="text-sm font-semibold flex items-center justify-center gap-1.5" style={{ color: '#4A7C59' }}>
-              <PartyPopper className="w-4 h-4" /> {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות! קדימה!
-            </p>
+      {/* Readiness checklist — collapses to a compact "done" row once complete */}
+      {checklistCollapsed ? (
+        <button onClick={() => setChecklistOpen(true)}
+          className="card w-full flex items-center justify-between gap-2"
+          style={{ background: 'rgba(74,124,89,0.08)', border: '1px solid rgba(74,124,89,0.2)' }}>
+          <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: '#4A7C59' }}>
+            <CheckCircle2 className="w-4 h-4" /> רשימת המוכנות הושלמה — {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות!
+          </span>
+          <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: '#4A7C59' }} />
+        </button>
+      ) : (
+        <div className="card">
+          <div className="flex items-center justify-between">
+            <h2 className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
+              <CheckCircle2 className="w-4 h-4" style={{ color: '#4A7C59' }} /> רשימת מוכנות לטעימות
+            </h2>
+            {allChecked && (
+              <button onClick={() => setChecklistOpen(false)} title="מזעור">
+                <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
           </div>
-        )}
-      </div>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+            מומלץ לוודא לפחות 3 מתוך 4 סימנים לפני התחלה
+          </p>
+          <div className="space-y-3">
+            {READINESS_CHECKLIST.map(item => (
+              <button key={item.id} onClick={() => toggleCheck(item.id)}
+                className="w-full flex items-start gap-3 text-right">
+                {checkedItems.includes(item.id)
+                  ? <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: '#4A7C59' }} />
+                  : <Circle className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--border)' }} />
+                }
+                <div>
+                  <p className="text-sm font-medium text-right" style={{ color: 'var(--text)' }}>{item.label}</p>
+                  <p className="text-xs text-right" style={{ color: 'var(--text-muted)' }}>{item.detail}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+          {allChecked && (
+            <div className="mt-4 rounded-xl p-3 text-center"
+              style={{ background: 'rgba(74,124,89,0.1)', border: '1px solid rgba(74,124,89,0.2)' }}>
+              <p className="text-sm font-semibold flex items-center justify-center gap-1.5" style={{ color: '#4A7C59' }}>
+                <PartyPopper className="w-4 h-4" /> {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות! קדימה!
+              </p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Stages */}
       <div className="space-y-3">

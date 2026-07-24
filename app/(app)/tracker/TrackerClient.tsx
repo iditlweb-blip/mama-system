@@ -706,9 +706,18 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
               <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
                 <Clock className="w-3 h-3" /> {showForm === 'sleep' ? 'נרדמה בשעה' : 'שעה'}
               </label>
-              <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+              {/* Time is the primary field (shown large); the date is secondary
+                  (shown small) — most manual entries are for "today". */}
+              <div className="flex items-center gap-2">
+                <input type="time" value={startTime.slice(11, 16)}
+                  onChange={e => setStartTime(`${startTime.slice(0, 10)}T${e.target.value}`)}
+                  className="flex-1 px-3 py-2.5 rounded-xl border text-2xl font-bold text-center outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                <input type="date" value={startTime.slice(0, 10)}
+                  onChange={e => setStartTime(`${e.target.value}T${startTime.slice(11, 16)}`)}
+                  className="px-2 py-1.5 rounded-lg border text-xs outline-none"
+                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }} />
+              </div>
             </div>
 
             {showForm === 'feed' && (

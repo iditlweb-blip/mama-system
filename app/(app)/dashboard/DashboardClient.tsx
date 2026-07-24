@@ -102,7 +102,7 @@ function fmtDurShort(min: number): string {
 
 export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
-  nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
+  nextMilestone, todayLogs: initialLogs,
   todaySchedule: initialSchedule, isPregnancy, dueDate,
   pregnancyTests: initialPregnancyTests,
 }: Props) {
@@ -168,6 +168,24 @@ export default function DashboardClient({
   const [editingTaskId,    setEditingTaskId]    = useState<string | null>(null)
   const [editingTaskTitle, setEditingTaskTitle] = useState('')
   const [savingTask,       setSavingTask]       = useState(false)
+
+  // Inline "add urgent task" shortcut, right inside the Tasks cube
+  const [addingTaskOpen, setAddingTaskOpen] = useState(false)
+  const [newTaskTitle,   setNewTaskTitle]   = useState('')
+  const [creatingTask,   setCreatingTask]   = useState(false)
+
+  async function addQuickTask() {
+    const title = newTaskTitle.trim()
+    if (!title) return
+    setCreatingTask(true)
+    const { data } = await supabase.from('tasks')
+      .insert({ user_id: userId, title, priority: 'high', category: 'baby', completed: false })
+      .select().single()
+    if (data) setLocalTasks(prev => [data as Task, ...prev])
+    setCreatingTask(false)
+    setNewTaskTitle('')
+    setAddingTaskOpen(false)
+  }
 
   async function deleteLog(id: string) {
     // Optimistic remove
@@ -329,38 +347,28 @@ export default function DashboardClient({
       {/* GaveBirth modal */}
       {showGaveBirth && <GaveBirthModal onClose={() => setShowGaveBirth(false)} />}
 
-      {/* ── Greeting card ─────────────────────────── */}
-      <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)' }}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold mb-1" style={{ color: 'var(--text)' }}>
-              שלום {profile?.name?.split(' ')[0] || 'אמא'} 👋
-            </h1>
-            <div className="flex items-start gap-2">
-              <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
-              <p className="text-sm leading-relaxed font-light" style={{ color: 'var(--text-muted)' }}>
-                {motivation}
-              </p>
-            </div>
-
-            {/* ילדתי button — only for pregnancy tracking */}
-            {(profile?.tracking_type === 'pregnancy' || (!profile?.tracking_type && !profile?.baby_birthdate)) && (
-              <button
-                onClick={() => setShowGaveBirth(true)}
-                className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
-                style={{ background: 'rgba(127,82,104,0.12)', color: '#7F5268', border: '1.5px solid rgba(127,82,104,0.25)' }}
-              >
-                🎉 ילדתי!
-              </button>
-            )}
-          </div>
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 text-xl"
-            style={{ background: 'var(--purple)', color: '#fff' }}
-          >
-            💜
-          </div>
+      {/* ── Greeting card (compact) ─────────────────── */}
+      <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)', padding: '14px 16px' }}>
+        <h1 className="text-base font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
+          שלום 👋
+        </h1>
+        <div className="flex items-start gap-2">
+          <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
+          <p className="text-sm leading-relaxed font-light" style={{ color: 'var(--text-muted)' }}>
+            {motivation}
+          </p>
         </div>
+
+        {/* ילדתי button — only for pregnancy tracking */}
+        {(profile?.tracking_type === 'pregnancy' || (!profile?.tracking_type && !profile?.baby_birthdate)) && (
+          <button
+            onClick={() => setShowGaveBirth(true)}
+            className="mt-3 flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90"
+            style={{ background: 'rgba(127,82,104,0.12)', color: '#7F5268', border: '1.5px solid rgba(127,82,104,0.25)' }}
+          >
+            🎉 ילדתי!
+          </button>
+        )}
       </div>
 
       {/* ── Baby progress ─────────────────────────── */}
@@ -434,8 +442,8 @@ export default function DashboardClient({
         )
       })()}
 
-      {/* ── Status (baby) / Upcoming tests (pregnancy) ─── */}
-      {isPregnancy ? (
+      {/* ── Upcoming tests (pregnancy only) ─── */}
+      {isPregnancy && (
         <div className="card">
           <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
             <CalendarClock className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
@@ -478,200 +486,7 @@ export default function DashboardClient({
             </Link>
           </div>
         </div>
-      ) : (
-        <div className="card">
-          <h2 className="font-medium text-sm mb-3 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <Moon className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-            סטטוס אחרון
-          </h2>
-          <div className="space-y-2">
-            {[
-              { icon: Milk, label: 'האכלה אחרונה', value: lastFeedAgo, color: '#7F5268' },
-              { icon: BedDouble, label: 'שינה אחרונה', value: lastSleepAgo, color: '#5C7A6A' },
-            ].map(({ icon: Icon, label, value, color }) => (
-              <div
-                key={label}
-                className="flex items-center justify-between p-3 rounded-xl"
-                style={{ background: 'var(--surface-2, #FAF4ED)' }}
-              >
-                <div className="flex items-center gap-2">
-                  <Icon className="w-3.5 h-3.5" style={{ color }} />
-                  <span className="text-sm font-light" style={{ color: 'var(--text)' }}>{label}</span>
-                </div>
-                <span className="text-sm font-medium" style={{ color: value ? color : 'var(--text-muted)' }}>
-                  {value || 'לא נרשם'}
-                </span>
-              </div>
-            ))}
-            <Link
-              href="/tracker"
-              className="flex items-center justify-center gap-1 mt-2 text-xs font-medium"
-              style={{ color: 'var(--primary)' }}
-            >
-              לטרקר המלא
-              <ChevronLeft className="w-3.5 h-3.5" />
-            </Link>
-          </div>
-        </div>
       )}
-
-      {/* ── Today's schedule ───────────────────────── */}
-      {localSchedule.length > 0 && (
-        <div className="card">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-              הלוז של היום
-            </h2>
-            <Link href="/business" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
-              כל הלוז
-            </Link>
-          </div>
-          <div className="space-y-2">
-            {localSchedule.map(item => {
-              const c = scheduleColors[item.type]
-              const done = !!item.completed
-              return (
-                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl transition-all"
-                  style={{ background: 'var(--surface-2, #FAF4ED)', opacity: done ? 0.55 : 1 }}>
-                  <button
-                    onClick={() => toggleScheduleDone(item.id, !done)}
-                    title={done ? 'בטלי סימון' : 'סמני כהושלם'}
-                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-                    style={done ? { background: '#4A7C59', borderColor: '#4A7C59' } : { borderColor: c.text }}
-                  >
-                    {done && <Check className="w-3 h-3 text-white" />}
-                  </button>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
-                    <p className="text-xs" style={{ color: c.text }}>
-                      {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
-                      {item.notes ? ` · ${item.notes}` : ''}
-                    </p>
-                  </div>
-                  <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: `${c.text}18`, color: c.text }}>
-                    {c.label}
-                  </span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* ── Tasks ──────────────────────────────────── */}
-      <div className="card">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
-            <CheckSquare className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-            המשימות הדחופות
-          </h2>
-          <Link href="/tasks" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
-            כל המשימות
-          </Link>
-        </div>
-        {localTasks.length === 0 ? (
-          <div className="text-center py-6">
-            <p className="text-sm mb-2 font-light" style={{ color: 'var(--text-muted)' }}>אין משימות פתוחות 🎉</p>
-            <Link href="/tasks" className="text-sm font-medium" style={{ color: 'var(--primary)' }}>הוסיפי משימה</Link>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {localTasks.slice(0, 5).map(task => (
-              <div
-                key={task.id}
-                className="flex items-center gap-3 p-3 rounded-xl"
-                style={{ background: 'var(--surface-2, #FAF4ED)', position: 'relative' }}
-              >
-                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priorityColors[task.priority] }} />
-
-                {/* Title — normal or edit mode */}
-                {editingTaskId === task.id ? (
-                  <div className="flex-1 flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={editingTaskTitle}
-                      onChange={e => setEditingTaskTitle(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter') saveEditTask(task.id)
-                        if (e.key === 'Escape') cancelEditTask()
-                      }}
-                      autoFocus
-                      className="flex-1 text-sm px-2 py-1 rounded-lg outline-none border"
-                      style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
-                    />
-                    <button
-                      onClick={() => saveEditTask(task.id)}
-                      disabled={savingTask}
-                      className="text-xs px-2 py-1 rounded-lg font-medium text-white"
-                      style={{ background: '#4A7C59', flexShrink: 0 }}
-                    >
-                      {savingTask ? '...' : 'שמור'}
-                    </button>
-                    <button
-                      onClick={cancelEditTask}
-                      className="text-xs px-2 py-1 rounded-lg font-medium"
-                      style={{ background: 'var(--border)', color: 'var(--text-muted)', flexShrink: 0 }}
-                    >
-                      ביטול
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <span
-                      className="flex-1 text-sm font-light cursor-pointer hover:opacity-70 flex items-center gap-1.5 group"
-                      style={{ color: 'var(--text)' }}
-                      onClick={() => startEditTask(task)}
-                      title="לחצי לעריכה"
-                    >
-                      {task.title}
-                      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
-                    </span>
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryClass[task.category]}`}
-                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
-                    >
-                      {(() => {
-                        const CatIcon = categoryIcons[task.category]
-                        return <CatIcon className="w-3 h-3" />
-                      })()}
-                      {categoryText[task.category]}
-                    </span>
-                  </>
-                )}
-
-                {/* Delete × button */}
-                {editingTaskId !== task.id && (
-                  <button
-                    onClick={() => deleteTask(task.id)}
-                    title="מחק משימה"
-                    style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      width: 20,
-                      height: 20,
-                      borderRadius: '50%',
-                      background: 'rgba(200,50,50,0.1)',
-                      color: '#cc3333',
-                      border: 'none',
-                      cursor: 'pointer',
-                      fontSize: 12,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {/* ── Sleep timer shortcut (baby only) ─────── */}
       {!isPregnancy && (
@@ -930,6 +745,247 @@ export default function DashboardClient({
         </div>
       </div>
       )}
+
+      {/* ── Today's schedule ───────────────────────── */}
+      {localSchedule.length > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+              הלוז של היום
+            </h2>
+            <Link href="/business" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
+              כל הלוז
+            </Link>
+          </div>
+          <div className="space-y-2">
+            {localSchedule.map(item => {
+              const c = scheduleColors[item.type]
+              const done = !!item.completed
+              return (
+                <div key={item.id} className="flex items-center gap-3 p-3 rounded-xl transition-all"
+                  style={{ background: 'var(--surface-2, #FAF4ED)', opacity: done ? 0.55 : 1 }}>
+                  <button
+                    onClick={() => toggleScheduleDone(item.id, !done)}
+                    title={done ? 'בטלי סימון' : 'סמני כהושלם'}
+                    className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                    style={done ? { background: '#4A7C59', borderColor: '#4A7C59' } : { borderColor: c.text }}
+                  >
+                    {done && <Check className="w-3 h-3 text-white" />}
+                  </button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
+                    <p className="text-xs" style={{ color: c.text }}>
+                      {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
+                      {item.notes ? ` · ${item.notes}` : ''}
+                    </p>
+                  </div>
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: `${c.text}18`, color: c.text }}>
+                    {c.label}
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Tasks (urgent) — with inline add shortcut ── */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <CheckSquare className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+            המשימות הדחופות
+          </h2>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setAddingTaskOpen(v => !v)}
+              className="text-xs font-medium flex items-center gap-1"
+              style={{ color: 'var(--primary)' }}
+            >
+              <Plus className="w-3.5 h-3.5" /> הוספה
+            </button>
+            <Link href="/tasks" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
+              כל המשימות
+            </Link>
+          </div>
+        </div>
+
+        {/* Inline add-task row */}
+        {addingTaskOpen && (
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              type="text"
+              value={newTaskTitle}
+              onChange={e => setNewTaskTitle(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') addQuickTask()
+                if (e.key === 'Escape') { setAddingTaskOpen(false); setNewTaskTitle('') }
+              }}
+              autoFocus
+              placeholder="משימה דחופה חדשה..."
+              className="flex-1 text-sm px-3 py-2 rounded-xl outline-none border"
+              style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
+            />
+            <button
+              onClick={addQuickTask}
+              disabled={creatingTask || !newTaskTitle.trim()}
+              className="text-xs px-3 py-2 rounded-xl font-medium text-white disabled:opacity-50"
+              style={{ background: '#4A7C59', flexShrink: 0 }}
+            >
+              {creatingTask ? '...' : 'הוספה'}
+            </button>
+          </div>
+        )}
+
+        {localTasks.length === 0 ? (
+          <div className="text-center py-6">
+            <p className="text-sm mb-2 font-light" style={{ color: 'var(--text-muted)' }}>אין משימות פתוחות 🎉</p>
+            <button onClick={() => setAddingTaskOpen(true)} className="text-sm font-medium" style={{ color: 'var(--primary)' }}>הוסיפי משימה</button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {localTasks.slice(0, 5).map(task => (
+              <div
+                key={task.id}
+                className="flex items-center gap-3 p-3 rounded-xl"
+                style={{ background: 'var(--surface-2, #FAF4ED)', position: 'relative' }}
+              >
+                <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priorityColors[task.priority] }} />
+
+                {/* Title — normal or edit mode */}
+                {editingTaskId === task.id ? (
+                  <div className="flex-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editingTaskTitle}
+                      onChange={e => setEditingTaskTitle(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') saveEditTask(task.id)
+                        if (e.key === 'Escape') cancelEditTask()
+                      }}
+                      autoFocus
+                      className="flex-1 text-sm px-2 py-1 rounded-lg outline-none border"
+                      style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
+                    />
+                    <button
+                      onClick={() => saveEditTask(task.id)}
+                      disabled={savingTask}
+                      className="text-xs px-2 py-1 rounded-lg font-medium text-white"
+                      style={{ background: '#4A7C59', flexShrink: 0 }}
+                    >
+                      {savingTask ? '...' : 'שמור'}
+                    </button>
+                    <button
+                      onClick={cancelEditTask}
+                      className="text-xs px-2 py-1 rounded-lg font-medium"
+                      style={{ background: 'var(--border)', color: 'var(--text-muted)', flexShrink: 0 }}
+                    >
+                      ביטול
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <span
+                      className="flex-1 text-sm font-light cursor-pointer hover:opacity-70 flex items-center gap-1.5 group"
+                      style={{ color: 'var(--text)' }}
+                      onClick={() => startEditTask(task)}
+                      title="לחצי לעריכה"
+                    >
+                      {task.title}
+                      <Pencil className="w-3 h-3 opacity-0 group-hover:opacity-40 transition-opacity" style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+                    </span>
+                    <span
+                      className={`text-xs px-2 py-0.5 rounded-full font-medium ${categoryClass[task.category]}`}
+                      style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                    >
+                      {(() => {
+                        const CatIcon = categoryIcons[task.category]
+                        return <CatIcon className="w-3 h-3" />
+                      })()}
+                      {categoryText[task.category]}
+                    </span>
+                  </>
+                )}
+
+                {/* Delete × button */}
+                {editingTaskId !== task.id && (
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    title="מחק משימה"
+                    style={{
+                      position: 'absolute',
+                      top: 6,
+                      right: 6,
+                      width: 20,
+                      height: 20,
+                      borderRadius: '50%',
+                      background: 'rgba(200,50,50,0.1)',
+                      color: '#cc3333',
+                      border: 'none',
+                      cursor: 'pointer',
+                      fontSize: 12,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'rgba(200,50,50,0.1)')}
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Short developmental info for current age (baby only) ── */}
+      {!isPregnancy && profile?.baby_name && nextMilestone && (
+        <div className="card" style={{ background: 'rgba(92,122,106,0.06)', borderColor: 'rgba(92,122,106,0.16)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Sparkles className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} />
+              מה קורה בגיל הזה
+            </h2>
+            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: 'rgba(92,122,106,0.12)', color: '#5C7A6A' }}>
+              {babyAgeLabel}
+            </span>
+          </div>
+          <p className="text-sm font-light leading-relaxed mb-3" style={{ color: 'var(--text-muted)' }}>
+            {nextMilestone}
+          </p>
+          <Link href="/development" className="flex items-center gap-1 text-xs font-medium" style={{ color: 'var(--primary)' }}>
+            עוד על ההתפתחות
+            <ChevronLeft className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      )}
+
+      {/* ── Products that may interest you (teaser) ── */}
+      <Link
+        href="/products"
+        className="card flex items-center justify-between hover:opacity-90 transition-opacity"
+        style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.16)' }}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(127,82,104,0.12)' }}>
+            <Sparkles className="w-5 h-5" style={{ color: '#7F5268' }} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+              מוצרים שיכולים לעניין אותך
+            </p>
+            <p className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>
+              {isPregnancy
+                ? 'מוצרים ואנשי מקצוע נבחרים לתקופת ההיריון'
+                : 'מוצרים ואנשי מקצוע נבחרים להתפתחות התינוק'}
+            </p>
+          </div>
+        </div>
+        <ChevronLeft className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--primary)' }} />
+      </Link>
 
       {/* ── Log entry modal (full, like the tracker) ── */}
       {showForm && (() => {
