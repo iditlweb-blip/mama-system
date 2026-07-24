@@ -34,6 +34,9 @@ export interface Profile {
   pwa_installed_at: string | null
   // Pregnancy delivery hospital (migration 013) — feeds the Waze button.
   hospital_address: string | null
+  // One-time admin Telegram alerts (migration 015).
+  registered_notified: boolean | null
+  pwa_notified: boolean | null
 }
 
 export interface Contraction {

@@ -69,7 +69,13 @@ export default function AuthPage() {
       if (err) {
         setError(translateError(err.message))
       } else if (data.session) {
-        // Email confirmation disabled → logged in immediately
+        // Email confirmation disabled → logged in immediately. Tell the admin a
+        // new user registered (server resolves name/email from the session).
+        fetch('/api/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event: 'register' }),
+        }).catch(() => {})
         router.push('/dashboard')
         return
       } else {

@@ -29,6 +29,12 @@ export default function PwaTracker() {
             .from('profiles')
             .update({ pwa_installed_at: new Date().toISOString() })
             .eq('id', session.user.id)
+          // First install → alert the admin (server dedupes via pwa_notified).
+          fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: 'pwa' }),
+          }).catch(() => {})
         }
       } catch {
         // silent fail — column may not exist yet

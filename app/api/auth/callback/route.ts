@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { notifyRegistrationOnce } from '@/lib/adminNotify'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -12,8 +13,21 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    if (!error) return NextResponse.redirect(`${origin}${next}`)
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+    if (!error) {
+      // First arrival via OAuth or an email-confirmation link — alert the admin
+      // once (the helper dedupes, so re-logins never re-notify). Fire-and-forget
+      // so a Telegram hiccup can't block the redirect into the app.
+      const user = data?.user
+      if (user) {
+        notifyRegistrationOnce(
+          user.id,
+          (user.user_metadata?.full_name as string | undefined) ?? null,
+          user.email ?? null,
+        ).catch(err => console.error('[notify] registration (callback):', err))
+      }
+      return NextResponse.redirect(`${origin}${next}`)
+    }
   }
 
   return NextResponse.redirect(`${origin}/auth?error=auth_failed`)
