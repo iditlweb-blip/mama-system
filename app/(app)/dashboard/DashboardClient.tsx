@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock, Sunrise } from 'lucide-react'
 import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
@@ -162,6 +162,7 @@ export default function DashboardClient({
   const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
   const [notes,      setNotes]      = useState('')
   const [startTime,  setStartTime]  = useState(() => toLocalInput(new Date()))
+  const [wakeTime,   setWakeTime]   = useState('')   // sleep only — optional "woke at"
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
   // Edit state for tasks
@@ -247,11 +248,13 @@ export default function DashboardClient({
     setAmount(''); setDuration(''); setNotes('')
     setFeedType('breast'); setDiaperType('wet')
     setStartTime(toLocalInput(new Date()))
+    setWakeTime('')
   }
 
   function openForm(type: 'feed'|'sleep'|'diaper') {
     setEditingLogId(null)
     setStartTime(toLocalInput(new Date()))
+    setWakeTime('')
     setShowForm(type)
   }
 
@@ -259,6 +262,7 @@ export default function DashboardClient({
     setEditingLogId(log.id)
     setShowForm(log.type as 'feed'|'sleep'|'diaper')
     setStartTime(toLocalInput(new Date(log.start_time)))
+    setWakeTime(log.end_time ? toLocalInput(new Date(log.end_time)) : '')
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
@@ -278,6 +282,7 @@ export default function DashboardClient({
       amount_ml: null,
       diaper_type: null,
       duration_min: null,
+      end_time: null,
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
@@ -285,7 +290,21 @@ export default function DashboardClient({
       if (duration) payload.duration_min = parseInt(duration)
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
-    if (showForm === 'sleep' && duration) payload.duration_min = parseInt(duration)
+    if (showForm === 'sleep') {
+      // Prefer an explicit "woke at" — it sets end_time and derives the
+      // duration; otherwise fall back to the manual minutes field.
+      if (wakeTime) {
+        const start = new Date(startTime)
+        const end = new Date(wakeTime)
+        const mins = Math.round((end.getTime() - start.getTime()) / 60000)
+        if (mins > 0) {
+          payload.end_time = end.toISOString()
+          payload.duration_min = mins
+        }
+      } else if (duration) {
+        payload.duration_min = parseInt(duration)
+      }
+    }
 
     if (editingLogId) {
       const { data } = await supabase.from('baby_logs').update(payload).eq('id', editingLogId).select().single()
@@ -1014,15 +1033,26 @@ export default function DashboardClient({
 
               <div>
                 <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                  <Clock className="w-3 h-3" /> תאריך ושעה
+                  <Clock className="w-3 h-3" /> {showForm === 'sleep' ? 'נרדמה בשעה' : 'שעה'}
                 </label>
-                <input
-                  type="datetime-local"
-                  value={startTime}
-                  onChange={e => setStartTime(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-                />
+                {/* Time is the primary field (large); the date is secondary
+                    (small) — most manual entries are for "today", matching the tracker. */}
+                <div className="flex items-center gap-2">
+                  <input
+                    type="time"
+                    value={startTime.slice(11, 16)}
+                    onChange={e => setStartTime(`${startTime.slice(0, 10)}T${e.target.value}`)}
+                    className="flex-1 px-3 py-2.5 rounded-xl border text-2xl font-bold text-center outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                  />
+                  <input
+                    type="date"
+                    value={startTime.slice(0, 10)}
+                    onChange={e => setStartTime(`${e.target.value}T${startTime.slice(11, 16)}`)}
+                    className="px-2 py-1.5 rounded-lg border text-xs outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }}
+                  />
+                </div>
               </div>
 
               {showForm === 'feed' && (
@@ -1074,16 +1104,52 @@ export default function DashboardClient({
               )}
 
               {showForm === 'sleep' && (
-                <div>
-                  <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
-                  <input
-                    type="number"
-                    value={duration}
-                    onChange={e => setDuration(e.target.value)}
-                    placeholder="90"
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-                  />
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
+                      <Sunrise className="w-3 h-3" /> התעוררה בשעה (אופציונלי)
+                    </label>
+                    {/* Same large-time / small-date shape as "נרדמה בשעה". */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="time"
+                        value={wakeTime ? wakeTime.slice(11, 16) : ''}
+                        onChange={e => {
+                          const t = e.target.value
+                          if (!t) { setWakeTime(''); return }
+                          const datePart = wakeTime ? wakeTime.slice(0, 10) : startTime.slice(0, 10)
+                          setWakeTime(`${datePart}T${t}`)
+                        }}
+                        className="flex-1 px-3 py-2.5 rounded-xl border text-2xl font-bold text-center outline-none"
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                      />
+                      <input
+                        type="date"
+                        value={wakeTime ? wakeTime.slice(0, 10) : startTime.slice(0, 10)}
+                        onChange={e => {
+                          const d = e.target.value
+                          const timePart = wakeTime ? wakeTime.slice(11, 16) : ''
+                          setWakeTime(timePart ? `${d}T${timePart}` : '')
+                        }}
+                        className="px-2 py-1.5 rounded-lg border text-xs outline-none"
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }}
+                      />
+                    </div>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים — משך השינה יחושב אוטומטית</p>
+                  </div>
+                  {!wakeTime && (
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
+                      <input
+                        type="number"
+                        value={duration}
+                        onChange={e => setDuration(e.target.value)}
+                        placeholder="90"
+                        className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                      />
+                    </div>
+                  )}
                 </div>
               )}
 

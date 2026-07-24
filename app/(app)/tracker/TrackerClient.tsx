@@ -769,9 +769,26 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
                   <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
                     <Sunrise className="w-3 h-3" /> התעוררה בשעה (אופציונלי)
                   </label>
-                  <input type="datetime-local" value={wakeTime} onChange={e => setWakeTime(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                  {/* Same large-time / small-date shape as "נרדמה בשעה" above. */}
+                  <div className="flex items-center gap-2">
+                    <input type="time" value={wakeTime ? wakeTime.slice(11, 16) : ''}
+                      onChange={e => {
+                        const t = e.target.value
+                        if (!t) { setWakeTime(''); return }
+                        const datePart = wakeTime ? wakeTime.slice(0, 10) : startTime.slice(0, 10)
+                        setWakeTime(`${datePart}T${t}`)
+                      }}
+                      className="flex-1 px-3 py-2.5 rounded-xl border text-2xl font-bold text-center outline-none"
+                      style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                    <input type="date" value={wakeTime ? wakeTime.slice(0, 10) : startTime.slice(0, 10)}
+                      onChange={e => {
+                        const d = e.target.value
+                        const timePart = wakeTime ? wakeTime.slice(11, 16) : ''
+                        setWakeTime(timePart ? `${d}T${timePart}` : '')
+                      }}
+                      className="px-2 py-1.5 rounded-lg border text-xs outline-none"
+                      style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }} />
+                  </div>
                   <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים — משך השינה יחושב אוטומטית</p>
                 </div>
                 {!wakeTime && (
