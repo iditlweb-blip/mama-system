@@ -13,6 +13,7 @@ import {
   deleteUser, sendPasswordReset, createUserByAdmin,
   upsertProfessional, deleteProfessional,
   upsertProduct, deleteProduct, fetchProductImage,
+  setProductsEnabled,
 } from './actions'
 
 interface UserRow {
@@ -65,15 +66,18 @@ interface Props {
   stats: Stats
   professionals: Professional[]
   products: Product[]
+  productsEnabled: boolean
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled }: Props) {
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
   const [products, setProducts] = useState(initProducts)
+  const [productsEnabled, setProductsEnabledState] = useState(initProductsEnabled)
+  const [togglingProducts, setTogglingProducts] = useState(false)
   const [search, setSearch] = useState('')
   const [sort, setSort]     = useState<'newest' | 'active' | 'name'>('newest')
   const [modal, setModal]   = useState<ModalType>(null)
@@ -120,6 +124,19 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   function showToast(msg: string, ok = true) {
     setToast({ msg, ok })
     setTimeout(() => setToast(null), 3500)
+  }
+
+  async function handleToggleProducts() {
+    const next = !productsEnabled
+    setTogglingProducts(true)
+    const res = await setProductsEnabled(next)
+    setTogglingProducts(false)
+    if (res.ok) {
+      setProductsEnabledState(next)
+      showToast(next ? 'עמוד המוצרים הופעל' : 'עמוד המוצרים כובה')
+    } else {
+      showToast(res.error ?? 'שגיאה בעדכון', false)
+    }
   }
 
   function openDelete(u: UserRow) { setSelected(u); setModal('delete') }
@@ -611,6 +628,27 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           {/* ── Products ───────────────────────────────────────────────────────────── */}
           {manageTab === 'products' && (
             <div>
+              {/* Products page on/off toggle — when off, visitors see a
+                  "coming soon" placeholder instead of the products page. */}
+              <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-xl border flex-wrap"
+                style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>עמוד המוצרים</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    {productsEnabled ? 'העמוד פעיל ומוצג למשתמשות' : 'העמוד מוסתר — מוצג "בקרוב כאן"'}
+                  </p>
+                </div>
+                <button
+                  onClick={handleToggleProducts}
+                  disabled={togglingProducts}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+                  style={{ background: productsEnabled ? '#4A7C59' : '#9CA3AF' }}>
+                  {togglingProducts
+                    ? <Loader2 className="w-4 h-4 animate-spin" />
+                    : productsEnabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                  {productsEnabled ? 'העמוד מופעל' : 'העמוד כבוי'}
+                </button>
+              </div>
               <div className="flex justify-end mb-4">
                 <button
                   onClick={() => { setProductForm(emptyProduct); setShowProductForm(true) }}

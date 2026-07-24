@@ -6,6 +6,39 @@ import ProductsGrid from './ProductsGrid'
 export default async function ProductsPage() {
   const supabase = await createClient()
 
+  // Feature toggle — admins turn the products page on from the admin panel.
+  // Until then (or if the setting is missing) the page shows a "coming soon"
+  // placeholder instead of the products/professionals content.
+  const { data: setting } = await supabase
+    .from('app_settings')
+    .select('value')
+    .eq('key', 'products_enabled')
+    .maybeSingle()
+  const productsEnabled = setting?.value === true
+
+  if (!productsEnabled) {
+    return (
+      <div style={{ padding: 'clamp(20px,3vw,40px)', maxWidth: 1040, margin: '0 auto', fontFamily: 'var(--font-body)', direction: 'rtl' }}>
+        <div style={{ marginBottom: 20 }}>
+          <BackButton href="/dashboard" />
+        </div>
+        <div style={{ textAlign: 'center', padding: 'clamp(48px,10vw,96px) 20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+            <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(127,82,104,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <ShoppingBag size={34} color="#7F5268" strokeWidth={1.6} />
+            </div>
+          </div>
+          <h1 style={{ color: '#7F5268', fontSize: 'clamp(1.4rem,4vw,2rem)', fontWeight: 700, margin: '0 0 12px' }}>
+            בקרוב כאן
+          </h1>
+          <p style={{ color: 'var(--text-muted)', fontSize: 'clamp(0.95rem,2.5vw,1.1rem)', lineHeight: 1.7, maxWidth: 460, margin: '0 auto' }}>
+            בהמשך נוסיף כאן מוצרים נבחרים ואנשי מקצוע מומלצים שילוו וייעזרו לך במסע האימהות. יש למה לחכות 💜
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   const { data: professionals } = await supabase
     .from('professionals')
     .select('*')

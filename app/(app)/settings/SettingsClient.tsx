@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   User, Baby, Check, Loader2, Camera, AlertTriangle, X, Heart,
-  UserRound, LogOut, MessageCircle, Copy
+  UserRound, LogOut, MessageCircle
 } from 'lucide-react'
 
 function PregnancyIcon({ className }: { className?: string }) {
@@ -131,39 +131,7 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
     router.refresh()
   }
 
-  // ── WhatsApp linking ──
-  const botNumber = process.env.NEXT_PUBLIC_WHATSAPP_BOT_NUMBER || ''
-  const [linkCode,      setLinkCode]      = useState<string | null>(null)
-  const [generatingCode, setGeneratingCode] = useState(false)
-  const [codeCopied,    setCodeCopied]    = useState(false)
-  const isWhatsappLinked = !!profile?.whatsapp_number
-
-  async function generateLinkCode() {
-    setGeneratingCode(true)
-    setError(null)
-    try {
-      const code = String(Math.floor(100000 + Math.random() * 900000)) // 6 digits
-      const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString() // +15 min
-      const { error: insErr } = await supabase.from('whatsapp_link_codes').insert({
-        user_id: userId, code, expires_at: expiresAt,
-      })
-      if (insErr) throw insErr
-      setLinkCode(code)
-      setCodeCopied(false)
-    } catch {
-      setError('שגיאה ביצירת קוד חיבור. נסי שוב.')
-    } finally {
-      setGeneratingCode(false)
-    }
-  }
-
-  function copyCode() {
-    if (!linkCode) return
-    navigator.clipboard?.writeText(linkCode).then(() => {
-      setCodeCopied(true)
-      setTimeout(() => setCodeCopied(false), 2500)
-    })
-  }
+  // WhatsApp personal assistant — shown as "coming soon" for now.
 
   const initials = name ? name.charAt(0).toUpperCase() : ''
 
@@ -291,59 +259,12 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
         )}
       </Section>
 
-      {/* ── WhatsApp linking ──────────────────────────────────────── */}
-      <Section icon={MessageCircle} title="חיבור וואטסאפ" color="#25D366">
-        <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-          חברי את הוואטסאפ שלך ל-MamaFlow וכתבי לעוזרת האישית "מאמא" בשפה חופשית — למשל
-          "התינוק נרדם", "האכלתי בקבוק 120", או "כמה חיתולים היום?"
-        </p>
-
-        {isWhatsappLinked ? (
-          <div className="rounded-xl p-3 flex items-center gap-2.5" style={{ background: '#25D96615', border: '1px solid #25D96640' }}>
-            <Check className="w-4 h-4 flex-shrink-0" style={{ color: '#1DA851' }} />
-            <p className="text-sm" style={{ color: 'var(--text)' }}>
-              הוואטסאפ שלך מחובר <span dir="ltr" className="font-medium">({profile?.whatsapp_number})</span> ✅
-            </p>
-          </div>
-        ) : linkCode ? (
-          <div className="space-y-3">
-            <div className="rounded-xl p-4 text-center" style={{ background: 'var(--bg)', border: '1px dashed #25D96680' }}>
-              <p className="text-xs mb-1.5" style={{ color: 'var(--text-muted)' }}>קוד החיבור שלך (תקף ל-15 דקות):</p>
-              <div className="flex items-center justify-center gap-2">
-                <span dir="ltr" className="text-3xl font-bold tracking-[0.3em]" style={{ color: '#1DA851' }}>{linkCode}</span>
-                <button onClick={copyCode} className="p-1.5 rounded-lg hover:opacity-70 transition-opacity" title="העתקה">
-                  {codeCopied ? <Check className="w-4 h-4" style={{ color: '#1DA851' }} /> : <Copy className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />}
-                </button>
-              </div>
-            </div>
-            <ol className="text-sm space-y-1.5 pr-4 list-decimal" style={{ color: 'var(--text)' }}>
-              <li>שמרי את מספר הבוט{botNumber && <> <span dir="ltr" className="font-medium">{botNumber}</span></>} באנשי הקשר, או פתחי צ’אט חדש אליו.</li>
-              <li>שלחי לבוט את הקוד <span dir="ltr" className="font-medium">{linkCode}</span> כהודעה.</li>
-              <li>זהו! הבוט יאשר שהמספר חובר ותוכלי להתחיל לכתוב לו.</li>
-            </ol>
-            {botNumber && (
-              <a
-                href={`https://wa.me/${botNumber.replace(/[^\d]/g, '')}?text=${encodeURIComponent(linkCode)}`}
-                target="_blank" rel="noopener noreferrer"
-                className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all"
-                style={{ background: '#25D366' }}
-              >
-                <MessageCircle className="w-4 h-4" /> פתחי וואטסאפ עם הקוד
-              </a>
-            )}
-            <button onClick={generateLinkCode} disabled={generatingCode}
-              className="text-xs hover:opacity-70 transition-opacity" style={{ color: 'var(--primary)' }}>
-              יצירת קוד חדש
-            </button>
-          </div>
-        ) : (
-          <button onClick={generateLinkCode} disabled={generatingCode}
-            className="w-full py-2.5 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60 transition-all"
-            style={{ background: '#25D366' }}>
-            {generatingCode ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircle className="w-4 h-4" />}
-            {generatingCode ? 'יוצרת קוד...' : 'יצירת קוד חיבור'}
-          </button>
-        )}
+      {/* ── WhatsApp personal assistant (coming soon) ─────────────── */}
+      <Section icon={MessageCircle} title="עוזרת אישית בוואטסאפ" color="#25D366">
+        <div className="py-8 text-center">
+          <p className="text-2xl font-bold mb-2" style={{ color: '#7F5268' }}>בקרוב</p>
+          <p className="text-sm font-light" style={{ color: 'var(--text-muted)' }}>יש למה לחכות 💜</p>
+        </div>
       </Section>
 
       {/* ── Save ──────────────────────────────────────────────────── */}

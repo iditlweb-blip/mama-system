@@ -13,7 +13,10 @@ export default async function TrackerPage() {
       .from('baby_logs')
       .select('*')
       .eq('user_id', userId!)
-      .gte('start_time', today)
+      // Include today's logs AND any sleep that ended today (a night sleep
+      // started the previous evening) so an overnight sleep keeps showing on
+      // the timeline instead of disappearing after navigation.
+      .or(`start_time.gte.${today},end_time.gte.${today}`)
       .order('start_time', { ascending: false }),
     getProfile(),
     supabase

@@ -597,7 +597,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             )}
 
             {/* Overtired warning + fewer-naps recommendation */}
-            {sleepPlan.recommendFewerNaps && !(timer.active && timer.isNight) && (
+            {sleepPlan.recommendFewerNaps && sleepPlan.napsRemaining > 0 && sleepPlan.recommendedNapsRemaining !== null && sleepPlan.recommendedNapsRemaining !== sleepPlan.napsRemaining && !(timer.active && timer.isNight) && (
               <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
                 style={{ background: 'rgba(196,120,45,0.12)', border: '1px solid rgba(196,120,45,0.3)' }}>
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#C4782D' }} />

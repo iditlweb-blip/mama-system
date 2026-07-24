@@ -82,6 +82,24 @@ const TRACK = [
   { type: 'diaper' as const, icon: Droplets,  label: 'חיתול', color: '#7A6A3C' },
 ]
 
+// Format a Date as a local wall-clock value for a <input type="datetime-local">.
+// Plain toISOString() would emit UTC and shift the shown time by the timezone
+// offset (e.g. 9:52 local → 6:52 in Israel), which is the bug this fixes.
+function toLocalInput(d: Date): string {
+  const off = d.getTimezoneOffset() * 60000
+  return new Date(d.getTime() - off).toISOString().slice(0, 16)
+}
+
+const hhmm = (d: Date) => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+
+function fmtDurShort(min: number): string {
+  if (min <= 0) return ''
+  const h = Math.floor(min / 60), m = min % 60
+  if (h && m) return `${h} ש' ${m} ד'`
+  if (h) return `${h} ש'`
+  return `${m} ד'`
+}
+
 export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
   nextMilestone, lastFeedAgo, lastSleepAgo, todayLogs: initialLogs,
@@ -143,7 +161,7 @@ export default function DashboardClient({
   const [duration,   setDuration]   = useState('')
   const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
   const [notes,      setNotes]      = useState('')
-  const [startTime,  setStartTime]  = useState(() => new Date().toISOString().slice(0, 16))
+  const [startTime,  setStartTime]  = useState(() => toLocalInput(new Date()))
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
   // Edit state for tasks
@@ -210,19 +228,19 @@ export default function DashboardClient({
     setEditingLogId(null)
     setAmount(''); setDuration(''); setNotes('')
     setFeedType('breast'); setDiaperType('wet')
-    setStartTime(new Date().toISOString().slice(0, 16))
+    setStartTime(toLocalInput(new Date()))
   }
 
   function openForm(type: 'feed'|'sleep'|'diaper') {
     setEditingLogId(null)
-    setStartTime(new Date().toISOString().slice(0, 16))
+    setStartTime(toLocalInput(new Date()))
     setShowForm(type)
   }
 
   function editLog(log: BabyLog) {
     setEditingLogId(log.id)
     setShowForm(log.type as 'feed'|'sleep'|'diaper')
-    setStartTime(new Date(log.start_time).toISOString().slice(0, 16))
+    setStartTime(toLocalInput(new Date(log.start_time)))
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
@@ -805,19 +823,41 @@ export default function DashboardClient({
                 const track = TRACK.find(t => t.type === log.type)
                 if (!track) return null
                 const Icon = track.icon
-                const time = log.start_time
-                  ? new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                  : ''
+                const start = log.start_time ? new Date(log.start_time) : null
+                // For sleep, show a from–to range plus a duration summary — like
+                // the baby-tracker timeline. Feed/diaper keep the single time.
+                let time = ''
+                let durLabel = ''
+                if (start) {
+                  time = hhmm(start)
+                  if (log.type === 'sleep') {
+                    const end = log.end_time
+                      ? new Date(log.end_time)
+                      : log.duration_min
+                        ? new Date(start.getTime() + log.duration_min * 60000)
+                        : null
+                    if (end) time = `${hhmm(start)}–${hhmm(end)}`
+                    if (log.duration_min) durLabel = fmtDurShort(log.duration_min)
+                  }
+                }
+                const isNight = log.type === 'sleep' && log.is_night
                 return (
                   <div
                     key={log.id}
                     className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg"
                     style={{ background: `${track.color}0d` }}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-wrap">
                       <Icon className="w-3.5 h-3.5" style={{ color: track.color, flexShrink: 0 }} />
                       <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
                       {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
+                      {durLabel && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>· {durLabel}</span>}
+                      {isNight && (
+                        <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                          style={{ background: 'rgba(60,60,110,0.12)', color: '#3C3C6E' }}>
+                          <Moon className="w-2.5 h-2.5" /> לילה
+                        </span>
+                      )}
                     </div>
                     {/* Edit + delete live on the far (left) side so they never
                         sit on top of the label/time text on narrow screens. */}

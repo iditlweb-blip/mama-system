@@ -76,6 +76,23 @@ export async function createUserByAdmin(
   }
 }
 
+// ─── App settings: products page on/off toggle ─────────────────────────────────
+export async function setProductsEnabled(enabled: boolean): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('app_settings').upsert(
+      { key: 'products_enabled', value: enabled, updated_at: new Date().toISOString() },
+      { onConflict: 'key' },
+    )
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/products')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── Professionals CRUD ────────────────────────────────────────────────────────
 export async function upsertProfessional(data: {
   id?: string

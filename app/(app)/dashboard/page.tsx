@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   const [profile, { data: tasks }, { data: logs }, { data: todaySchedule }] = await Promise.all([
     getProfile(),
     supabase.from('tasks').select('*').eq('user_id', userId!).in('status', ['todo', 'inprogress']).order('created_at', { ascending: false }).limit(5),
-    supabase.from('baby_logs').select('*').eq('user_id', userId!).gte('start_time', new Date().toISOString().split('T')[0]).order('start_time', { ascending: false }).limit(10),
+    supabase.from('baby_logs').select('*').eq('user_id', userId!).or(`start_time.gte.${new Date().toISOString().split('T')[0]},end_time.gte.${new Date().toISOString().split('T')[0]}`).order('start_time', { ascending: false }).limit(10),
     supabase.from('weekly_schedule').select('*').eq('user_id', userId!).eq('day_of_week', todayDow).order('start_time'),
   ])
 

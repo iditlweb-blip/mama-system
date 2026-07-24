@@ -34,6 +34,7 @@ export default async function AdminPage() {
     { data: professionals },
     { data: products },
     { data: analyticsData },
+    { data: productsSetting },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
@@ -41,7 +42,9 @@ export default async function AdminPage() {
     admin.from('professionals').select('*').order('sort_order').limit(100),
     admin.from('products').select('*').order('sort_order').limit(100),
     admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
+    admin.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
   ])
+  const productsEnabled = productsSetting?.value === true
 
   // Build PWA lookup map
   const pwaMap: Record<string, string> = {}
@@ -93,6 +96,7 @@ export default async function AdminPage() {
       stats={stats}
       professionals={professionals ?? []}
       products={products ?? []}
+      productsEnabled={productsEnabled}
     />
   )
 }
