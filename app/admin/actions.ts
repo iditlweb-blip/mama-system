@@ -93,6 +93,23 @@ export async function setProductsEnabled(enabled: boolean): Promise<{ ok: boolea
   }
 }
 
+// ─── App settings: WhatsApp group link + visibility ────────────────────────────
+export async function setWhatsappGroup(url: string, visible: boolean): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('app_settings').upsert(
+      { key: 'whatsapp_group', value: { url, visible }, updated_at: new Date().toISOString() },
+      { onConflict: 'key' },
+    )
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/settings')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── Professionals CRUD ────────────────────────────────────────────────────────
 export async function upsertProfessional(data: {
   id?: string

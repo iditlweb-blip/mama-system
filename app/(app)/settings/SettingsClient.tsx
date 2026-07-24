@@ -37,9 +37,14 @@ interface ProfileFull {
   whatsapp_number?: string | null
 }
 
-interface Props { profile: ProfileFull | null; userId: string; userEmail: string }
+interface Props {
+  profile: ProfileFull | null
+  userId: string
+  userEmail: string
+  whatsappGroup: { url: string; visible: boolean }
+}
 
-export default function SettingsClient({ profile, userId, userEmail }: Props) {
+export default function SettingsClient({ profile, userId, userEmail, whatsappGroup }: Props) {
   const supabase = createClient()
   const router   = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -258,6 +263,21 @@ export default function SettingsClient({ profile, userId, userEmail }: Props) {
           </div>
         )}
       </Section>
+
+      {/* ── WhatsApp app group (admin-controlled visibility) ──────── */}
+      {whatsappGroup.visible && whatsappGroup.url && (
+        <Section icon={MessageCircle} title="קבוצת הוואטסאפ של האפליקציה" color="#25D366">
+          <p className="text-sm mb-3" style={{ color: 'var(--text-muted)' }}>
+            הצטרפי לקבוצת האפליקציה כדי לקבל עדכונים, טיפים ותמיכה מאמהות אחרות 💜
+          </p>
+          <a href={whatsappGroup.url} target="_blank" rel="noopener noreferrer"
+            className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 hover:opacity-90 transition-opacity"
+            style={{ background: '#25D366' }}>
+            <MessageCircle className="w-4 h-4" />
+            הצטרפות לקבוצה
+          </a>
+        </Section>
+      )}
 
       {/* ── WhatsApp personal assistant (coming soon) ─────────────── */}
       <Section icon={MessageCircle} title="עוזרת אישית בוואטסאפ" color="#25D366">

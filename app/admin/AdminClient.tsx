@@ -13,7 +13,7 @@ import {
   deleteUser, sendPasswordReset, createUserByAdmin,
   upsertProfessional, deleteProfessional,
   upsertProduct, deleteProduct, fetchProductImage,
-  setProductsEnabled,
+  setProductsEnabled, setWhatsappGroup,
 } from './actions'
 
 interface UserRow {
@@ -67,17 +67,23 @@ interface Props {
   professionals: Professional[]
   products: Product[]
   productsEnabled: boolean
+  whatsappGroup: { url: string; visible: boolean }
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup }: Props) {
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
   const [products, setProducts] = useState(initProducts)
   const [productsEnabled, setProductsEnabledState] = useState(initProductsEnabled)
   const [togglingProducts, setTogglingProducts] = useState(false)
+
+  // WhatsApp group settings (link + show/hide)
+  const [waUrl, setWaUrl]         = useState(whatsappGroup.url)
+  const [waVisible, setWaVisible] = useState(whatsappGroup.visible)
+  const [savingWa, setSavingWa]   = useState(false)
   const [search, setSearch] = useState('')
   const [sort, setSort]     = useState<'newest' | 'active' | 'name'>('newest')
   const [modal, setModal]   = useState<ModalType>(null)
@@ -137,6 +143,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     } else {
       showToast(res.error ?? 'שגיאה בעדכון', false)
     }
+  }
+
+  async function handleSaveWhatsapp() {
+    setSavingWa(true)
+    const res = await setWhatsappGroup(waUrl.trim(), waVisible)
+    setSavingWa(false)
+    if (res.ok) showToast('הגדרות קבוצת הוואטסאפ נשמרו')
+    else showToast(res.error ?? 'שגיאה בשמירה', false)
   }
 
   function openDelete(u: UserRow) { setSelected(u); setModal('delete') }
@@ -392,9 +406,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
         </div>
 
         {/* App usage */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-2 gap-4 mb-8">
           <UsageCard icon={CheckSquare} color="#7F5268" label="משימות במערכת" value={stats.taskCount} />
-          <UsageCard icon={Baby}        color="#5C7A6A" label="רישומי תינוק"  value={stats.logCount}  />
           <UsageCard icon={Smartphone}  color="#5C6BA0" label="התקנות PWA"    value={stats.pwaCount}  />
         </div>
 
@@ -754,6 +767,45 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── WhatsApp group ─────────────────────────────────────────────────────── */}
+        <div className="card mt-8">
+          <h2 className="font-bold text-lg mb-1 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <MessageCircle className="w-5 h-5" style={{ color: '#25D366' }} />
+            קבוצת וואטסאפ של האפליקציה
+          </h2>
+          <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
+            כאן מגדירים את קישור ההצטרפות לקבוצה. כשההצגה כבויה — הכפתור לא יופיע למשתמשות בעמוד ההגדרות.
+          </p>
+
+          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>קישור לקבוצה</label>
+          <input value={waUrl} onChange={e => setWaUrl(e.target.value)}
+            placeholder="https://chat.whatsapp.com/..." dir="ltr"
+            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none mb-4"
+            style={inputSty} />
+
+          <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-xl border flex-wrap"
+            style={{ borderColor: 'var(--border)', background: 'rgba(37,211,102,0.05)' }}>
+            <div>
+              <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>הצגה למשתמשות</p>
+              <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {waVisible ? 'הכפתור מוצג בעמוד ההגדרות' : 'הכפתור מוסתר — אף אחת לא רואה אותו'}
+              </p>
+            </div>
+            <button onClick={() => setWaVisible(v => !v)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+              style={{ background: waVisible ? '#25D366' : '#9CA3AF' }}>
+              {waVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+              {waVisible ? 'מוצג' : 'מוסתר'}
+            </button>
+          </div>
+
+          <button onClick={handleSaveWhatsapp} disabled={savingWa}
+            className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+            style={{ background: '#7F5268' }}>
+            {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
+          </button>
         </div>
 
         <p className="text-center text-xs mt-6 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
