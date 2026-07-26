@@ -42,9 +42,13 @@ export default function AdminMarketing({ initialContent, initialNotes, onToast }
   function addNote(e: React.FormEvent) {
     e.preventDefault()
     if (!noteText.trim()) return
+    const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
+    const note: AdminNote = { id, body: noteText.trim(), created_at: new Date().toISOString() }
+    setNotes(prev => [note, ...prev])
+    setNoteText('')
     startTransition(async () => {
-      const res = await upsertAdminNote({ body: noteText.trim() })
-      if (res.ok) { setNoteText(''); onToast('הערה נוספה'); window.location.reload() }
+      const res = await upsertAdminNote({ id, body: note.body })
+      if (res.ok) onToast('הערה נוספה')
       else onToast(res.error ?? 'שגיאה', false)
     })
   }
@@ -66,12 +70,20 @@ export default function AdminMarketing({ initialContent, initialNotes, onToast }
   function save(e: React.FormEvent) {
     e.preventDefault()
     if (!form.body.trim()) return
+    const id = crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`
+    const item: AdminContent = {
+      id, platform, title: form.title || null, body: form.body.trim(),
+      status: form.status, scheduled_date: form.scheduled_date || null,
+      link: form.link || null, created_at: new Date().toISOString(),
+    }
+    setItems(prev => [item, ...prev])
+    resetForm()
     startTransition(async () => {
       const res = await upsertAdminContent({
-        platform, title: form.title || undefined, body: form.body.trim(),
+        id, platform, title: form.title || undefined, body: item.body,
         status: form.status, scheduled_date: form.scheduled_date || undefined, link: form.link || undefined,
       })
-      if (res.ok) { onToast('נשמר'); resetForm(); window.location.reload() }
+      if (res.ok) onToast('נשמר')
       else onToast(res.error ?? 'שגיאה', false)
     })
   }
