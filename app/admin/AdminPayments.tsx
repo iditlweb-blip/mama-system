@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Loader2, Trash2, Check, CircleDollarSign, CalendarClock } from 'lucide-react'
+import { Plus, Loader2, Trash2, Check, CircleDollarSign, CalendarClock, Edit2, Calculator } from 'lucide-react'
 import { upsertAdminPayment, deleteAdminPayment } from './actions'
 
 export interface AdminPayment {
@@ -18,36 +18,62 @@ export interface AdminPayment {
 const RECUR_LABEL: Record<string, string> = { monthly: 'חודשי', yearly: 'שנתי', once: 'חד-פעמי' }
 const CUR_SYMBOL: Record<string, string> = { ILS: '₪', USD: '$' }
 
+const emptyForm = { id: '', name: '', amount: '', currency: 'ILS', recurrence: 'monthly', due_date: '', notes: '', includeTax: false }
+
 export default function AdminPayments({ initialPayments, onToast }: {
   initialPayments: AdminPayment[]
   onToast: (msg: string, ok?: boolean) => void
 }) {
   const [items, setItems] = useState(initialPayments)
   const [showForm, setShowForm] = useState(false)
-  const [form, setForm] = useState({ name: '', amount: '', currency: 'ILS', recurrence: 'monthly', due_date: '', notes: '' })
+  const [form, setForm] = useState(emptyForm)
   const [isPending, startTransition] = useTransition()
 
-  // ── Calculator controls ──────────────────────────────────────────────────
-  const [includeTax, setIncludeTax] = useState(false)
+  // ── Global calculator settings (VAT % + USD→ILS rate) ─────────────────────
   const [taxRate, setTaxRate] = useState('18')     // Israeli VAT (מע״מ) 18%
   const [usdRate, setUsdRate] = useState('3.7')    // USD → ILS exchange rate
+  const rate = parseFloat(usdRate) || 0
+  const taxMult = 1 + (parseFloat(taxRate) || 0) / 100
 
   const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
 
-  function resetForm() {
-    setForm({ name: '', amount: '', currency: 'ILS', recurrence: 'monthly', due_date: '', notes: '' })
-    setShowForm(false)
+  function resetForm() { setForm(emptyForm); setShowForm(false) }
+
+  function openAdd() { setForm(emptyForm); setShowForm(true) }
+  function openEdit(p: AdminPayment) {
+    setForm({
+      id: p.id, name: p.name, amount: String(p.amount), currency: p.currency,
+      recurrence: p.recurrence, due_date: p.due_date ?? '', notes: p.notes ?? '',
+      includeTax: false,
+    })
+    setShowForm(true)
   }
 
   function save(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name.trim()) return
+    // Store the *gross* amount (incl. VAT) when the checkbox is on, so the saved
+    // number already reflects what actually leaves the account.
+    const base = parseFloat(form.amount) || 0
+    const amount = form.includeTax ? Math.round(base * taxMult * 100) / 100 : base
+    const id = form.id || (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random()}`)
+    const payment: AdminPayment = {
+      id, name: form.name.trim(), amount, currency: form.currency,
+      recurrence: form.recurrence, due_date: form.due_date || null,
+      paid: form.id ? (items.find(i => i.id === form.id)?.paid ?? false) : false,
+      notes: form.notes || null,
+    }
+    // Optimistic update — no page reload.
+    setItems(prev => form.id ? prev.map(x => x.id === id ? payment : x) : [payment, ...prev])
+    const editing = !!form.id
+    resetForm()
     startTransition(async () => {
       const res = await upsertAdminPayment({
-        name: form.name.trim(), amount: parseFloat(form.amount) || 0, currency: form.currency,
-        recurrence: form.recurrence, due_date: form.due_date || undefined, notes: form.notes || undefined,
+        id, name: payment.name, amount: payment.amount, currency: payment.currency,
+        recurrence: payment.recurrence, due_date: payment.due_date ?? undefined,
+        paid: payment.paid, notes: payment.notes ?? undefined,
       })
-      if (res.ok) { onToast('נשמר'); resetForm(); window.location.reload() }
+      if (res.ok) onToast(editing ? 'עודכן' : 'נשמר')
       else onToast(res.error ?? 'שגיאה', false)
     })
   }
@@ -73,106 +99,87 @@ export default function AdminPayments({ initialPayments, onToast }: {
     })
   }
 
-  // ── Calculator: monthly-equivalent & yearly totals, per currency ──────────
-  function totals(currency: string) {
-    const rows = items.filter(i => i.currency === currency && i.recurrence !== 'once')
-    let monthly = 0
-    for (const r of rows) monthly += r.recurrence === 'yearly' ? r.amount / 12 : r.amount
-    const onceUnpaid = items
-      .filter(i => i.currency === currency && i.recurrence === 'once' && !i.paid)
-      .reduce((s, i) => s + i.amount, 0)
-    return { monthly, yearly: monthly * 12, onceUnpaid }
-  }
-  const currencies = Array.from(new Set(items.map(i => i.currency)))
-  const fmt = (n: number, cur: string) => `${CUR_SYMBOL[cur] ?? ''}${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`
-
-  // ── Combined total, everything converted to ILS ───────────────────────────
-  const rate = parseFloat(usdRate) || 0
-  const tax = includeTax ? (parseFloat(taxRate) || 0) / 100 : 0
+  // ── Helpers ───────────────────────────────────────────────────────────────
   const toIls = (n: number, cur: string) => (cur === 'USD' ? n * rate : n)
+  const fmtIls = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`
+  // Monthly-equivalent ILS for a single payment (recurring only; 'once' → 0).
+  const monthlyIls = (p: AdminPayment) => {
+    if (p.recurrence === 'once') return 0
+    const ils = toIls(p.amount, p.currency)
+    return p.recurrence === 'yearly' ? ils / 12 : ils
+  }
+
+  // ── Grand totals (everything converted to ILS) ────────────────────────────
   const grand = (() => {
     let monthly = 0, onceUnpaid = 0
     for (const i of items) {
-      const ils = toIls(i.amount, i.currency)
-      if (i.recurrence === 'once') { if (!i.paid) onceUnpaid += ils }
-      else monthly += i.recurrence === 'yearly' ? ils / 12 : ils
+      if (i.recurrence === 'once') { if (!i.paid) onceUnpaid += toIls(i.amount, i.currency) }
+      else monthly += monthlyIls(i)
     }
-    const mult = 1 + tax
-    return { monthly: monthly * mult, yearly: monthly * 12 * mult, onceUnpaid: onceUnpaid * mult }
+    return { monthly, yearly: monthly * 12, onceUnpaid }
   })()
-  const fmtIls = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`
+
+  // ── Live preview for the form being edited ────────────────────────────────
+  const preview = (() => {
+    const base = parseFloat(form.amount) || 0
+    const gross = form.includeTax ? base * taxMult : base
+    const ils = form.currency === 'USD' ? gross * rate : gross
+    if (form.recurrence === 'once') return { once: ils, monthly: 0, yearly: 0 }
+    const monthly = form.recurrence === 'yearly' ? ils / 12 : ils
+    return { once: 0, monthly, yearly: monthly * 12 }
+  })()
 
   return (
     <div className="card">
       <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--text)' }}>תשלומים והוצאות</h2>
 
-      {/* ── Calculator summary ── */}
-      {currencies.length === 0 ? null : (
-        <>
-          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: `repeat(${Math.min(currencies.length, 2)}, minmax(0,1fr))` }}>
-            {currencies.map(cur => {
-              const t = totals(cur)
-              return (
-                <div key={cur} className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
-                  <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>סיכום ({cur})</p>
-                  <div className="space-y-1.5">
-                    <Row label="חודשי (ממוצע)" value={fmt(t.monthly, cur)} strong />
-                    <Row label="שנתי" value={fmt(t.yearly, cur)} />
-                    {t.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmt(t.onceUnpaid, cur)} />}
-                  </div>
-                </div>
-              )
-            })}
+      {/* ── Grand total in ILS ── */}
+      {items.length > 0 && (
+        <div className="p-4 rounded-xl border mb-3" style={{ borderColor: '#7F5268', background: 'rgba(127,82,104,0.08)' }}>
+          <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>
+            סה״כ בשקלים · דולר לפי שער {rate}
+          </p>
+          <div className="space-y-1.5">
+            <Row label="חודשי (ממוצע)" value={fmtIls(grand.monthly)} strong />
+            <Row label="שנתי" value={fmtIls(grand.yearly)} />
+            {grand.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmtIls(grand.onceUnpaid)} />}
           </div>
-
-          {/* ── Calculator controls: VAT toggle + USD rate ── */}
-          <div className="p-3 rounded-xl border mb-3 flex flex-wrap items-center gap-4"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
-            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text)' }}>
-              <input type="checkbox" checked={includeTax} onChange={e => setIncludeTax(e.target.checked)}
-                className="w-4 h-4 accent-[#7F5268]" />
-              חשב כולל מע״מ
-            </label>
-            <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-              אחוז מע״מ
-              <input type="number" step="0.1" value={taxRate} onChange={e => setTaxRate(e.target.value)}
-                disabled={!includeTax}
-                className="w-16 px-2 py-1 rounded-lg border text-sm outline-none disabled:opacity-50" style={inputSty} />
-              %
-            </label>
-            <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
-              שער דולר (1$ =)
-              <input type="number" step="0.01" value={usdRate} onChange={e => setUsdRate(e.target.value)}
-                className="w-20 px-2 py-1 rounded-lg border text-sm outline-none" style={inputSty} />
-              ₪
-            </label>
-          </div>
-
-          {/* ── Grand total in ILS (all currencies converted) ── */}
-          <div className="p-4 rounded-xl border mb-5" style={{ borderColor: '#7F5268', background: 'rgba(127,82,104,0.08)' }}>
-            <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>
-              סה״כ בשקלים {includeTax ? '(כולל מע״מ)' : ''} · דולר לפי שער {rate}
-            </p>
-            <div className="space-y-1.5">
-              <Row label="חודשי (ממוצע)" value={fmtIls(grand.monthly)} strong />
-              <Row label="שנתי" value={fmtIls(grand.yearly)} />
-              {grand.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmtIls(grand.onceUnpaid)} />}
-            </div>
-          </div>
-        </>
+        </div>
       )}
 
-      <div className="flex justify-end mb-4">
-        <button onClick={() => { resetForm(); setShowForm(true) }}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
-          style={{ background: '#7F5268' }}>
-          <Plus className="w-4 h-4" />הוספת תשלום
-        </button>
+      {/* ── Exchange-rate setting (affects ILS conversion everywhere) ── */}
+      <div className="p-3 rounded-xl border mb-4 flex flex-wrap items-center gap-4"
+        style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+        <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+          שער דולר (1$ =)
+          <input type="number" step="0.01" value={usdRate} onChange={e => setUsdRate(e.target.value)}
+            className="w-20 px-2 py-1 rounded-lg border text-sm outline-none" style={inputSty} />
+          ₪
+        </label>
+        <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+          אחוז מע״מ
+          <input type="number" step="0.1" value={taxRate} onChange={e => setTaxRate(e.target.value)}
+            className="w-16 px-2 py-1 rounded-lg border text-sm outline-none" style={inputSty} />
+          %
+        </label>
       </div>
+
+      {!showForm && (
+        <div className="flex justify-end mb-4">
+          <button onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+            style={{ background: '#7F5268' }}>
+            <Plus className="w-4 h-4" />הוספת תשלום
+          </button>
+        </div>
+      )}
 
       {showForm && (
         <form onSubmit={save} className="p-4 rounded-xl mb-4 border space-y-3"
           style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+          <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
+            {form.id ? 'עריכת תשלום' : 'הוספת תשלום'}
+          </p>
           <div className="grid grid-cols-2 gap-3">
             <input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
               placeholder="שם ההוצאה (Vercel, דומיין...) *" required
@@ -197,6 +204,40 @@ export default function AdminPayments({ initialPayments, onToast }: {
               placeholder="הערה (אופציונלי)"
               className="col-span-2 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
           </div>
+
+          {/* VAT toggle for THIS payment */}
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text)' }}>
+            <input type="checkbox" checked={form.includeTax} onChange={e => setForm(f => ({ ...f, includeTax: e.target.checked }))}
+              className="w-4 h-4 accent-[#7F5268]" />
+            הסכום שהזנתי הוא לפני מע״מ — הוסף {taxRate}% מע״מ
+          </label>
+
+          {/* Live calculation preview */}
+          {(parseFloat(form.amount) || 0) > 0 && (
+            <div className="p-3 rounded-xl border flex flex-wrap items-center gap-x-5 gap-y-1.5"
+              style={{ borderColor: '#7F5268', background: 'rgba(127,82,104,0.06)' }}>
+              <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#7F5268' }}>
+                <Calculator className="w-3.5 h-3.5" />חישוב
+              </span>
+              {form.recurrence === 'once' ? (
+                <span className="text-sm font-bold" style={{ color: '#7F5268' }}>
+                  חד-פעמי: {fmtIls(preview.once)}
+                </span>
+              ) : (
+                <>
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>
+                    לחודש: <b style={{ color: '#7F5268' }}>{fmtIls(preview.monthly)}</b>
+                  </span>
+                  <span className="text-sm" style={{ color: 'var(--text)' }}>
+                    לשנה: <b style={{ color: '#7F5268' }}>{fmtIls(preview.yearly)}</b>
+                  </span>
+                </>
+              )}
+              {form.currency === 'USD' && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>לפי שער {rate}</span>}
+              {form.includeTax && <span className="text-xs" style={{ color: 'var(--text-muted)' }}>כולל מע״מ</span>}
+            </div>
+          )}
+
           <div className="flex gap-2">
             <button type="submit" disabled={isPending}
               className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
@@ -226,6 +267,11 @@ export default function AdminPayments({ initialPayments, onToast }: {
               <p className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>{p.name}</p>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{RECUR_LABEL[p.recurrence]}</span>
+                {p.recurrence !== 'once' && (
+                  <span className="text-xs font-medium" style={{ color: '#7F5268' }}>
+                    ≈ {fmtIls(monthlyIls(p))} לחודש
+                  </span>
+                )}
                 {p.due_date && (
                   <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                     <CalendarClock className="w-3 h-3" />{new Date(p.due_date).toLocaleDateString('he-IL')}
@@ -238,6 +284,10 @@ export default function AdminPayments({ initialPayments, onToast }: {
               <CircleDollarSign className="w-3.5 h-3.5" />
               {CUR_SYMBOL[p.currency] ?? ''}{p.amount.toLocaleString('he-IL', { maximumFractionDigits: 2 })}
             </span>
+            <button onClick={() => openEdit(p)} className="p-1.5 rounded-lg shrink-0"
+              style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
             <button onClick={() => remove(p)} className="p-1.5 rounded-lg shrink-0"
               style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }}>
               <Trash2 className="w-3.5 h-3.5" />
