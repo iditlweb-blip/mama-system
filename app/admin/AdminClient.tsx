@@ -9,12 +9,13 @@ import {
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
   LayoutDashboard, Wallet, MapPin, Phone, Ticket, ExternalLink,
+  ClipboardList, FileSpreadsheet, Copy,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
   upsertProfessional, deleteProfessional,
   upsertProduct, deleteProduct, fetchProductImage,
-  setProductsEnabled, setWhatsappGroup,
+  setProductsEnabled, setWhatsappGroup, setProForm as saveProFormLinks,
 } from './actions'
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
@@ -72,6 +73,7 @@ interface Props {
   products: Product[]
   productsEnabled: boolean
   whatsappGroup: { url: string; visible: boolean }
+  proForm: { formUrl: string; sheetUrl: string }
   adminTasks: AdminTask[]
   adminContent: AdminContent[]
   adminPayments: AdminPayment[]
@@ -82,7 +84,7 @@ type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, adminTasks, adminContent, adminPayments, adminNotes }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
@@ -94,6 +96,12 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   const [waUrl, setWaUrl]         = useState(whatsappGroup.url)
   const [waVisible, setWaVisible] = useState(whatsappGroup.visible)
   const [savingWa, setSavingWa]   = useState(false)
+
+  // Professionals sign-up form + responses sheet links
+  const [proFormUrl, setProFormUrl]   = useState(proFormLinks.formUrl)
+  const [proSheetUrl, setProSheetUrl] = useState(proFormLinks.sheetUrl)
+  const [savingProForm, setSavingProForm] = useState(false)
+  const [editProForm, setEditProForm] = useState(false)
   const [search, setSearch] = useState('')
   const [sort, setSort]     = useState<'newest' | 'active' | 'name'>('newest')
   const [modal, setModal]   = useState<ModalType>(null)
@@ -161,6 +169,23 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     setSavingWa(false)
     if (res.ok) showToast('הגדרות קבוצת הוואטסאפ נשמרו')
     else showToast(res.error ?? 'שגיאה בשמירה', false)
+  }
+
+  async function handleSaveProForm() {
+    setSavingProForm(true)
+    const res = await saveProFormLinks(proFormUrl.trim(), proSheetUrl.trim())
+    setSavingProForm(false)
+    if (res.ok) { showToast('הקישורים נשמרו'); setEditProForm(false) }
+    else showToast(res.error ?? 'שגיאה בשמירה', false)
+  }
+
+  async function copyToClipboard(text: string, label: string) {
+    try {
+      await navigator.clipboard.writeText(text)
+      showToast(`${label} הועתק`)
+    } catch {
+      showToast('לא ניתן להעתיק', false)
+    }
   }
 
   function openDelete(u: UserRow) { setSelected(u); setModal('delete') }
@@ -607,6 +632,66 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           {/* ── Professionals ─────────────────────────────────────────────────────── */}
           {manageTab === 'professionals' && (
             <div>
+              {/* Google Form sign-up + responses sheet */}
+              <div className="p-4 rounded-xl border mb-4"
+                style={{ borderColor: 'var(--border)', background: 'rgba(92,107,160,0.06)' }}>
+                <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+                  <div>
+                    <p className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
+                      <ClipboardList className="w-4 h-4" style={{ color: '#5C6BA0' }} />
+                      טופס הצטרפות לאנשי מקצוע
+                    </p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+                      שתפי את הטופס עם אנשי מקצוע, וצפי בתשובות שלהם כדי להוסיף אותם ככרטיסייה למטה.
+                    </p>
+                  </div>
+                  <button onClick={() => setEditProForm(v => !v)}
+                    className="text-xs inline-flex items-center gap-1 shrink-0" style={{ color: '#5C6BA0' }}>
+                    <Edit2 className="w-3 h-3" />{editProForm ? 'סגירה' : 'עריכת קישורים'}
+                  </button>
+                </div>
+
+                <div className="flex gap-2 flex-wrap">
+                  <a href={proFormUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: '#5C6BA0' }}>
+                    <ClipboardList className="w-4 h-4" />פתיחת הטופס
+                  </a>
+                  <a href={proSheetUrl} target="_blank" rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
+                    style={{ background: '#4A7C59' }}>
+                    <FileSpreadsheet className="w-4 h-4" />צפייה בתשובות
+                  </a>
+                  <button onClick={() => copyToClipboard(proFormUrl, 'קישור הטופס')}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold border"
+                    style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
+                    <Copy className="w-4 h-4" />העתקת קישור לשיתוף
+                  </button>
+                </div>
+
+                {editProForm && (
+                  <div className="mt-4 pt-4 border-t space-y-3" style={{ borderColor: 'var(--border)' }}>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>קישור הטופס (למילוי / שיתוף)</label>
+                      <input value={proFormUrl} onChange={e => setProFormUrl(e.target.value)} dir="ltr"
+                        placeholder="https://docs.google.com/forms/..."
+                        className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text)' }}>קישור לגיליון התשובות</label>
+                      <input value={proSheetUrl} onChange={e => setProSheetUrl(e.target.value)} dir="ltr"
+                        placeholder="https://docs.google.com/spreadsheets/..."
+                        className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+                    </div>
+                    <button onClick={handleSaveProForm} disabled={savingProForm}
+                      className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+                      style={{ background: '#7F5268' }}>
+                      {savingProForm ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירת קישורים
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-end mb-4">
                 <button
                   onClick={() => { setProForm(emptyPro); setShowProForm(true) }}

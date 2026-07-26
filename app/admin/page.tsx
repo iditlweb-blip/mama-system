@@ -36,6 +36,7 @@ export default async function AdminPage() {
     { data: analyticsData },
     { data: productsSetting },
     { data: whatsappSetting },
+    { data: proFormSetting },
     { data: adminTasks },
     { data: adminContent },
     { data: adminPayments },
@@ -49,6 +50,7 @@ export default async function AdminPage() {
     admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
     admin.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'whatsapp_group').maybeSingle(),
+    admin.from('app_settings').select('value').eq('key', 'pro_form').maybeSingle(),
     admin.from('admin_tasks').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_content').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_payments').select('*').order('created_at', { ascending: false }).limit(200),
@@ -57,6 +59,13 @@ export default async function AdminPage() {
   const productsEnabled = productsSetting?.value === true
   const waVal = (whatsappSetting?.value ?? {}) as { url?: string; visible?: boolean }
   const whatsappGroup = { url: waVal.url ?? '', visible: waVal.visible ?? false }
+
+  // Professionals sign-up form + responses sheet (seeded with the owner's links)
+  const proVal = (proFormSetting?.value ?? {}) as { formUrl?: string; sheetUrl?: string }
+  const proForm = {
+    formUrl: proVal.formUrl ?? 'https://docs.google.com/forms/d/1rtqOJaQsPV4mE3VrPyjHTNxXTQBfLb_XeDlPOgGKPfk/viewform',
+    sheetUrl: proVal.sheetUrl ?? 'https://docs.google.com/spreadsheets/d/1uTXpGRxSo8z6biHy_Ffwq-bzJISreI5-4rVMnNsvR2k/edit?gid=1154268236',
+  }
 
   // Build PWA lookup map
   const pwaMap: Record<string, string> = {}
@@ -110,6 +119,7 @@ export default async function AdminPage() {
       products={products ?? []}
       productsEnabled={productsEnabled}
       whatsappGroup={whatsappGroup}
+      proForm={proForm}
       adminTasks={adminTasks ?? []}
       adminContent={adminContent ?? []}
       adminPayments={adminPayments ?? []}

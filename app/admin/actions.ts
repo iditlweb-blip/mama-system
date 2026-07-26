@@ -110,6 +110,22 @@ export async function setWhatsappGroup(url: string, visible: boolean): Promise<{
   }
 }
 
+// ─── App settings: professionals sign-up form + responses sheet links ──────────
+export async function setProForm(formUrl: string, sheetUrl: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('app_settings').upsert(
+      { key: 'pro_form', value: { formUrl, sheetUrl }, updated_at: new Date().toISOString() },
+      { onConflict: 'key' },
+    )
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── Back-office: App tasks CRUD ────────────────────────────────────────────────
 export async function upsertAdminTask(data: {
   id?: string
