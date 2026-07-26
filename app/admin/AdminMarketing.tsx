@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { Plus, Loader2, Trash2, MessageCircle, Camera, Check, Clock, Lightbulb, ExternalLink } from 'lucide-react'
-import { upsertAdminContent, deleteAdminContent } from './actions'
+import { Plus, Loader2, Trash2, MessageCircle, Camera, Check, Clock, Lightbulb, ExternalLink, StickyNote } from 'lucide-react'
+import { upsertAdminContent, deleteAdminContent, upsertAdminNote, deleteAdminNote } from './actions'
 
 export interface AdminContent {
   id: string
@@ -15,11 +15,18 @@ export interface AdminContent {
   created_at: string
 }
 
+export interface AdminNote {
+  id: string
+  body: string
+  created_at: string
+}
+
 const STATUS_LABEL: Record<string, string> = { idea: 'רעיון', scheduled: 'מתוזמן', published: 'פורסם' }
 const STATUS_COLOR: Record<string, string> = { idea: '#B8860B', scheduled: '#5C6BA0', published: '#4A7C59' }
 
-export default function AdminMarketing({ initialContent, onToast }: {
+export default function AdminMarketing({ initialContent, initialNotes, onToast }: {
   initialContent: AdminContent[]
+  initialNotes: AdminNote[]
   onToast: (msg: string, ok?: boolean) => void
 }) {
   const [items, setItems] = useState(initialContent)
@@ -27,6 +34,29 @@ export default function AdminMarketing({ initialContent, onToast }: {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', status: 'idea', scheduled_date: '', link: '' })
   const [isPending, startTransition] = useTransition()
+
+  // ── Group notes ───────────────────────────────────────────────────────────
+  const [notes, setNotes] = useState(initialNotes)
+  const [noteText, setNoteText] = useState('')
+
+  function addNote(e: React.FormEvent) {
+    e.preventDefault()
+    if (!noteText.trim()) return
+    startTransition(async () => {
+      const res = await upsertAdminNote({ body: noteText.trim() })
+      if (res.ok) { setNoteText(''); onToast('הערה נוספה'); window.location.reload() }
+      else onToast(res.error ?? 'שגיאה', false)
+    })
+  }
+
+  function removeNote(n: AdminNote) {
+    if (!confirm('למחוק הערה זו?')) return
+    startTransition(async () => {
+      const res = await deleteAdminNote(n.id)
+      if (res.ok) { setNotes(prev => prev.filter(x => x.id !== n.id)); onToast('נמחק') }
+      else onToast(res.error ?? 'שגיאה', false)
+    })
+  }
 
   const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
   const accent = platform === 'whatsapp' ? '#25D366' : '#C13584'
@@ -182,6 +212,47 @@ export default function AdminMarketing({ initialContent, onToast }: {
           </div>
         ))}
       </div>
+
+      {/* ── Group notes (WhatsApp only) ── */}
+      {platform === 'whatsapp' && (
+        <div className="mt-6 pt-5 border-t" style={{ borderColor: 'var(--border)' }}>
+          <h3 className="font-semibold text-sm mb-1 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+            <StickyNote className="w-4 h-4" style={{ color: '#25D366' }} />הערות מהקבוצה
+          </h3>
+          <p className="text-xs mb-3" style={{ color: 'var(--text-muted)' }}>
+            מקום לרשום לעצמך תובנות, בקשות ורעיונות שעולים מחברות הקבוצה.
+          </p>
+          <form onSubmit={addNote} className="flex gap-2 mb-3">
+            <input value={noteText} onChange={e => setNoteText(e.target.value)}
+              placeholder="הוספת הערה מהקבוצה..."
+              className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+            <button type="submit" disabled={isPending}
+              className="px-4 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
+              style={{ background: '#25D366' }}>
+              {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}הוספה
+            </button>
+          </form>
+          <div className="space-y-2">
+            {notes.length === 0 ? (
+              <p className="text-center py-4 text-sm" style={{ color: 'var(--text-muted)' }}>אין הערות עדיין</p>
+            ) : notes.map(n => (
+              <div key={n.id} className="flex items-start justify-between gap-3 px-4 py-3 rounded-xl border"
+                style={{ borderColor: 'var(--border)' }}>
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm whitespace-pre-wrap" style={{ color: 'var(--text)' }}>{n.body}</p>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                    {new Date(n.created_at).toLocaleDateString('he-IL')}
+                  </p>
+                </div>
+                <button onClick={() => removeNote(n)} className="p-1.5 rounded-lg shrink-0"
+                  style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }}>
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

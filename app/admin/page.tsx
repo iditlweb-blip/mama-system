@@ -39,6 +39,7 @@ export default async function AdminPage() {
     { data: adminTasks },
     { data: adminContent },
     { data: adminPayments },
+    { data: adminNotes },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
@@ -51,6 +52,7 @@ export default async function AdminPage() {
     admin.from('admin_tasks').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_content').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_payments').select('*').order('created_at', { ascending: false }).limit(200),
+    admin.from('admin_notes').select('*').order('created_at', { ascending: false }).limit(200),
   ])
   const productsEnabled = productsSetting?.value === true
   const waVal = (whatsappSetting?.value ?? {}) as { url?: string; visible?: boolean }
@@ -111,6 +113,7 @@ export default async function AdminPage() {
       adminTasks={adminTasks ?? []}
       adminContent={adminContent ?? []}
       adminPayments={adminPayments ?? []}
+      adminNotes={adminNotes ?? []}
     />
   )
 }

@@ -27,6 +27,11 @@ export default function AdminPayments({ initialPayments, onToast }: {
   const [form, setForm] = useState({ name: '', amount: '', currency: 'ILS', recurrence: 'monthly', due_date: '', notes: '' })
   const [isPending, startTransition] = useTransition()
 
+  // ── Calculator controls ──────────────────────────────────────────────────
+  const [includeTax, setIncludeTax] = useState(false)
+  const [taxRate, setTaxRate] = useState('18')     // Israeli VAT (מע״מ) 18%
+  const [usdRate, setUsdRate] = useState('3.7')    // USD → ILS exchange rate
+
   const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
 
   function resetForm() {
@@ -81,27 +86,80 @@ export default function AdminPayments({ initialPayments, onToast }: {
   const currencies = Array.from(new Set(items.map(i => i.currency)))
   const fmt = (n: number, cur: string) => `${CUR_SYMBOL[cur] ?? ''}${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`
 
+  // ── Combined total, everything converted to ILS ───────────────────────────
+  const rate = parseFloat(usdRate) || 0
+  const tax = includeTax ? (parseFloat(taxRate) || 0) / 100 : 0
+  const toIls = (n: number, cur: string) => (cur === 'USD' ? n * rate : n)
+  const grand = (() => {
+    let monthly = 0, onceUnpaid = 0
+    for (const i of items) {
+      const ils = toIls(i.amount, i.currency)
+      if (i.recurrence === 'once') { if (!i.paid) onceUnpaid += ils }
+      else monthly += i.recurrence === 'yearly' ? ils / 12 : ils
+    }
+    const mult = 1 + tax
+    return { monthly: monthly * mult, yearly: monthly * 12 * mult, onceUnpaid: onceUnpaid * mult }
+  })()
+  const fmtIls = (n: number) => `₪${n.toLocaleString('he-IL', { maximumFractionDigits: 0 })}`
+
   return (
     <div className="card">
       <h2 className="font-bold text-lg mb-4" style={{ color: 'var(--text)' }}>תשלומים והוצאות</h2>
 
       {/* ── Calculator summary ── */}
       {currencies.length === 0 ? null : (
-        <div className="grid gap-3 mb-5" style={{ gridTemplateColumns: `repeat(${Math.min(currencies.length, 2)}, minmax(0,1fr))` }}>
-          {currencies.map(cur => {
-            const t = totals(cur)
-            return (
-              <div key={cur} className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
-                <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>סיכום ({cur})</p>
-                <div className="space-y-1.5">
-                  <Row label="חודשי (ממוצע)" value={fmt(t.monthly, cur)} strong />
-                  <Row label="שנתי" value={fmt(t.yearly, cur)} />
-                  {t.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmt(t.onceUnpaid, cur)} />}
+        <>
+          <div className="grid gap-3 mb-3" style={{ gridTemplateColumns: `repeat(${Math.min(currencies.length, 2)}, minmax(0,1fr))` }}>
+            {currencies.map(cur => {
+              const t = totals(cur)
+              return (
+                <div key={cur} className="p-4 rounded-xl border" style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+                  <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>סיכום ({cur})</p>
+                  <div className="space-y-1.5">
+                    <Row label="חודשי (ממוצע)" value={fmt(t.monthly, cur)} strong />
+                    <Row label="שנתי" value={fmt(t.yearly, cur)} />
+                    {t.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmt(t.onceUnpaid, cur)} />}
+                  </div>
                 </div>
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+
+          {/* ── Calculator controls: VAT toggle + USD rate ── */}
+          <div className="p-3 rounded-xl border mb-3 flex flex-wrap items-center gap-4"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)' }}>
+            <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text)' }}>
+              <input type="checkbox" checked={includeTax} onChange={e => setIncludeTax(e.target.checked)}
+                className="w-4 h-4 accent-[#7F5268]" />
+              חשב כולל מע״מ
+            </label>
+            <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+              אחוז מע״מ
+              <input type="number" step="0.1" value={taxRate} onChange={e => setTaxRate(e.target.value)}
+                disabled={!includeTax}
+                className="w-16 px-2 py-1 rounded-lg border text-sm outline-none disabled:opacity-50" style={inputSty} />
+              %
+            </label>
+            <label className="flex items-center gap-1.5 text-sm" style={{ color: 'var(--text-muted)' }}>
+              שער דולר (1$ =)
+              <input type="number" step="0.01" value={usdRate} onChange={e => setUsdRate(e.target.value)}
+                className="w-20 px-2 py-1 rounded-lg border text-sm outline-none" style={inputSty} />
+              ₪
+            </label>
+          </div>
+
+          {/* ── Grand total in ILS (all currencies converted) ── */}
+          <div className="p-4 rounded-xl border mb-5" style={{ borderColor: '#7F5268', background: 'rgba(127,82,104,0.08)' }}>
+            <p className="text-xs mb-2 font-semibold" style={{ color: '#7F5268' }}>
+              סה״כ בשקלים {includeTax ? '(כולל מע״מ)' : ''} · דולר לפי שער {rate}
+            </p>
+            <div className="space-y-1.5">
+              <Row label="חודשי (ממוצע)" value={fmtIls(grand.monthly)} strong />
+              <Row label="שנתי" value={fmtIls(grand.yearly)} />
+              {grand.onceUnpaid > 0 && <Row label="חד-פעמי שלא שולם" value={fmtIls(grand.onceUnpaid)} />}
+            </div>
+          </div>
+        </>
       )}
 
       <div className="flex justify-end mb-4">

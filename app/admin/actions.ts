@@ -236,6 +236,36 @@ export async function deleteAdminPayment(id: string): Promise<{ ok: boolean; err
   }
 }
 
+// ─── Back-office: WhatsApp / group notes CRUD ───────────────────────────────────
+export async function upsertAdminNote(data: {
+  id?: string
+  body: string
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = { body: data.body }
+    if (data.id) payload.id = data.id
+    const { error } = await admin.from('admin_notes').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteAdminNote(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('admin_notes').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── Professionals CRUD ────────────────────────────────────────────────────────
 export async function upsertProfessional(data: {
   id?: string

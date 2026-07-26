@@ -8,7 +8,7 @@ import {
   Briefcase, ShoppingBag, Plus, Edit2, BarChart2, ImageDown,
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
-  LayoutDashboard, Wallet,
+  LayoutDashboard, Wallet, MapPin, Phone, Ticket, ExternalLink,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
@@ -17,7 +17,7 @@ import {
   setProductsEnabled, setWhatsappGroup,
 } from './actions'
 import AdminTasks, { type AdminTask } from './AdminTasks'
-import AdminMarketing, { type AdminContent } from './AdminMarketing'
+import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminPayments, { type AdminPayment } from './AdminPayments'
 
 interface UserRow {
@@ -75,13 +75,14 @@ interface Props {
   adminTasks: AdminTask[]
   adminContent: AdminContent[]
   adminPayments: AdminPayment[]
+  adminNotes: AdminNote[]
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
-type AdminView = 'overview' | 'tasks' | 'marketing' | 'payments'
+type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, adminTasks, adminContent, adminPayments }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, adminTasks, adminContent, adminPayments, adminNotes }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
@@ -410,6 +411,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
         <div className="flex gap-1.5 mb-6 flex-wrap">
           {([
             { key: 'overview',  label: 'סקירה',   Icon: LayoutDashboard },
+            { key: 'content',   label: 'מוצרים ואנשי מקצוע', Icon: ShoppingBag },
             { key: 'tasks',     label: 'משימות',  Icon: CheckSquare },
             { key: 'marketing', label: 'שיווק',   Icon: MessageCircle },
             { key: 'payments',  label: 'תשלומים', Icon: Wallet },
@@ -428,7 +430,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           <AdminTasks initialTasks={adminTasks} onToast={showToast} />
         )}
         {view === 'marketing' && (
-          <AdminMarketing initialContent={adminContent} onToast={showToast} />
+          <AdminMarketing initialContent={adminContent} initialNotes={adminNotes} onToast={showToast} />
         )}
         {view === 'payments' && (
           <AdminPayments initialPayments={adminPayments} onToast={showToast} />
@@ -577,11 +579,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             ))}
           </div>
         </div>
+        </>
+        )}
 
-        {/* ── Manage content ─────────────────────────────────────────────────────── */}
+        {/* ── Manage content (own tab) ───────────────────────────────────────────── */}
+        {view === 'content' && (
         <div className="card">
           <div className="flex items-center justify-between mb-5 flex-wrap gap-3">
-            <h2 className="font-bold text-lg" style={{ color: 'var(--text)' }}>ניהול תוכן</h2>
+            <h2 className="font-bold text-lg" style={{ color: 'var(--text)' }}>ניהול מוצרים ואנשי מקצוע</h2>
             {/* Tabs */}
             <div className="flex rounded-xl overflow-hidden border" style={{ borderColor: 'var(--border)' }}>
               {(['professionals', 'products'] as ManageTab[]).map(tab => (
@@ -653,15 +658,33 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 {pros.length === 0 ? (
                   <p className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>אין אנשי מקצוע עדיין</p>
                 ) : pros.map(p => (
-                  <div key={p.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                  <div key={p.id} className="flex items-start justify-between gap-3 px-4 py-3 rounded-xl border"
                     style={{ borderColor: 'var(--border)' }}>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {[p.title, p.region, p.phone].filter(Boolean).join(' · ')}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                        {p.title && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>{p.title}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {p.region && (
+                          <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                            <MapPin className="w-3 h-3" />{p.region}
+                          </span>
+                        )}
+                        {p.phone && (
+                          <a href={`tel:${p.phone}`} className="text-xs inline-flex items-center gap-1" style={{ color: '#5C7A8A' }}>
+                            <Phone className="w-3 h-3" />{p.phone}
+                          </a>
+                        )}
+                        {p.sort_order != null && (
+                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>סדר: {p.sort_order}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <button onClick={() => editPro(p)}
                         className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
                         <Edit2 className="w-3.5 h-3.5" />
@@ -782,16 +805,51 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 {products.length === 0 ? (
                   <p className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>אין מוצרים עדיין</p>
                 ) : products.map(p => (
-                  <div key={p.id} className="flex items-center justify-between px-4 py-3 rounded-xl border"
+                  <div key={p.id} className="flex items-start gap-3 px-4 py-3 rounded-xl border"
                     style={{ borderColor: 'var(--border)' }}>
-                    <div>
-                      <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
-                      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                        {p.description ? p.description.slice(0, 60) + (p.description.length > 60 ? '...' : '') : ''}
-                        {p.coupon_code ? ` · קוד: ${p.coupon_code}` : ''}
-                      </p>
+                    {p.image_url ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={p.image_url} alt={p.name}
+                        className="w-14 h-14 rounded-xl object-cover border shrink-0" style={{ borderColor: 'var(--border)' }} />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ background: 'rgba(127,82,104,0.08)', color: '#7F5268' }}>
+                        <ShoppingBag className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                        {p.category && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>{p.category}</span>
+                        )}
+                      </div>
+                      {p.description && (
+                        <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{p.description}</p>
+                      )}
+                      {p.details && (
+                        <p className="text-xs mt-1 whitespace-pre-wrap opacity-80" style={{ color: 'var(--text-muted)' }}>{p.details}</p>
+                      )}
+                      <div className="flex items-center gap-3 mt-1.5 flex-wrap">
+                        {p.coupon_code && (
+                          <span className="text-xs inline-flex items-center gap-1 px-2 py-0.5 rounded-lg font-mono"
+                            style={{ background: 'rgba(74,124,89,0.1)', color: '#4A7C59' }}>
+                            <Ticket className="w-3 h-3" />{p.coupon_code}
+                          </span>
+                        )}
+                        {p.buy_link && (
+                          <a href={p.buy_link} target="_blank" rel="noopener noreferrer"
+                            className="text-xs inline-flex items-center gap-1" style={{ color: '#5C7A8A' }}>
+                            <ExternalLink className="w-3 h-3" />קישור לרכישה
+                          </a>
+                        )}
+                        {p.sort_order != null && (
+                          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>סדר: {p.sort_order}</span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0">
                       <button onClick={() => editProduct(p)}
                         className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
                         <Edit2 className="w-3.5 h-3.5" />
@@ -807,8 +865,10 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             </div>
           )}
         </div>
+        )}
 
         {/* ── WhatsApp group ─────────────────────────────────────────────────────── */}
+        {view === 'overview' && (
         <div className="card mt-8">
           <h2 className="font-bold text-lg mb-1 flex items-center gap-2" style={{ color: 'var(--text)' }}>
             <MessageCircle className="w-5 h-5" style={{ color: '#25D366' }} />
@@ -846,7 +906,6 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
           </button>
         </div>
-        </>
         )}
 
         <p className="text-center text-xs mt-6 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
