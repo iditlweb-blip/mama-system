@@ -110,6 +110,132 @@ export async function setWhatsappGroup(url: string, visible: boolean): Promise<{
   }
 }
 
+// ─── Back-office: App tasks CRUD ────────────────────────────────────────────────
+export async function upsertAdminTask(data: {
+  id?: string
+  title: string
+  notes?: string
+  status?: string
+  priority?: string
+  sort_order?: number
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = {
+      title: data.title,
+      notes: data.notes ?? null,
+      status: data.status ?? 'todo',
+      priority: data.priority ?? 'medium',
+      sort_order: data.sort_order ?? null,
+    }
+    if (data.id) payload.id = data.id
+    const { error } = await admin.from('admin_tasks').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteAdminTask(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('admin_tasks').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// ─── Back-office: Marketing content CRUD ────────────────────────────────────────
+export async function upsertAdminContent(data: {
+  id?: string
+  platform: string
+  title?: string
+  body: string
+  status?: string
+  scheduled_date?: string
+  link?: string
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = {
+      platform: data.platform,
+      title: data.title ?? null,
+      body: data.body,
+      status: data.status ?? 'idea',
+      scheduled_date: data.scheduled_date || null,
+      link: data.link ?? null,
+    }
+    if (data.id) payload.id = data.id
+    const { error } = await admin.from('admin_content').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteAdminContent(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('admin_content').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// ─── Back-office: Payments CRUD ─────────────────────────────────────────────────
+export async function upsertAdminPayment(data: {
+  id?: string
+  name: string
+  amount: number
+  currency?: string
+  recurrence?: string
+  due_date?: string
+  paid?: boolean
+  notes?: string
+}): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const payload: Record<string, unknown> = {
+      name: data.name,
+      amount: data.amount,
+      currency: data.currency ?? 'ILS',
+      recurrence: data.recurrence ?? 'monthly',
+      due_date: data.due_date || null,
+      paid: data.paid ?? false,
+      notes: data.notes ?? null,
+    }
+    if (data.id) payload.id = data.id
+    const { error } = await admin.from('admin_payments').upsert(payload, { onConflict: 'id' })
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteAdminPayment(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('admin_payments').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── Professionals CRUD ────────────────────────────────────────────────────────
 export async function upsertProfessional(data: {
   id?: string

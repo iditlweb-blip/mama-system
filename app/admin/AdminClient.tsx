@@ -8,6 +8,7 @@ import {
   Briefcase, ShoppingBag, Plus, Edit2, BarChart2, ImageDown,
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
+  LayoutDashboard, Wallet,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
@@ -15,6 +16,9 @@ import {
   upsertProduct, deleteProduct, fetchProductImage,
   setProductsEnabled, setWhatsappGroup,
 } from './actions'
+import AdminTasks, { type AdminTask } from './AdminTasks'
+import AdminMarketing, { type AdminContent } from './AdminMarketing'
+import AdminPayments, { type AdminPayment } from './AdminPayments'
 
 interface UserRow {
   id: string
@@ -68,12 +72,17 @@ interface Props {
   products: Product[]
   productsEnabled: boolean
   whatsappGroup: { url: string; visible: boolean }
+  adminTasks: AdminTask[]
+  adminContent: AdminContent[]
+  adminPayments: AdminPayment[]
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
+type AdminView = 'overview' | 'tasks' | 'marketing' | 'payments'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, adminTasks, adminContent, adminPayments }: Props) {
+  const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
   const [products, setProducts] = useState(initProducts)
@@ -397,6 +406,36 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           </button>
         </div>
 
+        {/* ── Back-office nav ─────────────────────────────────────────────────── */}
+        <div className="flex gap-1.5 mb-6 flex-wrap">
+          {([
+            { key: 'overview',  label: 'סקירה',   Icon: LayoutDashboard },
+            { key: 'tasks',     label: 'משימות',  Icon: CheckSquare },
+            { key: 'marketing', label: 'שיווק',   Icon: MessageCircle },
+            { key: 'payments',  label: 'תשלומים', Icon: Wallet },
+          ] as const).map(({ key, label, Icon }) => (
+            <button key={key} onClick={() => setView(key)}
+              className="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
+              style={view === key
+                ? { background: '#7F5268', color: '#fff' }
+                : { background: 'var(--surface, var(--bg))', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+              <Icon className="w-4 h-4" />{label}
+            </button>
+          ))}
+        </div>
+
+        {view === 'tasks' && (
+          <AdminTasks initialTasks={adminTasks} onToast={showToast} />
+        )}
+        {view === 'marketing' && (
+          <AdminMarketing initialContent={adminContent} onToast={showToast} />
+        )}
+        {view === 'payments' && (
+          <AdminPayments initialPayments={adminPayments} onToast={showToast} />
+        )}
+
+        {view === 'overview' && (
+        <>
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard icon={Users}      color="#7F5268" label="משתמשות רשומות" value={stats.total}       />
@@ -807,6 +846,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             {savingWa ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
           </button>
         </div>
+        </>
+        )}
 
         <p className="text-center text-xs mt-6 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
           <Lock className="w-3 h-3" />

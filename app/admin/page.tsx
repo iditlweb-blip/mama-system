@@ -36,6 +36,9 @@ export default async function AdminPage() {
     { data: analyticsData },
     { data: productsSetting },
     { data: whatsappSetting },
+    { data: adminTasks },
+    { data: adminContent },
+    { data: adminPayments },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
@@ -45,6 +48,9 @@ export default async function AdminPage() {
     admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
     admin.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'whatsapp_group').maybeSingle(),
+    admin.from('admin_tasks').select('*').order('created_at', { ascending: false }).limit(200),
+    admin.from('admin_content').select('*').order('created_at', { ascending: false }).limit(200),
+    admin.from('admin_payments').select('*').order('created_at', { ascending: false }).limit(200),
   ])
   const productsEnabled = productsSetting?.value === true
   const waVal = (whatsappSetting?.value ?? {}) as { url?: string; visible?: boolean }
@@ -102,6 +108,9 @@ export default async function AdminPage() {
       products={products ?? []}
       productsEnabled={productsEnabled}
       whatsappGroup={whatsappGroup}
+      adminTasks={adminTasks ?? []}
+      adminContent={adminContent ?? []}
+      adminPayments={adminPayments ?? []}
     />
   )
 }
