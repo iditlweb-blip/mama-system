@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Milk, BedDouble, Droplets, Plus, X, Clock,
   Trash2, Play, Square, Syringe,
-  Circle, AlertTriangle, ChevronRight,
+  Circle, ChevronRight,
   ClipboardList, Carrot, Baby, Droplet, Sparkles, Star,
   Check, Clock3, Moon, Sunrise, Pencil,
 } from 'lucide-react'
@@ -151,10 +151,31 @@ interface SleepBand extends SleepRow {
   windows: number[]   // progressive wake windows (minutes), length = naps + 1
 }
 
-function getSleepBand(weeks: number): SleepBand {
+// napAdjust lets the mother commit to fewer naps than the chart default once
+// the baby is clearly transitioning (e.g. 3→2). We spread the SAME wake-window
+// range across fewer naps, so each awake stretch grows — exactly what a
+// dropped-nap day looks like. Clamped so we never go below a single nap.
+function getSleepBand(weeks: number, napAdjust = 0): SleepBand {
   const row = SLEEP_MAP.find(r => weeks <= r.maxWeeks) || SLEEP_MAP[SLEEP_MAP.length - 1]
-  const windows = makeWindows(row.wwMin, row.wwMax, row.napsForCalc)
-  return { ...row, naps: row.napsForCalc, windows }
+  const naps = Math.max(1, row.napsForCalc + napAdjust)
+  const windows = makeWindows(row.wwMin, row.wwMax, naps)
+  return { ...row, naps, windows }
+}
+
+// The chart stores bedtime as a range like "18:30–20:00". The upper bound is
+// the "latest recommended" bedtime for the age; we use it both as the cutoff
+// that triggers the fewer-naps suggestion and as the number shown to the
+// mother — so the guidance always matches the table, at every age. Newborns
+// ("21:00–00:00") have no real fixed bedtime; midnight → cutoff disabled.
+function parseLatestBedtime(bedtime: string): { minutes: number; label: string } {
+  const parts = bedtime.split(/[–-]/)
+  const last = (parts[parts.length - 1] || '').trim()
+  const [hh, mm] = last.split(':').map(s => parseInt(s, 10))
+  const h = Number.isNaN(hh) ? 21 : hh
+  const m = Number.isNaN(mm) ? 0 : mm
+  // 00:00 = midnight = "no cutoff" (put it past the end of the day).
+  const minutes = h === 0 ? 24 * 60 : h * 60 + m
+  return { minutes, label: last }
 }
 
 interface SleepPlan {
@@ -168,13 +189,14 @@ interface SleepPlan {
   hasWakeData: boolean
   recommendFewerNaps: boolean
   recommendedNapsRemaining: number | null
+  latestBedtimeLabel: string        // upper bound of the age band's bedtime range, e.g. "20:00"
 }
 
 // Sleeping = a timer is currently running (day nap or night). nightSleeping =
 // that running timer was started as a "night timer" — in that case we skip
 // next-nap predictions entirely (the running sleep IS the night sleep).
-function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping: boolean, nightSleeping: boolean): SleepPlan {
-  const band = getSleepBand(weeks)
+function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping: boolean, nightSleeping: boolean, napAdjust = 0): SleepPlan {
+  const band = getSleepBand(weeks, napAdjust)
 
   const sleeps = logs
     .filter(l => l.type === 'sleep')
@@ -232,10 +254,15 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
   // If the chained prediction lands after 21:00, suggest trimming naps so the
   // baby doesn't get overtired — find the largest remaining-nap count that
   // still lands at/before 21:00 from the same anchor.
+  // Cutoff = the age band's own latest recommended bedtime (from the chart),
+  // not a fixed 21:00. So at 6–8m the line is drawn at 20:00, and it moves with
+  // the age automatically.
+  const { minutes: cutoffMin, label: latestBedtimeLabel } = parseLatestBedtime(band.bedtime)
   let recommendFewerNaps = false
   let recommendedNapsRemaining: number | null = null
   if (bedtime) {
-    const cutoff = new Date(now); cutoff.setHours(21, 0, 0, 0)
+    const cutoff = new Date(now); cutoff.setHours(0, 0, 0, 0)
+    cutoff.setMinutes(cutoffMin)
     if (bedtime.getTime() > cutoff.getTime()) {
       let found: number | null = null
       for (let n = N - 1; n >= 0; n--) {
@@ -249,7 +276,7 @@ function computeSleepPlan(weeks: number, logs: BabyLog[], now: number, sleeping:
     }
   }
 
-  return { band, napsTaken, napsRemaining, minutesToNextNap, nextNapAt, bedtime, sleeping, hasWakeData, recommendFewerNaps, recommendedNapsRemaining }
+  return { band, napsTaken, napsRemaining, minutesToNextNap, nextNapAt, bedtime, sleeping, hasWakeData, recommendFewerNaps, recommendedNapsRemaining, latestBedtimeLabel }
 }
 
 function fmtDur(min: number): string {
@@ -406,11 +433,28 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
     return () => clearInterval(id)
   }, [])
 
+  // "We've dropped a nap" — a choice the mother makes when the app suggests it.
+  // Stored per age band (keyed by band label) so it never leaks into the next
+  // stage: once the baby grows into a band whose default already has fewer
+  // naps, the flag simply doesn't apply. localStorage keeps it on this device.
+  const bandLabel = babyWeeks !== null ? getSleepBand(babyWeeks).label : ''
+  const [dropOneNap, setDropOneNap] = useState(false)
+  useEffect(() => {
+    if (!bandLabel) return
+    try { setDropOneNap(localStorage.getItem(`napDrop:${userId}:${bandLabel}`) === '1') }
+    catch { /* private mode / storage disabled — just stay on the default */ }
+  }, [userId, bandLabel])
+  function toggleDropNap(v: boolean) {
+    setDropOneNap(v)
+    try { localStorage.setItem(`napDrop:${userId}:${bandLabel}`, v ? '1' : '0') } catch { /* ignore */ }
+  }
+  const napAdjust = dropOneNap ? -1 : 0
+
   const sleepPlan = useMemo(() => (
     babyWeeks !== null
-      ? computeSleepPlan(babyWeeks, logs, now, timer.active, timer.active && timer.isNight)
+      ? computeSleepPlan(babyWeeks, logs, now, timer.active, timer.active && timer.isNight, napAdjust)
       : null
-  ), [babyWeeks, logs, now, timer.active, timer.isNight])
+  ), [babyWeeks, logs, now, timer.active, timer.isNight, napAdjust])
 
   // A stopped timer (from here OR the always-mounted global bar) broadcasts
   // its new sleep log; add it to the list here so it appears immediately.
@@ -549,10 +593,14 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
             <InfoTile icon={Moon} label="שעת השכבה מומלצת" value={sleepPlan.band.bedtime} />
           </div>
 
-          {/* Age-band note (general guidance for the stage) */}
+          {/* Age-band note + a clear "this is guidance, not a rule" framing */}
           <div className="rounded-xl px-3 py-2.5 mb-3 text-xs leading-relaxed"
             style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.15)', color: 'var(--text-muted)' }}>
-            {sleepPlan.band.note}
+            <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: '#7F5268' }}>
+              <Sparkles className="w-3.5 h-3.5" /> מידע והמלצות לגיל הזה
+            </p>
+            <p className="mb-1.5">{sleepPlan.band.note}</p>
+            <p>המספרים כאן הם המלצה כללית לפי טבלת שינה לגיל — לא כלל מחייב. כל תינוק שונה, והכי חשוב לעקוב אחרי סימני העייפות {isGirl ? 'שלה' : 'שלו'} ולהשכיב בהתאם.</p>
           </div>
 
           {/* Live insights based on what was marked today */}
@@ -589,33 +637,52 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
               </div>
             )}
 
-            {/* Predicted bedtime */}
-            {!(timer.active && timer.isNight) && (
-              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
-                style={{ background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
-                <Moon className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
-                <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-                  {sleepPlan.bedtime
-                    ? <>{`הלילה של ${babyName || 'התינוק'} יתחיל היום בערך ב-`}<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b></>
-                    : !sleepPlan.hasWakeData
-                      ? <span style={{ color: 'var(--text-muted)' }}>{`סמני שינה כדי לחזות מתי יתחיל הלילה של ${babyName || 'התינוק'}`}</span>
-                      : <>{`הלילה של ${babyName || 'התינוק'} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
-                  }
-                </p>
-              </div>
-            )}
-
-            {/* Overtired warning + fewer-naps recommendation */}
-            {sleepPlan.recommendFewerNaps && sleepPlan.napsRemaining > 0 && sleepPlan.recommendedNapsRemaining !== null && sleepPlan.recommendedNapsRemaining !== sleepPlan.napsRemaining && !(timer.active && timer.isNight) && (
-              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5"
-                style={{ background: 'rgba(196,120,45,0.12)', border: '1px solid rgba(196,120,45,0.3)' }}>
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color: '#C4782D' }} />
-                <p className="text-sm" style={{ color: 'var(--text)' }}>
-                  לפי החישוב הלילה יתחיל מאוחר מ-21:00 — כדאי לשקול
-                  {' '}<b>{sleepPlan.recommendedNapsRemaining} שנ”צים</b> בלבד מעכשיו (במקום {sleepPlan.napsRemaining}) כדי שלא {`${isGirl ? 'תגיע' : 'יגיע'} לעייפות יתר`}.
-                </p>
-              </div>
-            )}
+            {/* Predicted bedtime + fewer-naps recommendation — one combined,
+                calm block. When the chained calculation lands after the age's
+                latest recommended bedtime we don't show a separate scary
+                warning; we explain the number and the suggestion together, and
+                offer a checkbox to actually drop a nap (recalculates live). */}
+            {!(timer.active && timer.isNight) && (() => {
+              const meaningfulDrop = sleepPlan.recommendFewerNaps
+                && sleepPlan.recommendedNapsRemaining !== null
+                && sleepPlan.recommendedNapsRemaining !== sleepPlan.napsRemaining
+              const showLate = !!sleepPlan.bedtime && meaningfulDrop && sleepPlan.napsRemaining > 0
+              const showCheckbox = showLate || dropOneNap
+              const baby = babyName || 'התינוק'
+              return (
+                <div className="rounded-xl px-3 py-2.5" style={showLate
+                  ? { background: 'rgba(196,120,45,0.10)', border: '1px solid rgba(196,120,45,0.25)' }
+                  : { background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
+                  <div className="flex items-start gap-2.5">
+                    <Moon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: showLate ? '#C4782D' : '#5C7A6A' }} />
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>
+                      {sleepPlan.bedtime
+                        ? showLate
+                          ? <>לפי חישוב השנ”צים עד כה, על פי חלונות הערות הלילה של {baby} צפוי להתחיל בערך ב-<b>{fmtTime(sleepPlan.bedtime)}</b>. בגיל הזה מומלץ להשכיב לא יאוחר מ-<b>{sleepPlan.latestBedtimeLabel}</b> — לכן כדאי לשקול להוריד שנ”צ אחד.</>
+                          : <>הלילה של {baby} צפוי להתחיל בערך ב-<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b> 🌙{dropOneNap ? <span style={{ color: 'var(--text-muted)' }}> (מחושב לפי תנומה אחת פחות)</span> : ''}</>
+                        : !sleepPlan.hasWakeData
+                          ? <span style={{ color: 'var(--text-muted)' }}>{`סמני שינה כדי לחזות מתי יתחיל הלילה של ${baby}`}</span>
+                          : <>{`הלילה של ${baby} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
+                      }
+                    </p>
+                  </div>
+                  {showCheckbox && (
+                    <label className="flex items-center gap-2 mt-2.5 pt-2.5 cursor-pointer"
+                      style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                      <input type="checkbox" checked={dropOneNap}
+                        onChange={e => toggleDropNap(e.target.checked)}
+                        className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: '#5C7A6A' }} />
+                      <span className="text-xs" style={{ color: 'var(--text)' }}>
+                        {dropOneNap
+                          ? <>החישוב מעודכן לתנומה אחת פחות ✓ <span style={{ color: 'var(--text-muted)' }}>(אפשר לבטל כדי לחזור)</span></>
+                          : <>{`${baby} כבר מוכן${isGirl ? 'ה' : ''} לתנומה אחת פחות — עדכני את החישוב`}</>
+                        }
+                      </span>
+                    </label>
+                  )}
+                </div>
+              )
+            })()}
           </div>
         </div>
       )}
