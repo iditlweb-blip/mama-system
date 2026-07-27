@@ -2,7 +2,7 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 // Serve the standalone landing page HTML at the root URL.
-// The file is pre-built with all assets embedded (fonts, images, JS) as base64 —
+// The file is pre-built with all assets embedded (fonts, images, JS) as base64 -
 // no external dependencies needed.
 
 let cachedHtml: string | null = null

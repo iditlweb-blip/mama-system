@@ -6,7 +6,7 @@ import { createBrowserClient } from '@supabase/ssr'
 
 /**
  * Records how long the user spends on each page.
- * Mount once in the (app) layout — it auto-tracks on every navigation.
+ * Mount once in the (app) layout - it auto-tracks on every navigation.
  */
 export default function PageTimeTracker() {
   const pathname   = usePathname()
@@ -31,7 +31,7 @@ export default function PageTimeTracker() {
     })
   }
 
-  // On page change — flush old page
+  // On page change - flush old page
   useEffect(() => {
     const prevPage  = pageRef.current
     const prevStart = startRef.current

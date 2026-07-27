@@ -60,7 +60,7 @@ export default function DevelopmentClient() {
       </div>
       <div>
         <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>התפתחות התינוק</h1>
-        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>מידע מפורט לפי שלב גיל — 0 עד 12 חודשים</p>
+        <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>מידע מפורט לפי שלב גיל - 0 עד 12 חודשים</p>
       </div>
 
       {/* Stage Tabs */}
@@ -194,7 +194,7 @@ export default function DevelopmentClient() {
           מתי לפנות לרופא
         </h3>
         <p className="text-xs mb-2" style={{ color: '#9CA3AF' }}>
-          אלו סימני דגל — לא אוטומטי שמשהו לא בסדר, אבל כדאי לאמת עם רופא ילדים.
+          אלו סימני דגל - לא אוטומטי שמשהו לא בסדר, אבל כדאי לאמת עם רופא ילדים.
         </p>
         <ul className="space-y-1">
           {stage.redFlags.map((flag, i) => (

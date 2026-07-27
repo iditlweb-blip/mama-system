@@ -136,7 +136,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
     router.refresh()
   }
 
-  // WhatsApp personal assistant — shown as "coming soon" for now.
+  // WhatsApp personal assistant - shown as "coming soon" for now.
 
   const initials = name ? name.charAt(0).toUpperCase() : ''
 
@@ -212,7 +212,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
           ))}
         </div>
 
-        {/* Pregnancy — due date */}
+        {/* Pregnancy - due date */}
         {trackingType === 'pregnancy' && (
           <div className="space-y-4">
             <Field
@@ -233,7 +233,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
           </div>
         )}
 
-        {/* Baby — baby info */}
+        {/* Baby - baby info */}
         {trackingType === 'baby' && (
           <div className="space-y-4">
             <Field label="שם התינוק/ת" value={babyName} onChange={setBabyName} placeholder="שם יפה" />

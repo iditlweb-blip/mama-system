@@ -33,7 +33,7 @@ export default function PregnancyWeekClient({ dueDate }: { dueDate: string | nul
           מה קורה השבוע
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {currentWeek > 0 ? `את בשבוע ${currentWeek} להריון — מה מתפתח אצל התינוק/ת` : 'התפתחות העובר שבוע אחר שבוע'}
+          {currentWeek > 0 ? `את בשבוע ${currentWeek} להריון - מה מתפתח אצל התינוק/ת` : 'התפתחות העובר שבוע אחר שבוע'}
         </p>
       </div>
 

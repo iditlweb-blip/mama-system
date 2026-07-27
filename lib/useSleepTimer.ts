@@ -14,7 +14,7 @@ const KEY = 'mama_sleep_timer_start'
 const NIGHT_KEY = 'mama_sleep_timer_night'
 const EVT = 'mama-sleep-timer-change'
 // Broadcast when stop() records a new sleep log, so any mounted screen
-// (tracker, dashboard) can add it to its list immediately — even when the
+// (tracker, dashboard) can add it to its list immediately - even when the
 // timer was stopped from the always-mounted global bar, not that screen.
 export const LOG_ADDED_EVT = 'mama-baby-log-added'
 const DB_POLL_MS = 15000
@@ -76,7 +76,7 @@ export function useSleepTimer(userId: string) {
       }
     } else if (readStart() != null) {
       // Only clear the local cache from the DB when we're confident the DB
-      // has caught up — the row is written synchronously on start() below.
+      // has caught up - the row is written synchronously on start() below.
       writeLocal(null, false)
     }
   }, [supabase, userId, writeLocal])
@@ -114,7 +114,7 @@ export function useSleepTimer(userId: string) {
   }, [startMs])
 
   // Start the timer. Pass `night: true` for a "night timer" (good for
-  // newborns) — the resulting sleep log is tagged `is_night` so it's
+  // newborns) - the resulting sleep log is tagged `is_night` so it's
   // excluded from the daily nap count and doesn't drive next-nap predictions.
   const start = useCallback((opts?: { night?: boolean }) => {
     const now = Date.now()
@@ -142,7 +142,7 @@ export function useSleepTimer(userId: string) {
   // timer is that the mother doesn't have to remember to log the sleep herself.
   // So we capture the insert error and, if it looks like a missing/unknown
   // `is_night` column, retry the insert without that field. Only after a log
-  // row is actually written do we clear the running timer — that way a genuine
+  // row is actually written do we clear the running timer - that way a genuine
   // failure keeps the timer visible instead of silently discarding the sleep.
   const stop = useCallback(async (): Promise<BabyLog | null> => {
     const s = readStart()
@@ -168,7 +168,7 @@ export function useSleepTimer(userId: string) {
       .single()
 
     // If the failure is about the is_night column not existing in this DB,
-    // record the sleep anyway without it — recording the log matters more
+    // record the sleep anyway without it - recording the log matters more
     // than the night flag.
     if (error && /is_night/i.test(`${error.message} ${error.details ?? ''}`)) {
       ;({ data, error } = await supabase
@@ -179,14 +179,14 @@ export function useSleepTimer(userId: string) {
     }
 
     if (error || !data) {
-      // Couldn't write the log — keep the timer running so the mother can
+      // Couldn't write the log - keep the timer running so the mother can
       // retry rather than losing the sleep entirely, and surface the reason.
       setStopping(false)
       console.error('[sleep-timer] failed to record sleep log:', error)
       return null
     }
 
-    // Log persisted — now it's safe to clear the running timer everywhere.
+    // Log persisted - now it's safe to clear the running timer everywhere.
     writeLocal(null, false)
     await supabase.from('active_sleep_timers').delete().eq('user_id', userId)
     setStopping(false)

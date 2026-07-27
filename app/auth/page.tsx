@@ -14,9 +14,9 @@ function translateError(msg: string): string {
   if (m.includes('invalid login credentials') || m.includes('invalid credentials'))
     return 'כתובת מייל או סיסמא שגויים'
   if (m.includes('email not confirmed'))
-    return 'המייל עדיין לא אושר — בדקי את תיבת הדואר ולחצי על קישור האישור'
+    return 'המייל עדיין לא אושר - בדקי את תיבת הדואר ולחצי על קישור האישור'
   if (m.includes('user already registered') || m.includes('already been registered') || m.includes('already registered'))
-    return 'כתובת המייל הזו כבר רשומה במערכת — נסי להיכנס במקום להירשם'
+    return 'כתובת המייל הזו כבר רשומה במערכת - נסי להיכנס במקום להירשם'
   if (m.includes('password should be at least'))
     return 'הסיסמא חייבת להכיל לפחות 6 תווים'
   if (m.includes('unable to validate email'))
@@ -24,9 +24,9 @@ function translateError(msg: string): string {
   if (m.includes('signup is disabled'))
     return 'ההרשמה מושבתת כרגע'
   if (m.includes('rate limit') || m.includes('too many') || m.includes('over_email') || m.includes('email rate limit'))
-    return 'הגבלת שליחת מיילים — נסי שוב בעוד שעה, או פני לעידית לקבלת קישור כניסה ישיר'
+    return 'הגבלת שליחת מיילים - נסי שוב בעוד שעה, או פני לעידית לקבלת קישור כניסה ישיר'
   if (m.includes('provider is not enabled') || m.includes('oauth'))
-    return 'כניסה עם Google אינה מוגדרת עדיין — השתמשי בכניסה עם מייל וסיסמא'
+    return 'כניסה עם Google אינה מוגדרת עדיין - השתמשי בכניסה עם מייל וסיסמא'
   return msg
 }
 
@@ -48,7 +48,7 @@ export default function AuthPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get('error')) {
-      setError('הכניסה עם Google נכשלה — נסי שוב, או השתמשי בכניסה עם מייל')
+      setError('הכניסה עם Google נכשלה - נסי שוב, או השתמשי בכניסה עם מייל')
     }
   }, [])
 
@@ -80,7 +80,7 @@ export default function AuthPage() {
         return
       } else {
         // Email confirmation required
-        setSuccess('החשבון נוצר! נשלח אליך מייל אישור — לחצי על הקישור שם כדי להפעיל את החשבון. אם לא מגיע, בדקי תיקיית ספאם.')
+        setSuccess('החשבון נוצר! נשלח אליך מייל אישור - לחצי על הקישור שם כדי להפעיל את החשבון. אם לא מגיע, בדקי תיקיית ספאם.')
         switchMode('login')
       }
 
@@ -88,7 +88,7 @@ export default function AuthPage() {
       const { error: err } = await supabase.auth.signInWithPassword({ email, password })
       if (err) {
         setError(translateError(err.message))
-        // If email not confirmed — offer to resend
+        // If email not confirmed - offer to resend
         if (err.message.toLowerCase().includes('email not confirmed')) {
           setInfo('לא קיבלת מייל אישור? לחצי כאן לשליחה מחדש')
         }
@@ -107,7 +107,7 @@ export default function AuthPage() {
       if (err) {
         setError(translateError(err.message))
       } else {
-        setSuccess(`נשלח לך קישור לאיפוס סיסמא לכתובת ${email} — בדקי גם בתיקיית הספאם`)
+        setSuccess(`נשלח לך קישור לאיפוס סיסמא לכתובת ${email} - בדקי גם בתיקיית הספאם`)
         switchMode('login')
       }
     }
@@ -120,7 +120,7 @@ export default function AuthPage() {
     if (!email) { setError('הכניסי את כתובת המייל שלך ואז לחצי שוב'); return }
     const { error: err } = await supabase.auth.resend({ type: 'signup', email })
     if (err) setError(translateError(err.message))
-    else setSuccess('קישור אישור נשלח מחדש — בדקי את תיבת הדואר')
+    else setSuccess('קישור אישור נשלח מחדש - בדקי את תיבת הדואר')
     setInfo('')
   }
 
@@ -310,7 +310,7 @@ export default function AuthPage() {
         </div>
 
         <p className="text-center text-xs mt-5 font-light flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
-          כל כך גאים בך — ממשיכה לנהל, לצמוח ולאהוב <Heart className="w-3 h-3" fill="currentColor" style={{ color: 'var(--purple, #7F5268)' }} />
+          כל כך גאים בך - ממשיכה לנהל, לצמוח ולאהוב <Heart className="w-3 h-3" fill="currentColor" style={{ color: 'var(--purple, #7F5268)' }} />
         </p>
       </div>
     </div>

@@ -36,7 +36,7 @@ type Guidance = {
 // min, sustained for ~1 hour → time to head to the hospital. We derive the
 // numbers from the contractions logged in the last hour and translate them
 // into three plain-language levels. This is guidance, never a substitute for
-// the mother's doctor/midwife — the page states that explicitly.
+// the mother's doctor/midwife - the page states that explicitly.
 function analyze(ascending: Contraction[]): { guidance: Guidance; avgInterval: number; avgDuration: number; regular: boolean; count: number } {
   const now = Date.now()
   const recent = ascending.filter(c => now - new Date(c.start_time).getTime() <= 60 * 60 * 1000)
@@ -59,7 +59,7 @@ function analyze(ascending: Contraction[]): { guidance: Guidance; avgInterval: n
     guidance = {
       level: 'go',
       title: 'זה הזמן לצאת לבית החולים 🏥',
-      body: 'הצירים סדירים, במרווחים של כ-5 דקות ובאורך של כדקה, כבר למעלה משעה. זה בדרך כלל הסימן לצאת. קחי את התיק ותצאי — ובדרך אפשר להתקשר לבית החולים.',
+      body: 'הצירים סדירים, במרווחים של כ-5 דקות ובאורך של כדקה, כבר למעלה משעה. זה בדרך כלל הסימן לצאת. קחי את התיק ותצאי - ובדרך אפשר להתקשר לבית החולים.',
     }
   } else if (regular && avgInterval > 0 && avgInterval <= 8 && recent.length >= 3) {
     guidance = {
@@ -70,7 +70,7 @@ function analyze(ascending: Contraction[]): { guidance: Guidance; avgInterval: n
   } else {
     guidance = {
       level: 'early',
-      title: 'עדיין מוקדם — המשיכי לתעד',
+      title: 'עדיין מוקדם - המשיכי לתעד',
       body: 'הצירים עדיין לא סדירים או שהמרווחים גדולים. נשמי, שתי מים, נוחי, והמשיכי לתעד. הדפוס יתחדד ככל שהלידה מתקרבת.',
     }
   }
@@ -133,7 +133,7 @@ export default function ContractionsClient({
 
   async function handleStop() {
     const c = await timer.stop()
-    if (!c) alert('לא הצלחנו לשמור את הציר. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+    if (!c) alert('לא הצלחנו לשמור את הציר. נסי שוב בעוד רגע - הטיימר עדיין פועל.')
   }
 
   function openManual() {
@@ -250,12 +250,12 @@ export default function ContractionsClient({
         <p className="text-sm mb-3" style={{ color: 'var(--text)' }}>{guidance.body}</p>
         <div className="grid grid-cols-3 gap-2 text-center">
           <Stat label="בשעה האחרונה" value={`${count}`} unit="צירים" />
-          <Stat label="מרווח ממוצע" value={avgInterval > 0 ? avgInterval.toFixed(1) : '—'} unit="דקות" />
-          <Stat label="אורך ממוצע" value={avgDuration > 0 ? Math.round(avgDuration).toString() : '—'} unit="שניות" />
+          <Stat label="מרווח ממוצע" value={avgInterval > 0 ? avgInterval.toFixed(1) : '-'} unit="דקות" />
+          <Stat label="אורך ממוצע" value={avgDuration > 0 ? Math.round(avgDuration).toString() : '-'} unit="שניות" />
         </div>
         <p className="text-xs mt-3 flex items-start gap-1.5" style={{ color: 'var(--text-muted)' }}>
           <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-          {regular ? 'הצירים שלך סדירים.' : 'הצירים עדיין לא סדירים.'} זו הערכה כללית בלבד. אם ירדו מים, יש דימום, כאב חזק או ירידה בתנועות העובר — פני לבית החולים או התקשרי מיד, ללא קשר למספרים.
+          {regular ? 'הצירים שלך סדירים.' : 'הצירים עדיין לא סדירים.'} זו הערכה כללית בלבד. אם ירדו מים, יש דימום, כאב חזק או ירידה בתנועות העובר - פני לבית החולים או התקשרי מיד, ללא קשר למספרים.
         </p>
       </div>
 

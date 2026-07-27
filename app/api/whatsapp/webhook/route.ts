@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     for (const entry of payload.entry ?? []) {
       for (const change of entry.changes ?? []) {
         const messages = change.value?.messages
-        if (!messages) continue // e.g. delivery/read status callbacks — ignore
+        if (!messages) continue // e.g. delivery/read status callbacks - ignore
         for (const message of messages) {
           await handleMessage(message)
         }
@@ -70,7 +70,7 @@ async function handleMessage(message: InboundMessage) {
       const code = (message.text?.body ?? '').trim()
       const linked = await tryLinkNumber(supabase, from, code)
       await sendWhatsAppText(from, linked
-        ? 'מעולה! 🎉 המספר שלך חובר ל-MamaFlow. מעכשיו אפשר לכתוב לי כאן — למשל "התינוק נרדם", "האכלתי בקבוק 120", או "כמה חיתולים היום?"'
+        ? 'מעולה! 🎉 המספר שלך חובר ל-MamaFlow. מעכשיו אפשר לכתוב לי כאן - למשל "התינוק נרדם", "האכלתי בקבוק 120", או "כמה חיתולים היום?"'
         : 'שלום! 👋 כדי לחבר את הוואטסאפ שלך ל-MamaFlow, היכנסי לאפליקציה → הגדרות → "חיבור וואטסאפ", וקבלי קוד חיבור. שלחי לי אותו כאן.')
     } else {
       await sendWhatsAppText(from, 'שלום! כדי להתחיל, חברי את המספר דרך הגדרות האפליקציה ושלחי לי את קוד החיבור.')

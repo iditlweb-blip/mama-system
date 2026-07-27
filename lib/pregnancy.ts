@@ -22,7 +22,7 @@ export const STANDARD_TESTS: StandardTest[] = [
   { week: 40, name: 'ביקור אחרון + תיאום לידה' },
 ]
 
-// Current pregnancy week from the due date (clamped to 1–42).
+// Current pregnancy week from the due date (clamped to 1-42).
 export function calcPregnancyWeek(dueDate: string | null | undefined): number {
   if (!dueDate) return 0
   const due = new Date(dueDate)

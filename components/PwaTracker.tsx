@@ -37,7 +37,7 @@ export default function PwaTracker() {
           }).catch(() => {})
         }
       } catch {
-        // silent fail — column may not exist yet
+        // silent fail - column may not exist yet
       }
     }
 

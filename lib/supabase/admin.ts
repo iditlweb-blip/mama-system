@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * Admin client — uses service_role key.
+ * Admin client - uses service_role key.
  * NEVER import this in client components.
  * Server-side only.
  */

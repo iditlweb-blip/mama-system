@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Landing Content Editor  — מופיע רק כשה-URL מכיל ?editor
+// Landing Content Editor  - מופיע רק כשה-URL מכיל ?editor
 // שמירה: landing_content_v1 (טקסטים/תמונות), landing_styles_v1 (עיצוב)
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,7 @@ const BRAND = ['#1a1a1a','#ffffff','#7F5268','#F9A8D4','#4A7C59','#F7EDE2','#256
 // ── Default content (mirrors page.tsx) ──────────────────────────────────────
 const DEFAULTS: Record<string, string> = {
   'le-hero-h1':  'אמא בסדר',
-  'le-hero-sub': 'בתוך כל הטירוף, העייפות וים העצות מסביב — אנחנו כאן כדי לעשות לך סדר.\nמהבדיקה הראשונה ועד גיל שנה, כל מה שאת באמת צריכה לדעת במקום אחד.',
+  'le-hero-sub': 'בתוך כל הטירוף, העייפות וים העצות מסביב - אנחנו כאן כדי לעשות לך סדר.\nמהבדיקה הראשונה ועד גיל שנה, כל מה שאת באמת צריכה לדעת במקום אחד.',
 
   'le-feat-0-label': 'מעקב הריון',   'le-feat-0-sub': 'שבועות, גדלים, בדיקות',
   'le-feat-1-label': 'מעקב תינוק',   'le-feat-1-sub': 'האכלות, שינה, חיתולים',
@@ -46,7 +46,7 @@ const DEFAULTS: Record<string, string> = {
   'le-daily-0-title': 'שבוע 28 להריון',
   'le-daily-0-body': 'בדקי מה גודל התינוק השבוע, מה הבדיקות הקרובות שלך, ושאלי את ה-AI על כל מה שמדאיג אותך.',
   'le-daily-1-title': 'יום אחרי לידה',
-  'le-daily-1-body': 'תבצעי רישומים של האכלות, שינה וחיתולים — וכל מה שאת צריכה כדי להיות רגועה.',
+  'le-daily-1-body': 'תבצעי רישומים של האכלות, שינה וחיתולים - וכל מה שאת צריכה כדי להיות רגועה.',
   'le-daily-2-title': 'נמנום קצר',
   'le-daily-2-body': 'לחצי Start, התינוק קם- לחצי Stop. הנמנום נרשם אוטומטית. את פנויה לנשום.',
   'le-daily-3-title': 'רגע של ספק',
@@ -273,7 +273,7 @@ function EditorPanel() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         }}
       >
-        <span style={{ fontWeight: 700, fontSize: 13 }}>✏️ עורך תוכן — Elementor</span>
+        <span style={{ fontWeight: 700, fontSize: 13 }}>✏️ עורך תוכן - Elementor</span>
         <button onClick={() => setOpen(o => !o)}
           style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', fontSize:16 }}>
           {open ? '▲' : '▼'}
@@ -429,7 +429,7 @@ function Divider() {
   return <div style={{ height:1, background:'rgba(255,255,255,0.07)', margin:'4px 0 8px' }} />
 }
 
-// ── FieldRow — text input + always-visible size bar + 🎨 advanced controls ────
+// ── FieldRow - text input + always-visible size bar + 🎨 advanced controls ────
 function FieldRow({
   label, id, value, onChange, rows = 1, elStyle, onStyleChange,
 }: {
@@ -512,7 +512,7 @@ function FieldRow({
   )
 }
 
-// ── StyleControls — Elementor-style formatting panel ─────────────────────────
+// ── StyleControls - Elementor-style formatting panel ─────────────────────────
 function StyleControls({
   id, style, onStyleChange,
 }: {
@@ -535,7 +535,7 @@ function StyleControls({
 
       {/* ── Color ── */}
       <Row label="צבע">
-        {/* Color picker — native input overlaid by preview */}
+        {/* Color picker - native input overlaid by preview */}
         <div style={{ position:'relative', width:26, height:22, flexShrink:0 }}>
           <div style={{
             width:26, height:22, borderRadius:5,
@@ -656,7 +656,7 @@ function XBtn({ onClick }: { onClick: () => void }) {
   )
 }
 
-// ── IconRow — emoji text input + image file upload ────────────────────────────
+// ── IconRow - emoji text input + image file upload ────────────────────────────
 function IconRow({
   label, id, value, defaultEmoji, onChange,
 }: {

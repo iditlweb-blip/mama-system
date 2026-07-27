@@ -113,7 +113,7 @@ export default function OnboardingClient() {
           ))}
         </div>
 
-        {/* Step 1 — Name */}
+        {/* Step 1 - Name */}
         {step === 1 && (
           <div>
             <h1 className="text-3xl font-bold mb-2 text-center flex items-center justify-center gap-2" style={{ color: '#3d2b2b' }}>
@@ -155,7 +155,7 @@ export default function OnboardingClient() {
           </div>
         )}
 
-        {/* Step 2 — Tracking type */}
+        {/* Step 2 - Tracking type */}
         {step === 2 && (
           <div>
             <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>
@@ -285,7 +285,7 @@ export default function OnboardingClient() {
           </div>
         )}
 
-        {/* Step 3 — Goal */}
+        {/* Step 3 - Goal */}
         {step === 3 && (
           <div>
             <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>
@@ -334,7 +334,7 @@ export default function OnboardingClient() {
           </div>
         )}
 
-        {/* Step 4 — Profile photo */}
+        {/* Step 4 - Profile photo */}
         {step === 4 && (
           <div>
             <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>

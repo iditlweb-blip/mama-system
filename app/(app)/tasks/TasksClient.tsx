@@ -164,7 +164,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
           style={{ background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
           <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#C0392B' }} />
           <p className="text-sm" style={{ color: '#C0392B' }}>
-            יש לך <strong>{overdueCount}</strong> משימות שפג תוקפן — כדאי לטפל בהן היום
+            יש לך <strong>{overdueCount}</strong> משימות שפג תוקפן - כדאי לטפל בהן היום
           </p>
         </div>
       )}
@@ -203,7 +203,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
               )}
             </div>
             <p className="text-sm mb-3 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-              {pomoMode === 'work' ? 'מיקוד מלא — הניחי את הטלפון' : <><Coffee className="w-3.5 h-3.5" /> הפסקה! קחי נשימה</>}
+              {pomoMode === 'work' ? 'מיקוד מלא - הניחי את הטלפון' : <><Coffee className="w-3.5 h-3.5" /> הפסקה! קחי נשימה</>}
             </p>
             <div className="flex items-center gap-2 flex-wrap">
               <button onClick={() => setPomoRunning(!pomoRunning)}

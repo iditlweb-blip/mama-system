@@ -63,7 +63,7 @@ export default function AdminPayments({ initialPayments, onToast }: {
       paid: form.id ? (items.find(i => i.id === form.id)?.paid ?? false) : false,
       notes: form.notes || null,
     }
-    // Optimistic update — no page reload.
+    // Optimistic update - no page reload.
     setItems(prev => form.id ? prev.map(x => x.id === id ? payment : x) : [payment, ...prev])
     const editing = !!form.id
     resetForm()
@@ -209,7 +209,7 @@ export default function AdminPayments({ initialPayments, onToast }: {
           <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text)' }}>
             <input type="checkbox" checked={form.includeTax} onChange={e => setForm(f => ({ ...f, includeTax: e.target.checked }))}
               className="w-4 h-4 accent-[#7F5268]" />
-            הסכום שהזנתי הוא לפני מע״מ — הוסף {taxRate}% מע״מ
+            הסכום שהזנתי הוא לפני מע״מ - הוסיפי {taxRate}% מע״מ
           </label>
 
           {/* Live calculation preview */}
@@ -256,7 +256,7 @@ export default function AdminPayments({ initialPayments, onToast }: {
         ) : items.map(p => (
           <div key={p.id} className="flex items-center gap-3 px-4 py-3 rounded-xl border"
             style={{ borderColor: 'var(--border)', opacity: p.paid ? 0.6 : 1 }}>
-            <button onClick={() => togglePaid(p)} title={p.paid ? 'שולם' : 'סמן כשולם'}
+            <button onClick={() => togglePaid(p)} title={p.paid ? 'שולם' : 'סמני כשולם'}
               className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border"
               style={p.paid
                 ? { background: '#4A7C59', borderColor: '#4A7C59', color: '#fff' }

@@ -13,10 +13,10 @@ import {
 const WEANING_STAGES = [
   {
     fromWeek: 17, toWeek: 20,
-    title: 'שלב ראשון — טעימות ראשונות',
-    subtitle: '4–5 חודשים',
+    title: 'שלב ראשון - טעימות ראשונות',
+    subtitle: '4-5 חודשים',
     icon: Carrot,
-    quantity: '1–3 כפיות',
+    quantity: '1-3 כפיות',
     frequency: 'פעם ביום',
     timing: 'אחרי האכלת חלב',
     texture: 'פירה חלק מאוד, דק עם חלב אם / מים',
@@ -31,29 +31,29 @@ const WEANING_STAGES = [
   },
   {
     fromWeek: 21, toWeek: 26,
-    title: 'שלב שני — הרחבת תפריט',
-    subtitle: '5–6 חודשים',
+    title: 'שלב שני - הרחבת תפריט',
+    subtitle: '5-6 חודשים',
     icon: Salad,
-    quantity: '3–6 כפות',
-    frequency: 'פעם–פעמיים ביום',
+    quantity: '3-6 כפות',
+    frequency: 'פעם-פעמיים ביום',
     timing: 'בין האכלות חלב',
     texture: 'פירה עם קצת גושים קטנים',
     foods: ['ברוקולי', 'אפונה', 'אבוקדו', 'בננה', 'אוכמניות', 'דגני בוקר (שיבולת שועל)'],
     avoid: ['דבש', 'מלח', 'אגוזים שלמים'],
     allergens: ['ניתן להתחיל גלוטן (שיבולת שועל/חיטה)'],
     recipes: [
-      { name: 'אבוקדו+בננה', icon: LeafyGreen, steps: 'מעכי אבוקדו ובננה ביחד — לא צריך בישול!' },
+      { name: 'אבוקדו+בננה', icon: LeafyGreen, steps: 'מעכי אבוקדו ובננה ביחד - לא צריך בישול!' },
       { name: 'ברוקולי מאודה', icon: Salad, steps: 'אדי ברוקולי 8 דק’, מעכי עם מים לפירה.' },
       { name: 'דייסת שיבולת שועל', icon: Soup, steps: 'שיבולת שועל + חלב אם/מים, בישול 3 דק’.' },
     ],
   },
   {
     fromWeek: 27, toWeek: 34,
-    title: 'שלב שלישי — מרקמים ועשיר',
-    subtitle: '6.5–8 חודשים',
+    title: 'שלב שלישי - מרקמים ועשיר',
+    subtitle: '6.5-8 חודשים',
     icon: Drumstick,
-    quantity: '1/4–1/2 כוס לארוחה',
-    frequency: '2–3 ארוחות ביום',
+    quantity: '1/4-1/2 כוס לארוחה',
+    frequency: '2-3 ארוחות ביום',
     timing: 'ארוחת בוקר, צהריים, ערב',
     texture: 'פירה גס, מרוסק, או אצבעות מזון רכות להאכלה עצמאית',
     foods: ['עוף מבושל', 'דג (סלמון/קרפיון)', 'עדשים', 'יוגורט', 'גבינה בולגרית'],
@@ -67,16 +67,16 @@ const WEANING_STAGES = [
   },
   {
     fromWeek: 35, toWeek: 52,
-    title: 'שלב רביעי — אוכל משפחתי',
-    subtitle: '8–12 חודשים',
+    title: 'שלב רביעי - אוכל משפחתי',
+    subtitle: '8-12 חודשים',
     icon: Wheat,
-    quantity: 'כ-150–200 מ"ל לארוחה',
-    frequency: '3 ארוחות + 1–2 חטיפים',
+    quantity: 'כ-150-200 מ"ל לארוחה',
+    frequency: '3 ארוחות + 1-2 חטיפים',
     timing: 'תבנית ארוחות קבועה',
     texture: 'גושים רכים, אצבעות, אוכל "משפחתי" מרוסק',
     foods: ['פסטה', 'אורז', 'לחם רך', 'גבינות', 'כל ירק/פרי', 'קטניות'],
     avoid: ['דבש', 'מלח מוסף', 'סוכר', 'מרגרינה', 'אגוזים שלמים (סכנת חנק)'],
-    allergens: ['ניתן כבר לאכול רוב האלרגנים — כולל אגוזי קשיו (טחונים)'],
+    allergens: ['ניתן כבר לאכול רוב האלרגנים - כולל אגוזי קשיו (טחונים)'],
     recipes: [
       { name: 'פסטה+ציר', icon: Wheat, steps: 'פסטה קצרה + ציר ירקות/עוף ביתי. ללא מלח.' },
       { name: 'עדשות+תרד', icon: Soup, steps: 'עדשות כתומות + תרד + גזר. בישול 20 דק’.' },
@@ -87,7 +87,7 @@ const WEANING_STAGES = [
 
 const READINESS_CHECKLIST = [
   { id: 'head', label: 'מחזיק/ת ראש זקוף ויושב/ת עם תמיכה', detail: 'צריך ליכולת לאכול בבטחה' },
-  { id: 'interest', label: 'מראה עניין באוכל — מסתכל/ת, מושיט/ה יד', detail: 'סימן לבגרות' },
+  { id: 'interest', label: 'מראה עניין באוכל - מסתכל/ת, מושיט/ה יד', detail: 'סימן לבגרות' },
   { id: 'mouth', label: 'מכניס/ה דברים לפה', detail: 'כישור יסוד לאכילה' },
   { id: 'tongue', label: 'לא מוציא/ה אוכל מהפה מיד (ירידה רפלקס דחיפה)', detail: 'מוכנות פיזיולוגית' },
 ]
@@ -160,13 +160,13 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
         </div>
       )}
 
-      {/* Readiness checklist — collapses to a compact "done" row once complete */}
+      {/* Readiness checklist - collapses to a compact "done" row once complete */}
       {checklistCollapsed ? (
         <button onClick={() => setChecklistOpen(true)}
           className="card w-full flex items-center justify-between gap-2"
           style={{ background: 'rgba(74,124,89,0.08)', border: '1px solid rgba(74,124,89,0.2)' }}>
           <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: '#4A7C59' }}>
-            <CheckCircle2 className="w-4 h-4" /> רשימת המוכנות הושלמה — {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות!
+            <CheckCircle2 className="w-4 h-4" /> רשימת המוכנות הושלמה - {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות!
           </span>
           <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: '#4A7C59' }} />
         </button>

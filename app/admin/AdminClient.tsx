@@ -195,7 +195,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   function closeModal()           { setModal(null); setSelected(null); setFormError('') }
 
   function fmt(dateStr: string | null) {
-    if (!dateStr) return '—'
+    if (!dateStr) return '-'
     const d    = new Date(dateStr)
     const diff = Date.now() - d.getTime()
     const mins  = Math.floor(diff / 60000)
@@ -229,7 +229,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   }
 
   function fmtPage(page: string | null): React.ReactNode {
-    if (!page) return '—'
+    if (!page) return '-'
     const map: Record<string, { icon: React.ElementType; label: string }> = {
       '/dashboard':   { icon: Home,           label: 'בית' },
       '/tracker':     { icon: Baby,           label: 'מעקב' },
@@ -421,7 +421,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             </div>
             <div>
               <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>מנהל מערכת</h1>
-              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>פאנל בלעדי — אמא בסדר</p>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>פאנל בלעדי - אמא בסדר</p>
             </div>
           </div>
           <button onClick={openCreate}
@@ -501,7 +501,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             </div>
           </div>
 
-          {/* Table header — 7 cols */}
+          {/* Table header - 7 cols */}
           <div className="hidden md:grid grid-cols-7 gap-3 px-3 pb-2 border-b text-xs font-semibold uppercase"
             style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
             <span>משתמשת</span>
@@ -529,7 +529,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                     {(u.name || u.email).charAt(0).toUpperCase()}
                   </div>
                   <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
-                    {u.name || '—'}
+                    {u.name || '-'}
                   </span>
                 </div>
 
@@ -570,7 +570,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
                   )}
                 </div>
 
@@ -788,14 +788,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           {/* ── Products ───────────────────────────────────────────────────────────── */}
           {manageTab === 'products' && (
             <div>
-              {/* Products page on/off toggle — when off, visitors see a
+              {/* Products page on/off toggle - when off, visitors see a
                   "coming soon" placeholder instead of the products page. */}
               <div className="flex items-center justify-between gap-3 mb-4 p-3 rounded-xl border flex-wrap"
                 style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
                 <div>
                   <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>עמוד המוצרים</p>
                   <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                    {productsEnabled ? 'העמוד פעיל ומוצג למשתמשות' : 'העמוד מוסתר — מוצג "בקרוב כאן"'}
+                    {productsEnabled ? 'העמוד פעיל ומוצג למשתמשות' : 'העמוד מוסתר - מוצג "בקרוב כאן"'}
                   </p>
                 </div>
                 <button
@@ -960,7 +960,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             קבוצת וואטסאפ של האפליקציה
           </h2>
           <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
-            כאן מגדירים את קישור ההצטרפות לקבוצה. כשההצגה כבויה — הכפתור לא יופיע למשתמשות בעמוד ההגדרות.
+            כאן מגדירים את קישור ההצטרפות לקבוצה. כשההצגה כבויה - הכפתור לא יופיע למשתמשות בעמוד ההגדרות.
           </p>
 
           <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text)' }}>קישור לקבוצה</label>
@@ -974,7 +974,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             <div>
               <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>הצגה למשתמשות</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                {waVisible ? 'הכפתור מוצג בעמוד ההגדרות' : 'הכפתור מוסתר — אף אחת לא רואה אותו'}
+                {waVisible ? 'הכפתור מוצג בעמוד ההגדרות' : 'הכפתור מוסתר - אף אחת לא רואה אותו'}
               </p>
             </div>
             <button onClick={() => setWaVisible(v => !v)}
@@ -1044,7 +1044,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-60"
               style={{ background: '#5C7A8A' }}>
               {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <KeyRound className="w-4 h-4" />}
-              שלח מייל
+              שליחת מייל
             </button>
             <button onClick={closeModal}
               className="flex-1 py-2.5 rounded-xl text-sm font-semibold border"
@@ -1064,7 +1064,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               {(selected.name || selected.email).charAt(0).toUpperCase()}
             </div>
             <div>
-              <p className="font-bold text-base" style={{ color: 'var(--text)' }}>{selected.name || '—'}</p>
+              <p className="font-bold text-base" style={{ color: 'var(--text)' }}>{selected.name || '-'}</p>
               <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{selected.email}</p>
             </div>
           </div>
@@ -1081,7 +1081,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             <DetailRow label="ותק"          value={memberDuration(selected.created_at) + ' במערכת'} />
             <DetailRow label="PWA" value={selected.pwa_installed_at
               ? <span className="inline-flex items-center gap-1.5"><Smartphone className="w-3.5 h-3.5" />{new Date(selected.pwa_installed_at).toLocaleDateString('he-IL')}</span>
-              : '—'} />
+              : '-'} />
             <DetailRow label="סטטוס" value={
               selected.confirmed
                 ? <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />מאושרת</span>

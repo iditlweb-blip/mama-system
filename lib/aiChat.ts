@@ -3,7 +3,7 @@ import { getGroqReply } from '@/lib/groq'
 import { ChatMode } from '@/types/database'
 
 // Server-to-server entry point into the same AI assistant that powers
-// app/chat — used by the WhatsApp webhook, which has no user session/cookie
+// app/chat - used by the WhatsApp webhook, which has no user session/cookie
 // (it authenticates the sender by their linked phone number instead, see
 // lib/whatsapp.ts + app/api/whatsapp/webhook). Takes an already-created
 // Supabase client (the webhook passes its admin/service-role client) plus a
@@ -32,7 +32,7 @@ export async function replyAsAssistant(
 
   const reply = await getGroqReply(messages, mode)
 
-  // Persist both sides — non-blocking, mirrors app/api/chat/route.ts.
+  // Persist both sides - non-blocking, mirrors app/api/chat/route.ts.
   supabase.from('chat_messages').insert([
     { user_id: userId, role: 'user', content: userMessage, mode },
     { user_id: userId, role: 'assistant', content: reply, mode },

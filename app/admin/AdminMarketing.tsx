@@ -131,7 +131,7 @@ export default function AdminMarketing({ initialContent, initialNotes, onToast }
 
       <p className="text-xs mb-4" style={{ color: 'var(--text-muted)' }}>
         {platform === 'whatsapp'
-          ? 'תיעוד וסידור ההודעות שאת שולחת לקבוצת הוואטסאפ — רעיונות, מתוזמנים ומה שכבר פורסם.'
+          ? 'תיעוד וסידור ההודעות שאת שולחת לקבוצת הוואטסאפ - רעיונות, מתוזמנים ומה שכבר פורסם.'
           : 'תכנון וסידור הפוסטים לעמוד האינסטגרם של אמא בסדר.'}
       </p>
 

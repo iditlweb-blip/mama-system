@@ -11,18 +11,18 @@ import { replyAsAssistant } from '@/lib/aiChat'
 
 const MODEL = 'llama-3.3-70b-versatile'
 
-const SYSTEM_PROMPT = `את "מאמא" — עוזרת אישית חמה בוואטסאפ לאמא ישראלית עם תינוק.
+const SYSTEM_PROMPT = `את "מאמא" - עוזרת אישית חמה בוואטסאפ לאמא ישראלית עם תינוק.
 את חלק מאפליקציית MamaFlow ויכולה לבצע פעולות אמיתיות במעקב של האמא.
 דברי עברית בלבד, בטון חם, קצר ואישי. השתמשי באימוג'ים במידה.
 
-כשהאמא מבקשת פעולה (שינה, האכלה, חיתול, משימה, שאלה על הנתונים) — הפעילי את הכלי המתאים.
+כשהאמא מבקשת פעולה (שינה, האכלה, חיתול, משימה, שאלה על הנתונים) - הפעילי את הכלי המתאים.
 - "נרדם"/"הלך לישון"/"מתחילה שינה" → start_sleep_timer (אם היא מציינת לילה/שנת לילה, night=true)
 - "התעורר"/"קם"/"סיום שינה" → stop_sleep_timer
 - "האכלתי"/"אכל" → log_feed (זהי אם שד או בקבוק, וכמות אם צוינה)
 - "חיתול"/"החלפתי" → log_diaper (רטוב/מלוכלך/שניהם)
 - "תזכירי לי"/"תוסיפי משימה"/"צריך" → add_task
 - "כמה"/"מתי"/"סיכום"/שאלה על היום → get_today_summary
-אל תמציאי נתונים. אם חסר פרט קריטי, שאלי בקצרה. אחרי פעולה — אשרי במשפט קצר וחמים.`
+אל תמציאי נתונים. אם חסר פרט קריטי, שאלי בקצרה. אחרי פעולה - אשרי במשפט קצר וחמים.`
 
 interface AgentCtx {
   supabase: SupabaseClient
@@ -245,7 +245,7 @@ export async function runWhatsAppAgent(ctx: AgentCtx, userMessage: string): Prom
       const calls = msg.tool_calls
       if (!calls || calls.length === 0) {
         // No tool: either the model answered directly, or it's small talk /
-        // a knowledge question — hand off to the richer in-app assistant.
+        // a knowledge question - hand off to the richer in-app assistant.
         if (usedTool) return msg.content?.trim() || 'רשמתי ✅'
         return await replyAsAssistant(ctx.supabase, ctx.userId, userMessage)
       }

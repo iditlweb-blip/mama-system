@@ -9,7 +9,7 @@ export default async function SettingsPage() {
     getProfile(),
   ])
 
-  // WhatsApp group link — the admin controls the link and its visibility from
+  // WhatsApp group link - the admin controls the link and its visibility from
   // the admin panel. Only render the join button when it's turned on.
   const supabase = await createClient()
   const { data: waSetting } = await supabase

@@ -1,12 +1,12 @@
 import crypto from 'crypto'
 
 // Thin wrapper around the Meta WhatsApp Cloud API (Graph API). Server-side
-// only — never import from a client component. All calls need:
-//   WHATSAPP_ACCESS_TOKEN   — permanent (System User) access token
-//   WHATSAPP_PHONE_NUMBER_ID — the "Phone number ID" from the app's
+// only - never import from a client component. All calls need:
+//   WHATSAPP_ACCESS_TOKEN   - permanent (System User) access token
+//   WHATSAPP_PHONE_NUMBER_ID - the "Phone number ID" from the app's
 //                              WhatsApp > API Setup page (NOT the phone
 //                              number itself)
-//   WHATSAPP_APP_SECRET      — the Meta app's secret, used to verify the
+//   WHATSAPP_APP_SECRET      - the Meta app's secret, used to verify the
 //                              X-Hub-Signature-256 header on inbound webhooks
 const GRAPH_VERSION = 'v21.0'
 
@@ -66,7 +66,7 @@ async function fetchMediaMeta(mediaId: string): Promise<MediaMeta> {
 
 // Downloads a media asset a user sent to the bot (image/pdf/etc). Returns
 // the raw bytes + mime type so the caller can re-upload to Supabase
-// Storage — Meta's media URLs are short-lived and require the same access
+// Storage - Meta's media URLs are short-lived and require the same access
 // token to fetch, so they can't be linked to directly from the app.
 export async function downloadWhatsAppMedia(mediaId: string): Promise<{ bytes: Buffer; mimeType: string }> {
   const meta = await fetchMediaMeta(mediaId)

@@ -12,7 +12,7 @@ async function verifyAdmin() {
     // Include the actually-detected session email in the thrown message so a
     // mismatch (wrong account logged in, stale session, etc.) is visible
     // directly in the error toast instead of requiring more back-and-forth.
-    throw new Error(`Unauthorized (session email: ${user?.email ?? 'none — not logged in'})`)
+    throw new Error(`Unauthorized (session email: ${user?.email ?? 'none - not logged in'})`)
   }
   return createAdminClient()
 }
@@ -33,7 +33,7 @@ export async function deleteUser(userId: string): Promise<{ ok: boolean; error?:
 // ─── Send password reset email ─────────────────────────────────────────────────
 export async function sendPasswordReset(email: string): Promise<{ ok: boolean; error?: string }> {
   try {
-    // Use the admin (service_role) client — this sends the email automatically
+    // Use the admin (service_role) client - this sends the email automatically
     const admin = await verifyAdmin()
     const { error } = await admin.auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://mama-system.vercel.app'}/api/auth/callback?next=/auth/reset`,

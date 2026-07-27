@@ -77,7 +77,7 @@ export default function ChatClient(
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [streaming, setStreaming] = useState('')
-  // Which tab is currently generating — so a streaming reply only appears in
+  // Which tab is currently generating - so a streaming reply only appears in
   // its own tab, not whichever tab happens to be open.
   const [busyMode, setBusyMode] = useState<ChatMode | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -92,7 +92,7 @@ export default function ChatClient(
   async function send(text?: string) {
     const content = (text || input).trim()
     if (!content || loading) return
-    const sendMode = mode // capture — the user may switch tabs mid-generation
+    const sendMode = mode // capture - the user may switch tabs mid-generation
     setInput('')
     const base = messagesByMode[sendMode] || []
     const newMessages: Message[] = [...base, { role: 'user', content }]
@@ -193,7 +193,7 @@ export default function ChatClient(
               <currentMode.icon className="w-8 h-8" style={{ color: currentMode.color }} />
             </div>
             <h3 className="font-bold mb-1" style={{ color: 'var(--text)' }}>
-              {currentMode.label} — {currentMode.description}
+              {currentMode.label} - {currentMode.description}
             </h3>
             <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
               שאלי אותי כל מה שעל הלב

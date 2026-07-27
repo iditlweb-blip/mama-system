@@ -173,7 +173,7 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
                     className="text-xs"
                     style={{ color: 'var(--text-muted)' }}
                   >
-                    נקה הכל
+                    ניקוי הכל
                   </button>
                 )}
               </div>
@@ -213,7 +213,7 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
                         {!n.read && (
                           <button
                             onClick={() => markRead(n.id)}
-                            title="סמן כנקרא"
+                            title="סמני כנקרא"
                             className="w-5 h-5 rounded flex items-center justify-center hover:opacity-70"
                             style={{ background: 'rgba(74,124,89,0.12)' }}
                           >

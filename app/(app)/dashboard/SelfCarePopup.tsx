@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { X, Heart, Sun, Sparkles, Leaf, ChevronLeft, type LucideIcon } from 'lucide-react'
 
 const MESSAGES: { text: string; Icon: LucideIcon }[] = [
-  { text: 'צאי לשמש — גם 10 דקות משנות מצב רוח לגמרי', Icon: Sun },
+  { text: 'צאי לשמש - גם 10 דקות משנות מצב רוח לגמרי', Icon: Sun },
   { text: 'קשה זה עובר, ואת עושה את הכי טוב שלך', Icon: Heart },
   { text: 'גם קפה ברגע שקט זה טיפוח עצמי. ספורי', Icon: Sparkles },
   { text: 'אמא מאושרת = תינוק מאושר. לא אנוכי לדאוג לעצמך', Icon: Heart },

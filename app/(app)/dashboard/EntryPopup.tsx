@@ -54,7 +54,7 @@ export default function EntryPopup({
   async function handleStop() {
     const log = await stop()
     if (!log) {
-      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע - הטיימר עדיין פועל.')
       return
     }
     onLog(log)

@@ -68,12 +68,12 @@ function calcWeeks(dueDate: string | null): { weeks: number; label: string; almo
     weeks: clamped,
     label: remaining > 0
       ? `שבוע ${clamped} (עוד ${remaining} שבועות ללידה)`
-      : `שבוע ${clamped} — כמעט זמן!`,
+      : `שבוע ${clamped} - כמעט זמן!`,
     almostTime: remaining <= 0,
   }
 }
 
-// Fruit-size-per-week — one consistent icon family (closest lucide match per
+// Fruit-size-per-week - one consistent icon family (closest lucide match per
 // fruit where one exists, generic Sprout otherwise), scaled up week over week
 // so the icon itself visually communicates "growing bigger".
 const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: number }> = {
@@ -153,7 +153,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
       // created yet (run migration 011_pregnancy_storage.sql in Supabase).
       const notFound = /bucket|not found|exist/i.test(error.message)
       showMsg(notFound
-        ? 'האחסון עדיין לא הוגדר — יש להריץ את מיגרציה 011 ב-Supabase'
+        ? 'האחסון עדיין לא הוגדר - יש להריץ את מיגרציה 011 ב-Supabase'
         : `שגיאה בהעלאה: ${error.message}`)
       setUploading(null)
       return
@@ -256,7 +256,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         {[
           { label: 'בדיקות הושלמו', value: completed, color: '#4A7C59' },
           { label: 'סה”כ בדיקות', value: tests.length, color: '#7F5268' },
-          { label: 'שבוע הריון', value: weeks || '—', color: '#5C7A8A' },
+          { label: 'שבוע הריון', value: weeks || '-', color: '#5C7A8A' },
         ].map(s => (
           <div key={s.label} style={{ flex: 1, background: '#fff', borderRadius: 14, padding: '14px 10px', textAlign: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
             <p style={{ margin: 0, fontSize: '1.6rem', fontWeight: 700, color: s.color }}>{s.value}</p>
@@ -307,7 +307,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         ))}
       </div>
 
-      {/* Overview tab — all standard tests by week */}
+      {/* Overview tab - all standard tests by week */}
       {tab === 'overview' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {STANDARD_TESTS.map(st => {
@@ -506,7 +506,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         }}
       />
 
-      {/* Lightbox — enlarge, share, download */}
+      {/* Lightbox - enlarge, share, download */}
       {lightbox && (
         <div
           onClick={() => setLightbox(null)}

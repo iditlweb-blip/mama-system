@@ -165,7 +165,7 @@ body {
 /* ─── Display font helper ──────────────────────────────────── */
 .font-display { font-family: var(--font-display) !important; }
 
-/* ─── Scroll-reveal (CSS view timeline — Chrome 115+, FF 110+) */
+/* ─── Scroll-reveal (CSS view timeline - Chrome 115+, FF 110+) */
 @keyframes scrollReveal {
   from { opacity: 0; transform: translateY(32px); }
   to   { opacity: 1; transform: translateY(0);    }

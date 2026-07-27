@@ -27,7 +27,7 @@ function ensureNotification(id: string, text: string, read: boolean) {
   try {
     const raw = localStorage.getItem('mama_notifications')
     const list: AppNotification[] = raw ? JSON.parse(raw) : []
-    if (list.find(n => n.id === id)) return   // already exists — don't touch it
+    if (list.find(n => n.id === id)) return   // already exists - don't touch it
     list.unshift({ id, text, read, ts: Date.now() })
     localStorage.setItem('mama_notifications', JSON.stringify(list))
     window.dispatchEvent(new Event('notification_update'))
@@ -91,7 +91,7 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
           איך את רוצה לציין או לחגוג ל{babyName}?
         </p>
         <p className="text-xs mb-5 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
-          אם יש לך רעיון — כתבי בפתק <Pencil className="w-3 h-3" />
+          אם יש לך רעיון - כתבי בפתק <Pencil className="w-3 h-3" />
         </p>
 
         <div className="flex flex-col gap-2">
@@ -104,7 +104,7 @@ export default function BirthdayPopup({ babyName, babyGender, babyWeeks }: Props
             לפתק אישי <ChevronLeft className="w-3.5 h-3.5" />
           </Link>
           <button onClick={() => setVisible(false)} className="w-full py-2 text-sm" style={{ color: 'var(--text-muted)' }}>
-            סגור
+            סגירה
           </button>
         </div>
       </div>

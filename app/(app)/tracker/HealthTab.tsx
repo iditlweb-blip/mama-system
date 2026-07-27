@@ -22,7 +22,7 @@ export interface HealthEvent {
 
 // Standard Israeli vaccine schedule (months)
 const VACCINE_SCHEDULE = [
-  { month: 0,  title: 'הפטיטיס B', desc: 'חיסון ראשון — ניתן בלידה' },
+  { month: 0,  title: 'הפטיטיס B', desc: 'חיסון ראשון - ניתן בלידה' },
   { month: 2,  title: 'פנטה + פוליו + פנאומוקוק + רוטה', desc: 'חיסון 2 חודשים' },
   { month: 4,  title: 'פנטה + פוליו + פנאומוקוק + רוטה', desc: 'חיסון 4 חודשים' },
   { month: 6,  title: 'פנטה + פוליו + פנאומוקוק + הפטיטיס B', desc: 'חיסון 6 חודשים' },

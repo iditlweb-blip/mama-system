@@ -48,7 +48,7 @@ export default function AdminTasks({ initialTasks, onToast }: {
       sort_order: existing?.sort_order ?? null,
       created_at: existing?.created_at ?? new Date().toISOString(),
     }
-    // Optimistic update — no page reload.
+    // Optimistic update - no page reload.
     setTasks(prev => form.id ? prev.map(t => t.id === id ? task : t) : [task, ...prev])
     resetForm()
     startTransition(async () => {

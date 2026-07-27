@@ -3,7 +3,7 @@ import "./globals.css"
 
 export const metadata: Metadata = {
   title: "אמא בסדר",
-  description: "מערכת ניהול לאמהות — משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
+  description: "מערכת ניהול לאמהות - משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "אמא בסדר",
-    description: "מערכת ניהול לאמהות עצמאיות — משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
+    description: "מערכת ניהול לאמהות עצמאיות - משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
     siteName: "אמא בסדר",
     locale: "he_IL",
     type: "website",
@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl">
       <head>
-        {/* Paint background BEFORE any CSS loads — kills white flash on PWA open */}
+        {/* Paint background BEFORE any CSS loads - kills white flash on PWA open */}
         <style dangerouslySetInnerHTML={{ __html: 'html,body{background-color:#f7ede2}' }} />
 
         <link rel="preload" href="/fonts/Talent_FS-Medium.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
@@ -52,7 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-title" content="אמא בסדר" />
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
 
-        {/* iOS PWA splash screens — shown by iOS before the web app loads (eliminates white screen) */}
+        {/* iOS PWA splash screens - shown by iOS before the web app loads (eliminates white screen) */}
         <link rel="apple-touch-startup-image" href="/splash/splash-1170x2532.png"
           media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3)" />
         <link rel="apple-touch-startup-image" href="/splash/splash-1284x2778.png"

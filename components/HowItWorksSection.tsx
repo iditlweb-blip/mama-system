@@ -12,19 +12,19 @@ const STEPS = [
   {
     num: '02',
     title: 'הגדרות',
-    body: 'אם את בהריון סמני את התאריך המשוער ומין העובר — אם את רוצה מעקב תינוק סמני בהתאם, המערכת תעשה את השאר בשבילך',
+    body: 'אם את בהריון סמני את התאריך המשוער ומין העובר - אם את רוצה מעקב תינוק סמני בהתאם, המערכת תעשה את השאר בשבילך',
     side: 'left' as const,
   },
   {
     num: '03',
     title: 'זהו!',
-    body: 'מעכשיו המערכת עושה הכל בשבילך — כנסי להתעדכן, לסמן, לראות את גודל העובר או השלב הבא בהתפתחות התינוק שלך.',
+    body: 'מעכשיו המערכת עושה הכל בשבילך - כנסי להתעדכן, לסמן, לראות את גודל העובר או השלב הבא בהתפתחות התינוק שלך.',
     side: 'right' as const,
   },
   {
     num: '04',
     title: 'אל תשכחי!',
-    body: 'אל תשכחי את עצמך! האפליקציה כאן כדי לעשות לך סדר ולעזור לך — תשמשי בה!',
+    body: 'אל תשכחי את עצמך! האפליקציה כאן כדי לעשות לך סדר ולעזור לך - תשמשי בה!',
     side: 'left' as const,
   },
 ]
@@ -55,7 +55,7 @@ function AnimatedDashLine({ d, viewBox, w, h, alignRight }: (typeof DASH_LINES)[
     const wrap = wrapRef.current
     if (!path || !wrap) return
 
-    /* Measure path and set initial hidden state — dashes stay throughout */
+    /* Measure path and set initial hidden state - dashes stay throughout */
     const len = path.getTotalLength()
     const cycleLen = 30
     const startOffset = Math.ceil(len / cycleLen) * cycleLen
@@ -173,7 +173,7 @@ function StepCard({ num, title, body, side }: (typeof STEPS)[0]) {
       justifyContent: side === 'right' ? 'flex-start' : 'flex-end',
       position:       'relative',
     }}>
-      {/* Step numeral SVG — decorative, anchored to the outer edge of the card */}
+      {/* Step numeral SVG - decorative, anchored to the outer edge of the card */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={`/icons/landing/step-${num}.svg`}

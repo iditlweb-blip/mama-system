@@ -9,14 +9,14 @@ const steps = {
     { icon: '2', text: 'לחצי על תפריט שלוש הנקודות בפינה הימנית העליונה' },
     { icon: '3', text: 'בחרי "הוסף למסך הבית" מהרשימה' },
     { icon: '4', text: 'בחרי שם לאפליקציה (למשל "אמא בסדר") ולחצי הוסף' },
-    { icon: '5', text: 'האפליקציה תופיע על מסך הבית — לחצי עליה לפתיחה!' },
+    { icon: '5', text: 'האפליקציה תופיע על מסך הבית - לחצי עליה לפתיחה!' },
   ],
   iphone: [
     { icon: '1', text: 'פתחי את דפדפן Safari (חשוב! רק Safari תומך בהוספה לדף הבית)' },
     { icon: '2', text: 'גשי לאתר mama-system.vercel.app' },
     { icon: '3', text: 'לחצי על כפתור השיתוף בתחתית המסך' },
     { icon: '4', text: 'גללי מטה ברשימה ובחרי "הוסף למסך הבית"' },
-    { icon: '5', text: 'לחצי "הוסף" — האפליקציה תופיע על מסך הבית שלך!' },
+    { icon: '5', text: 'לחצי "הוסף" - האפליקציה תופיע על מסך הבית שלך!' },
   ],
 }
 
@@ -53,7 +53,7 @@ export default function PwaInstallTabs() {
       >
         {tab === 'iphone' ? <Apple size={40} color="#7F5268" strokeWidth={1.4} /> : <Smartphone size={40} color="#7F5268" strokeWidth={1.4} />}
         <p className="text-sm font-medium" style={{ color: '#7F5268' }}>
-          סרטון הדרכה — {tab === 'iphone' ? 'iPhone' : 'Android'}
+          סרטון הדרכה - {tab === 'iphone' ? 'iPhone' : 'Android'}
         </p>
         <p className="text-xs font-light" style={{ color: 'rgba(127,82,104,0.6)' }}>בקרוב</p>
       </div>
@@ -82,7 +82,7 @@ export default function PwaInstallTabs() {
 
       {/* tip */}
       <p className="text-xs text-center mt-5 font-light flex items-center justify-center gap-1" style={{ color: 'rgba(127,82,104,0.7)' }}>
-        לא הצלחת? אפשר להשתמש ישירות מהדפדפן — זה עובד בדיוק אותו דבר <Heart size={12} />
+        לא הצלחת? אפשר להשתמש ישירות מהדפדפן - זה עובד בדיוק אותו דבר <Heart size={12} />
       </p>
     </div>
   )

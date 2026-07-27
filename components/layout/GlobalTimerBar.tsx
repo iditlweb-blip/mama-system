@@ -5,7 +5,7 @@ import { useSleepTimer } from '@/lib/useSleepTimer'
 import { BedDouble, Moon, Square, X } from 'lucide-react'
 
 // A slim bar that appears just below the header, on every authenticated
-// page, whenever the shared sleep timer is running — so it's always obvious
+// page, whenever the shared sleep timer is running - so it's always obvious
 // a session is being tracked even after navigating away from the tracker.
 // The user can always dismiss it; it reappears automatically the next time
 // a new timer session starts.
@@ -23,7 +23,7 @@ export default function GlobalTimerBar({ userId }: { userId: string }) {
     const log = await timer.stop()
     if (!log) {
       // The log couldn't be saved (timer stays running so nothing is lost).
-      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע - הטיימר עדיין פועל.')
     }
   }
 

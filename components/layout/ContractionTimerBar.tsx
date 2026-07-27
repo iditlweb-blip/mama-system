@@ -20,7 +20,7 @@ export default function ContractionTimerBar({ userId }: { userId: string }) {
 
   async function handleStop() {
     const c = await timer.stop()
-    if (!c) alert('לא הצלחנו לשמור את הציר. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+    if (!c) alert('לא הצלחנו לשמור את הציר. נסי שוב בעוד רגע - הטיימר עדיין פועל.')
   }
 
   return (

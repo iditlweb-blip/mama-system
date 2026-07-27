@@ -128,7 +128,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
     setSchedule(prev => prev.filter(s => s.id !== id))
   }
 
-  // In pregnancy mode there's no baby yet, so baby-category tasks are noise —
+  // In pregnancy mode there's no baby yet, so baby-category tasks are noise -
   // hide them here (they still live in the DB for when tracking switches).
   const visibleTasks = isPregnancy ? tasks.filter(t => t.category !== 'baby') : tasks
   const doneTasks = visibleTasks.filter(t => t.status === 'done')
@@ -443,7 +443,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 //   daily benefit ≈ average of the 3 months' salary before the leave / 90,
 //   capped at the legal daily maximum, paid across the entitlement period
 //   (15 weeks = 105 days for the full grant, 8 weeks = 56 days for the partial).
-// This is an estimate only — the exact sum depends on Bituach Leumi records.
+// This is an estimate only - the exact sum depends on Bituach Leumi records.
 const DAILY_CAP = 1651.25 // approx. legal daily maximum (2025), updated yearly
 
 function MaternityLeave({ dueDate }: { dueDate: string | null }) {
@@ -475,7 +475,7 @@ function MaternityLeave({ dueDate }: { dueDate: string | null }) {
             ניתן להתחיל את חופשת הלידה החל מ־
             <strong style={{ color: '#7F5268' }}> {earliestStart.toLocaleDateString('he-IL')} </strong>
             (עד 7 שבועות לפני תאריך הלידה המשוער
-            {dueDate && <> — {new Date(dueDate).toLocaleDateString('he-IL')}</>}).
+            {dueDate && <> - {new Date(dueDate).toLocaleDateString('he-IL')}</>}).
             את חייבת לצאת לכל המאוחר ביום הלידה עצמו.
           </p>
         ) : (
@@ -539,7 +539,7 @@ function MaternityLeave({ dueDate }: { dueDate: string | null }) {
             {capped && (
               <p className="text-xs flex items-start gap-1" style={{ color: '#B8860B' }}>
                 <Info className="w-3 h-3 mt-0.5 flex-shrink-0" />
-                השכר חורג מהתקרה — החישוב הוגבל לתקרת דמי הלידה המקסימלית ליום.
+                השכר חורג מהתקרה - החישוב הוגבל לתקרת דמי הלידה המקסימלית ליום.
               </p>
             )}
           </div>
@@ -664,7 +664,7 @@ function DeliveryEquipment({ userId }: { userId: string }) {
       {/* List */}
       <div className="card space-y-2">
         {items.length === 0 ? (
-          <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>הרשימה ריקה — הוסיפי פריטים למעלה</p>
+          <p className="text-sm text-center py-4" style={{ color: 'var(--text-muted)' }}>הרשימה ריקה - הוסיפי פריטים למעלה</p>
         ) : items.map(item => (
           editingId === item.id ? (
             <div key={item.id} className="flex items-center gap-2 p-2 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid rgba(127,82,104,0.3)' }}>
@@ -832,7 +832,7 @@ function ScheduleRow({ item, colors, onToggle, onSaveNote, onDelete }: {
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
           <p className="text-xs" style={{ color: colors.text }}>
-            {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
+            {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
           </p>
         </div>
         <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: `${colors.text}20`, color: colors.text }}>

@@ -27,11 +27,11 @@ function fmtDur(min: number): string {
 
 const hhmm = (d: Date) => d.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
 
-// A sleep segment clamped to a single calendar day (00:00–24:00 of that day).
+// A sleep segment clamped to a single calendar day (00:00-24:00 of that day).
 interface DaySegment {
   id: string
-  leftPct: number      // 0–100, position of the segment start within the day
-  widthPct: number     // 0–100, how much of the day it covers
+  leftPct: number      // 0-100, position of the segment start within the day
+  widthPct: number     // 0-100, how much of the day it covers
   minutes: number      // clamped minutes within this day
   isNight: boolean
   fromLabel: string    // real start clock (may be previous day)
@@ -74,7 +74,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
     return null
   }
 
-  // Which days actually have sleep data — used to build the day strip.
+  // Which days actually have sleep data - used to build the day strip.
   const daysWithData = useMemo(() => {
     const set = new Set<number>()
     for (const s of sleeps) {
@@ -167,7 +167,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
           </button>
         </div>
 
-        {/* 14-day strip — a mini calendar of recent days */}
+        {/* 14-day strip - a mini calendar of recent days */}
         <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ direction: 'rtl' }}>
           {strip.map(d => {
             const active = d.getTime() === selected.getTime()
@@ -197,7 +197,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
       <div className="card">
         <h2 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
           <Moon className="w-4 h-4" style={{ color: NIGHT }} />
-          ציר שינה — {selectedLabel}
+          ציר שינה - {selectedLabel}
         </h2>
 
         {loading ? (
@@ -226,7 +226,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
                 {segments.map(seg => (
                   <div
                     key={seg.id}
-                    title={`${seg.fromLabel}${seg.toLabel ? '–' + seg.toLabel : ''} · ${fmtDur(seg.minutes)}`}
+                    title={`${seg.fromLabel}${seg.toLabel ? '-' + seg.toLabel : ''} · ${fmtDur(seg.minutes)}`}
                     className="absolute top-0 bottom-0"
                     style={{
                       left: `${seg.leftPct}%`,
@@ -274,7 +274,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
                       {seg.isNight ? 'שנת לילה' : 'שנ״צ'}
                     </span>
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {seg.fromLabel}{seg.toLabel ? `–${seg.toLabel}` : ''}
+                      {seg.fromLabel}{seg.toLabel ? `-${seg.toLabel}` : ''}
                     </span>
                   </div>
                   <span className="text-xs font-semibold flex-shrink-0" style={{ color: 'var(--text)' }}>

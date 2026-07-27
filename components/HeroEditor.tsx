@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 
 // ────────────────────────────────────────────────────────────────────────────
-// Floating Hero Editor — dev only (process.env.NODE_ENV === 'development')
+// Floating Hero Editor - dev only (process.env.NODE_ENV === 'development')
 // Two tabs: Desktop 🖥️  |  Mobile 📱
 // Mobile tab simulates a phone frame (390px) via CSS transform.
 // Copy the values panel and send to Claude to bake into code.
@@ -77,7 +77,7 @@ function EditorPanel() {
     if (!el) { el = document.createElement('style'); el.id = '_hedge_mob'; document.head.appendChild(el) }
 
     if (sim) {
-      // Apply directly (no media query needed — phone frame is active)
+      // Apply directly (no media query needed - phone frame is active)
       el.textContent = `
         [data-hero="h1"]           { font-size: ${v.h1Size}rem    !important; white-space: normal !important; }
         [data-hero="subtitle"]     { font-size: ${v.subtitleSize}rem !important; white-space: normal !important; }
@@ -262,7 +262,7 @@ function EditorPanel() {
                 color: simOn ? '#fff' : '#ccc',
               }}
             >
-              {simOn ? '✅ מסגרת טלפון פעילה — לחצי לכיבוי' : '📱 הפעילי מסגרת טלפון'}
+              {simOn ? '✅ מסגרת טלפון פעילה - לחצי לכיבוי' : '📱 הפעילי מסגרת טלפון'}
             </button>
           )}
 

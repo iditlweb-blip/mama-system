@@ -8,8 +8,8 @@ import type { Contraction } from '@/types/database'
 // Start when a contraction begins, Stop when it ends) but is intentionally
 // simpler: a contraction lasts under two minutes, so the running state lives
 // only in localStorage (fast, survives refresh/navigation, syncs across tabs
-// in the same browser). There's no cross-device DB mirror because — unlike the
-// sleep timer — nothing external (e.g. the WhatsApp bot) drives it.
+// in the same browser). There's no cross-device DB mirror because - unlike the
+// sleep timer - nothing external (e.g. the WhatsApp bot) drives it.
 const KEY = 'mama_contraction_timer_start'
 const EVT = 'mama-contraction-timer-change'
 // Broadcast when stop()/addManual() records a contraction, so a screen that's

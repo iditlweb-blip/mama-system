@@ -1,9 +1,9 @@
 /**
  * Minimal Telegram notifier for admin alerts.
  *
- * Configure two env vars (server-side only — never NEXT_PUBLIC):
- *   TELEGRAM_BOT_TOKEN      — from @BotFather
- *   TELEGRAM_ADMIN_CHAT_ID  — the admin's chat id (send the bot a message, then
+ * Configure two env vars (server-side only - never NEXT_PUBLIC):
+ *   TELEGRAM_BOT_TOKEN      - from @BotFather
+ *   TELEGRAM_ADMIN_CHAT_ID  - the admin's chat id (send the bot a message, then
  *                             read it from https://api.telegram.org/bot<token>/getUpdates)
  *
  * If either is missing the call is a no-op, so the app keeps working before the
@@ -13,7 +13,7 @@ export async function sendTelegram(text: string): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID
   if (!token || !chatId) {
-    console.warn('[telegram] TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID not set — skipping notification')
+    console.warn('[telegram] TELEGRAM_BOT_TOKEN / TELEGRAM_ADMIN_CHAT_ID not set - skipping notification')
     return false
   }
   try {

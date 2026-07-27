@@ -115,7 +115,7 @@ export default function DashboardClient({
   const [addingTest, setAddingTest] = useState<string | null>(null)
 
   // Standard tests coming up from the current week onward that the woman hasn't
-  // added to her personal list yet — these are what "quick add" offers.
+  // added to her personal list yet - these are what "quick add" offers.
   const addedNames = new Set(pregTests.map(t => t.test_name))
   const upcomingStandard = STANDARD_TESTS.filter(
     st => st.week >= Math.max(0, pregnancyWeek - 2) && !addedNames.has(st.name),
@@ -162,7 +162,7 @@ export default function DashboardClient({
   const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
   const [notes,      setNotes]      = useState('')
   const [startTime,  setStartTime]  = useState(() => toLocalInput(new Date()))
-  const [wakeTime,   setWakeTime]   = useState('')   // sleep only — optional "woke at"
+  const [wakeTime,   setWakeTime]   = useState('')   // sleep only - optional "woke at"
   const [editingLogId, setEditingLogId] = useState<string | null>(null)
 
   // Edit state for tasks
@@ -228,7 +228,7 @@ export default function DashboardClient({
 
   // Add a freshly-inserted log to local state + bump the matching counter.
   // Deduped by id: a stopped sleep timer both broadcasts LOG_ADDED_EVT (picked
-  // up by the listener below) AND may be handed here via onLog — without this
+  // up by the listener below) AND may be handed here via onLog - without this
   // guard the same log would be added, and counted, twice.
   function addLogToState(log: BabyLog) {
     setLocalLogs(prev => {
@@ -291,7 +291,7 @@ export default function DashboardClient({
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'sleep') {
-      // Prefer an explicit "woke at" — it sets end_time and derives the
+      // Prefer an explicit "woke at" - it sets end_time and derives the
       // duration; otherwise fall back to the manual minutes field.
       if (wakeTime) {
         const start = new Date(startTime)
@@ -320,7 +320,7 @@ export default function DashboardClient({
   async function handleTimerStop() {
     const log = await timer.stop()
     if (!log) {
-      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע — הטיימר עדיין פועל.')
+      alert('לא הצלחנו לשמור את השינה. נסי שוב בעוד רגע - הטיימר עדיין פועל.')
     }
   }
 
@@ -350,11 +350,11 @@ export default function DashboardClient({
   return (
     <div className="space-y-5 max-w-5xl">
 
-      {/* Entry popup — sleep timer status + quick feed/diaper marking.
+      {/* Entry popup - sleep timer status + quick feed/diaper marking.
           Baby-tracking only; irrelevant (and hidden) in pregnancy mode. */}
       {!isPregnancy && <EntryPopup userId={userId} onLog={addLogToState} />}
 
-      {/* Birthday milestone popup — at 6 months & 1 year */}
+      {/* Birthday milestone popup - at 6 months & 1 year */}
       {profile?.baby_name && (
         <BirthdayPopup
           babyName={profile.baby_name}
@@ -378,7 +378,7 @@ export default function DashboardClient({
           </p>
         </div>
 
-        {/* ילדתי button — only for pregnancy tracking */}
+        {/* ילדתי button - only for pregnancy tracking */}
         {(profile?.tracking_type === 'pregnancy' || (!profile?.tracking_type && !profile?.baby_birthdate)) && (
           <button
             onClick={() => setShowGaveBirth(true)}
@@ -471,7 +471,7 @@ export default function DashboardClient({
           <div className="space-y-2">
             {myUpcoming.length === 0 ? (
               <p className="text-sm font-light text-center py-3" style={{ color: 'var(--text-muted)' }}>
-                אין בדיקות קרובות רשומות — הוסיפי מהרשימה למטה 👇
+                אין בדיקות קרובות רשומות - הוסיפי מהרשימה למטה 👇
               </p>
             ) : (
               myUpcoming.slice(0, 4).map(test => {
@@ -536,7 +536,7 @@ export default function DashboardClient({
                 </p>
               ) : (
                 <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  לחצי כשהתינוק נרדם — יירשם אוטומטית
+                  לחצי כשהתינוק נרדם - יירשם אוטומטית
                 </p>
               )}
             </div>
@@ -658,7 +658,7 @@ export default function DashboardClient({
                 if (!track) return null
                 const Icon = track.icon
                 const start = log.start_time ? new Date(log.start_time) : null
-                // For sleep, show a from–to range plus a duration summary — like
+                // For sleep, show a from-to range plus a duration summary - like
                 // the baby-tracker timeline. Feed/diaper keep the single time.
                 let time = ''
                 let durLabel = ''
@@ -670,7 +670,7 @@ export default function DashboardClient({
                       : log.duration_min
                         ? new Date(start.getTime() + log.duration_min * 60000)
                         : null
-                    if (end) time = `${hhmm(start)}–${hhmm(end)}`
+                    if (end) time = `${hhmm(start)}-${hhmm(end)}`
                     if (log.duration_min) durLabel = fmtDurShort(log.duration_min)
                   }
                 }
@@ -698,7 +698,7 @@ export default function DashboardClient({
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => editLog(log)}
-                        title="ערוך רישום"
+                        title="עריכת רישום"
                         style={{
                           width: 20,
                           height: 20,
@@ -744,7 +744,7 @@ export default function DashboardClient({
             </div>
           )}
 
-          {/* Per-type buttons — each opens the full log modal (date + time + details) */}
+          {/* Per-type buttons - each opens the full log modal (date + time + details) */}
           <div className="grid grid-cols-3 gap-2">
             {TRACK.map(({ type, icon: Icon, label, color }) => (
               <button
@@ -795,7 +795,7 @@ export default function DashboardClient({
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{item.title}</p>
                     <p className="text-xs" style={{ color: c.text }}>
-                      {item.start_time.slice(0, 5)} – {item.end_time.slice(0, 5)}
+                      {item.start_time.slice(0, 5)} - {item.end_time.slice(0, 5)}
                       {item.notes ? ` · ${item.notes}` : ''}
                     </p>
                   </div>
@@ -809,7 +809,7 @@ export default function DashboardClient({
         </div>
       )}
 
-      {/* ── Tasks (urgent) — with inline add shortcut ── */}
+      {/* ── Tasks (urgent) - with inline add shortcut ── */}
       <div className="card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
@@ -872,7 +872,7 @@ export default function DashboardClient({
               >
                 <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: priorityColors[task.priority] }} />
 
-                {/* Title — normal or edit mode */}
+                {/* Title - normal or edit mode */}
                 {editingTaskId === task.id ? (
                   <div className="flex-1 flex items-center gap-2">
                     <input
@@ -893,7 +893,7 @@ export default function DashboardClient({
                       className="text-xs px-2 py-1 rounded-lg font-medium text-white"
                       style={{ background: '#4A7C59', flexShrink: 0 }}
                     >
-                      {savingTask ? '...' : 'שמור'}
+                      {savingTask ? '...' : 'שמירה'}
                     </button>
                     <button
                       onClick={cancelEditTask}
@@ -1036,7 +1036,7 @@ export default function DashboardClient({
                   <Clock className="w-3 h-3" /> {showForm === 'sleep' ? 'נרדמה בשעה' : 'שעה'}
                 </label>
                 {/* Time is the primary field (large); the date is secondary
-                    (small) — most manual entries are for "today", matching the tracker. */}
+                    (small) - most manual entries are for "today", matching the tracker. */}
                 <div className="flex items-center gap-2">
                   <input
                     type="time"
@@ -1135,7 +1135,7 @@ export default function DashboardClient({
                         style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }}
                       />
                     </div>
-                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים — משך השינה יחושב אוטומטית</p>
+                    <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים - משך השינה יחושב אוטומטית</p>
                   </div>
                   {!wakeTime && (
                     <div>

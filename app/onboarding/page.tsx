@@ -13,7 +13,7 @@ export default async function OnboardingPage() {
     .eq('id', user.id)
     .single()
 
-  // Already onboarded — don't force the wizard again.
+  // Already onboarded - don't force the wizard again.
   if (profile?.setup_complete) redirect('/dashboard')
 
   return <OnboardingClient />

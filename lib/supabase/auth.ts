@@ -10,7 +10,7 @@ import type { Profile } from '@/types/database'
 //
 // Two optimisations here:
 //  1. `getClaims()` verifies the JWT locally (asymmetric signing keys) instead
-//     of calling the auth server — no network round-trip. The proxy already
+//     of calling the auth server - no network round-trip. The proxy already
 //     validated + refreshed the session over the network for this request, so
 //     the cookie is trustworthy.
 //  2. `cache()` deduplicates the work across the layout and the page within a

@@ -33,7 +33,7 @@ export default function ResetPasswordPage() {
     setLoading(true)
     const { error: err } = await supabase.auth.updateUser({ password })
     if (err) {
-      setError('שגיאה בעדכון הסיסמא — נסי לבקש קישור איפוס חדש')
+      setError('שגיאה בעדכון הסיסמא - נסי לבקש קישור איפוס חדש')
     } else {
       setSuccess(true)
       setTimeout(() => router.push('/dashboard'), 2500)

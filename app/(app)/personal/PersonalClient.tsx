@@ -34,7 +34,7 @@ const ACTIVITIES: { key: string; icon: LucideIcon; label: string; color: string 
 const MOTIVATIONS: { text: string; icon?: LucideIcon }[] = [
   { text: 'את מתנה לעצמך כשאת דואגת לעצמך', icon: Heart },
   { text: 'אמא מאושרת = ילד מאושר', icon: Flower2 },
-  { text: 'לא אנוכי לדאוג לעצמך — זה הכרחי' },
+  { text: 'לא אנוכי לדאוג לעצמך - זה הכרחי' },
   { text: 'כל דקה לעצמך היא השקעה במשפחה שלך' },
   { text: 'את מספיקה. את עושה מספיק. את מספיקה.' },
   { text: 'גם סופגנייה עם קפה ספירה כ"לעצמי"', icon: Coffee },
@@ -134,7 +134,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
       .single()
 
     if (error) {
-      // Table might not exist — store locally
+      // Table might not exist - store locally
       setDbError(true)
       const localLog: PersonalLog = {
         id: crypto.randomUUID(),
@@ -207,7 +207,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
       {/* DB warning */}
       {dbError && (
         <div className="rounded-xl p-3 text-xs" style={{ background: '#FFFBEB', border: '1px solid #FDE68A', color: '#92400E' }}>
-          הפעילות נשמרה זמנית (ברמת הדפדפן). להפעלת שמירה מלאה — יש להריץ את <code>supabase/migrations/003_personal.sql</code> בדשבורד Supabase.
+          הפעילות נשמרה זמנית (ברמת הדפדפן). להפעלת שמירה מלאה - יש להריץ את <code>supabase/migrations/003_personal.sql</code> בדשבורד Supabase.
         </div>
       )}
 
@@ -364,7 +364,7 @@ export default function PersonalClient({ userId, initialLogs }: Props) {
           <textarea
             value={noteText}
             onChange={e => handleNoteChange(e.target.value)}
-            placeholder="כתבי כאן כל מה שעל הלב — חלומות, תוכניות, מחשבות, מה שמתחשק..."
+            placeholder="כתבי כאן כל מה שעל הלב - חלומות, תוכניות, מחשבות, מה שמתחשק..."
             rows={6}
             autoFocus
             className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none resize-none leading-relaxed"

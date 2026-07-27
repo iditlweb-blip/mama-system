@@ -6,7 +6,7 @@ import ProductsGrid from './ProductsGrid'
 export default async function ProductsPage() {
   const supabase = await createClient()
 
-  // Feature toggle — admins turn the products page on from the admin panel.
+  // Feature toggle - admins turn the products page on from the admin panel.
   // Until then (or if the setting is missing) the page shows a "coming soon"
   // placeholder instead of the products/professionals content.
   const { data: setting } = await supabase
@@ -55,7 +55,7 @@ export default async function ProductsPage() {
         <BackButton href="/dashboard" />
       </div>
 
-      {/* Banner — compact */}
+      {/* Banner - compact */}
       <div style={{
         background: 'linear-gradient(135deg, #7F5268 0%, #9b6a85 100%)',
         borderRadius: 16,

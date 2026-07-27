@@ -77,7 +77,7 @@ export default async function DashboardPage() {
       { week: 52, text: 'יום הולדת ראשון!' },
     ]
     const next = milestones.find(m => m.week > babyWeeks)
-    if (next) nextMilestone = `עוד ${next.week - babyWeeks} שבועות — ${next.text}`
+    if (next) nextMilestone = `עוד ${next.week - babyWeeks} שבועות - ${next.text}`
   }
 
   // Last feed/sleep

@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // First arrival via OAuth or an email-confirmation link — alert the admin
+      // First arrival via OAuth or an email-confirmation link - alert the admin
       // once (the helper dedupes, so re-logins never re-notify). Fire-and-forget
       // so a Telegram hiccup can't block the redirect into the app.
       const user = data?.user
