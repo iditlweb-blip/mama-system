@@ -35,6 +35,7 @@ export default async function TrackerPage() {
       babyName={profile?.baby_name || null}
       babyGender={(profile?.baby_gender as 'boy' | 'girl' | null) || null}
       initialHealthEvents={healthResult.data || []}
+      napDroppedBand={profile?.nap_dropped_band ?? null}
     />
   )
 }

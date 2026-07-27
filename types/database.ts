@@ -37,6 +37,8 @@ export interface Profile {
   // One-time admin Telegram alerts (migration 015).
   registered_notified: boolean | null
   pwa_notified: boolean | null
+  // Sleep age-band for which a nap was dropped (migration 019).
+  nap_dropped_band: string | null
 }
 
 export interface Contraction {
@@ -56,6 +58,8 @@ export interface Task {
   status: TaskStatus
   priority: TaskPriority
   due_date: string | null
+  remind_at: string | null
+  reminded: boolean | null
   created_at: string
 }
 

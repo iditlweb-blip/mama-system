@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Plus, X, ChevronDown, Baby, Home, Briefcase,
   CheckCircle2, AlertCircle, Circle, ChevronRight, ClipboardList, Zap, Target,
-  Clock, Sprout, Undo2, AlertTriangle, Calendar, Sparkles,
+  Clock, Sprout, Undo2, AlertTriangle, Calendar, Sparkles, Bell,
 } from 'lucide-react'
 import { Task, TaskCategory, TaskStatus, TaskPriority } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -38,6 +38,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
   const [newCat,   setNewCat]   = useState<TaskCategory>('work')
   const [newPrio,  setNewPrio]  = useState<TaskPriority>('medium')
   const [newDue,   setNewDue]   = useState('')
+  const [newRemind, setNewRemind] = useState('')
   const [saving,   setSaving]   = useState(false)
 
   const supabase = createClient()
@@ -45,12 +46,16 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
   async function addTask() {
     if (!newTitle.trim()) return
     setSaving(true)
-    const { data } = await supabase.from('tasks').insert({
+    // remind_at/reminded are only sent when a reminder is set, so tasks added
+    // without one keep working even before migration 019 is applied.
+    const row: Record<string, unknown> = {
       user_id: userId, title: newTitle.trim(), category: newCat, priority: newPrio,
-      due_date: newDue || null, status: 'todo'
-    }).select().single()
+      due_date: newDue || null, status: 'todo',
+    }
+    if (newRemind) { row.remind_at = new Date(newRemind).toISOString(); row.reminded = false }
+    const { data } = await supabase.from('tasks').insert(row).select().single()
     if (data) setTasks([data, ...tasks])
-    setNewTitle(''); setNewDue(''); setShowForm(false); setSaving(false)
+    setNewTitle(''); setNewDue(''); setNewRemind(''); setShowForm(false); setSaving(false)
   }
 
   async function moveTask(id: string, status: TaskStatus) {
@@ -229,6 +234,15 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
                 style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
               />
             </div>
+            <div>
+              <label className="text-xs font-medium flex items-center gap-1 mb-1" style={{ color: 'var(--text-muted)' }}>
+                <Bell className="w-3 h-3" /> תזכורת (אופציונלי) - יקפוץ באפליקציה בזמן שתבחרי
+              </label>
+              <input type="datetime-local" value={newRemind} onChange={e => setNewRemind(e.target.value)}
+                className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
+            </div>
             <button onClick={addTask} disabled={saving || !newTitle.trim()}
               className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-60 transition-opacity"
               style={{ background: '#7F5268' }}
@@ -306,6 +320,12 @@ function TaskCard({ task, today, onMove, onDelete }: {
             style={{ color: isOverdue ? '#C0392B' : isDueToday ? '#B8860B' : 'var(--text-muted)' }}>
             {isOverdue ? <AlertTriangle className="w-3 h-3" /> : isDueToday ? <Calendar className="w-3 h-3" /> : null}
             {new Date(task.due_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
+          </span>
+        )}
+        {task.remind_at && (
+          <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#7F5268' }}>
+            <Bell className="w-3 h-3" />
+            {new Date(task.remind_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })} {new Date(task.remind_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
           </span>
         )}
       </div>

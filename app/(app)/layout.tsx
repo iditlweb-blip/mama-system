@@ -8,6 +8,7 @@ import PwaTracker from '@/components/PwaTracker'
 import PreloaderLottie from '@/components/PreloaderLottie'
 import BottomNav from '@/components/layout/BottomNav'
 import PageTimeTracker from '@/components/PageTimeTracker'
+import RemindersPopup from '@/components/RemindersPopup'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const userId = await getAuthUserId()
@@ -43,6 +44,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <PwaTracker />
         <PageTimeTracker />
       </div>
+      <RemindersPopup
+        userId={userId}
+        dueDate={profile?.due_date ?? null}
+        trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null}
+      />
       <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )

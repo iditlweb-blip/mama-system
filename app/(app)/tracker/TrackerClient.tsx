@@ -44,6 +44,7 @@ interface Props {
   babyName: string | null
   babyGender: 'boy' | 'girl' | null
   initialHealthEvents: HealthEvent[]
+  napDroppedBand: string | null
 }
 
 // ─── Tracker type config ──────────────────────────────────────
@@ -307,7 +308,7 @@ function toLocalInput(d: Date): string {
 }
 
 // ─── Main Component ───────────────────────────────────────────
-export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents }: Props) {
+export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents, napDroppedBand }: Props) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'daily' | 'archive' | 'weaning' | 'health'>('daily')
   const [logs, setLogs] = useState(initialLogs)
@@ -376,6 +377,7 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
           genderSuffix={genderSuffix}
           babyWeeks={babyWeeks}
           babyName={babyName}
+          napDroppedBand={napDroppedBand}
         />
       )}
 
@@ -404,10 +406,11 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
 }
 
 // ─── Daily Tab ────────────────────────────────────────────────
-function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: {
+function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, napDroppedBand }: {
   logs: BabyLog[]; setLogs: React.Dispatch<React.SetStateAction<BabyLog[]>>
   userId: string; genderSuffix: string
   babyWeeks: number | null; babyName: string | null
+  napDroppedBand: string | null
 }) {
   const [showForm, setShowForm] = useState<LogType | null>(null)
   const [saving, setSaving] = useState(false)
@@ -446,19 +449,19 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName }: 
   }, [])
 
   // "We've dropped a nap" - a choice the mother makes when the app suggests it.
-  // Stored per age band (keyed by band label) so it never leaks into the next
-  // stage: once the baby grows into a band whose default already has fewer
-  // naps, the flag simply doesn't apply. localStorage keeps it on this device.
+  // Stored per age band on the profile (migration 019) so it syncs across her
+  // devices and never leaks into the next stage: once the baby grows into a
+  // band whose default already has fewer naps, the flag simply doesn't apply.
   const bandLabel = babyWeeks !== null ? getSleepBand(babyWeeks).label : ''
-  const [dropOneNap, setDropOneNap] = useState(false)
+  const [dropOneNap, setDropOneNap] = useState(napDroppedBand != null && napDroppedBand === bandLabel)
   useEffect(() => {
-    if (!bandLabel) return
-    try { setDropOneNap(localStorage.getItem(`napDrop:${userId}:${bandLabel}`) === '1') }
-    catch { /* private mode / storage disabled - just stay on the default */ }
-  }, [userId, bandLabel])
+    setDropOneNap(napDroppedBand != null && napDroppedBand === bandLabel)
+  }, [napDroppedBand, bandLabel])
   function toggleDropNap(v: boolean) {
     setDropOneNap(v)
-    try { localStorage.setItem(`napDrop:${userId}:${bandLabel}`, v ? '1' : '0') } catch { /* ignore */ }
+    ;(async () => {
+      await supabase.from('profiles').update({ nap_dropped_band: v ? bandLabel : null }).eq('id', userId)
+    })()
   }
   const napAdjust = dropOneNap ? -1 : 0
 

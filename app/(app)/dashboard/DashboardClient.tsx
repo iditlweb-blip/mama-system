@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock, Sunrise } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock, Sunrise, Bell } from 'lucide-react'
 import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
@@ -175,18 +175,19 @@ export default function DashboardClient({
   // Inline "add urgent task" shortcut, right inside the Tasks cube
   const [addingTaskOpen, setAddingTaskOpen] = useState(false)
   const [newTaskTitle,   setNewTaskTitle]   = useState('')
+  const [newTaskRemind,  setNewTaskRemind]  = useState('')
   const [creatingTask,   setCreatingTask]   = useState(false)
 
   async function addQuickTask() {
     const title = newTaskTitle.trim()
     if (!title) return
     setCreatingTask(true)
-    const { data } = await supabase.from('tasks')
-      .insert({ user_id: userId, title, priority: 'high', category: 'baby', completed: false })
-      .select().single()
+    const row: Record<string, unknown> = { user_id: userId, title, priority: 'high', category: 'baby', status: 'todo' }
+    if (newTaskRemind) { row.remind_at = new Date(newTaskRemind).toISOString(); row.reminded = false }
+    const { data } = await supabase.from('tasks').insert(row).select().single()
     if (data) setLocalTasks(prev => [data as Task, ...prev])
     setCreatingTask(false)
-    setNewTaskTitle('')
+    setNewTaskTitle(''); setNewTaskRemind('')
     setAddingTaskOpen(false)
   }
 
@@ -838,28 +839,40 @@ export default function DashboardClient({
 
         {/* Inline add-task row */}
         {addingTaskOpen && (
-          <div className="flex items-center gap-2 mb-3">
-            <input
-              type="text"
-              value={newTaskTitle}
-              onChange={e => setNewTaskTitle(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') addQuickTask()
-                if (e.key === 'Escape') { setAddingTaskOpen(false); setNewTaskTitle('') }
-              }}
-              autoFocus
-              placeholder="משימה דחופה חדשה..."
-              className="flex-1 text-sm px-3 py-2 rounded-xl outline-none border"
-              style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
-            />
-            <button
-              onClick={addQuickTask}
-              disabled={creatingTask || !newTaskTitle.trim()}
-              className="text-xs px-3 py-2 rounded-xl font-medium text-white disabled:opacity-50"
-              style={{ background: '#4A7C59', flexShrink: 0 }}
-            >
-              {creatingTask ? '...' : 'הוספה'}
-            </button>
+          <div className="mb-3 space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newTaskTitle}
+                onChange={e => setNewTaskTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') addQuickTask()
+                  if (e.key === 'Escape') { setAddingTaskOpen(false); setNewTaskTitle(''); setNewTaskRemind('') }
+                }}
+                autoFocus
+                placeholder="משימה דחופה חדשה..."
+                className="flex-1 text-sm px-3 py-2 rounded-xl outline-none border"
+                style={{ borderColor: 'var(--primary)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
+              <button
+                onClick={addQuickTask}
+                disabled={creatingTask || !newTaskTitle.trim()}
+                className="text-xs px-3 py-2 rounded-xl font-medium text-white disabled:opacity-50"
+                style={{ background: '#4A7C59', flexShrink: 0 }}
+              >
+                {creatingTask ? '...' : 'הוספה'}
+              </button>
+            </div>
+            <label className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--text-muted)' }}>
+              <Bell className="w-3 h-3" /> תזכורת (אופציונלי):
+              <input
+                type="datetime-local"
+                value={newTaskRemind}
+                onChange={e => setNewTaskRemind(e.target.value)}
+                className="flex-1 text-xs px-2 py-1.5 rounded-lg outline-none border"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
+            </label>
           </div>
         )}
 
