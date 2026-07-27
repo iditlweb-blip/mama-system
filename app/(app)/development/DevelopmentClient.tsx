@@ -12,8 +12,10 @@ import { useRouter } from 'next/navigation'
 // Local icon mapping for age-stage tabs (replaces raw emoji stored in lib/milestones.ts)
 const STAGE_ICONS: Record<string, React.ElementType> = {
   '0-1': Sprout,
-  '1-3': Smile,
-  '3-6': PartyPopper,
+  '1-2': Smile,
+  '2-3': Smile,
+  '3-4': PartyPopper,
+  '4-6': PartyPopper,
   '6-9': Footprints,
   '9-12': Cake,
 }
