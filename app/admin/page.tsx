@@ -67,6 +67,15 @@ export default async function AdminPage() {
     sheetUrl: proVal.sheetUrl ?? 'https://docs.google.com/spreadsheets/d/1uTXpGRxSo8z6biHy_Ffwq-bzJISreI5-4rVMnNsvR2k/edit?gid=1154268236',
   }
 
+  // Quick profile-switch target (owner <-> pregnancy test profile). Only
+  // offered when both accounts are configured in server env.
+  const email = user.email?.trim().toLowerCase()
+  const swA = process.env.SWITCH_A_EMAIL?.trim().toLowerCase()
+  const swB = process.env.SWITCH_B_EMAIL?.trim().toLowerCase()
+  const switchLabel = swA && swB && process.env.SWITCH_A_PASSWORD && process.env.SWITCH_B_PASSWORD
+    ? email === swA ? 'מעבר לפרופיל הריון' : email === swB ? 'חזרה לפרופיל ראשי' : null
+    : null
+
   // Build PWA lookup map
   const pwaMap: Record<string, string> = {}
   for (const p of (pwaProfiles ?? [])) {
@@ -124,6 +133,7 @@ export default async function AdminPage() {
       adminContent={adminContent ?? []}
       adminPayments={adminPayments ?? []}
       adminNotes={adminNotes ?? []}
+      switchLabel={switchLabel}
     />
   )
 }

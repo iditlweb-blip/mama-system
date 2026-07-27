@@ -20,6 +20,7 @@ import {
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminPayments, { type AdminPayment } from './AdminPayments'
+import ProfileSwitcher from '@/components/layout/ProfileSwitcher'
 
 interface UserRow {
   id: string
@@ -78,13 +79,14 @@ interface Props {
   adminContent: AdminContent[]
   adminPayments: AdminPayment[]
   adminNotes: AdminNote[]
+  switchLabel: string | null   // profile quick-switch target, null when unconfigured
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, switchLabel }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
@@ -430,6 +432,42 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             <UserPlus className="w-4 h-4" />
             יצירת משתמשת חדשה
           </button>
+        </div>
+
+        {/* ── Control centre: jump straight into any part of the app ─────────── */}
+        <div className="rounded-2xl p-4 mb-5"
+          style={{ background: 'rgba(127,82,104,0.05)', border: '1px solid rgba(127,82,104,0.18)' }}>
+          <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+            <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#7F5268' }}>
+              <LayoutDashboard className="w-4 h-4" /> מרכז בקרה - מעבר מהיר
+            </p>
+            {switchLabel && <ProfileSwitcher label={switchLabel} />}
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            {([
+              { href: '/tracker',     label: 'מעקב תינוק',  Icon: Baby,          color: '#5C7A6A' },
+              { href: '/pregnancy',   label: 'מעקב הריון',  Icon: Activity,      color: '#C4548A' },
+              { href: '/dashboard',   label: 'דשבורד',      Icon: Home,          color: '#7F5268' },
+              { href: '/tasks',       label: 'משימות',      Icon: CheckSquare,   color: '#5C6BA0' },
+              { href: '/development', label: 'התפתחות',     Icon: BookOpen,      color: '#B8860B' },
+              { href: '/products',    label: 'מוצרים',      Icon: ShoppingBag,   color: '#4A7C59' },
+              { href: '/contractions',label: 'מד צירים',    Icon: Timer,         color: '#C0392B' },
+              { href: '/settings',    label: 'הגדרות',      Icon: User,          color: '#5C7A8A' },
+            ] as const).map(({ href, label, Icon, color }) => (
+              <a key={href} href={href}
+                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-opacity hover:opacity-75"
+                style={{ background: 'var(--surface, #fff)', border: '1px solid var(--border)', color: 'var(--text)' }}>
+                <Icon className="w-4 h-4 flex-shrink-0" style={{ color }} />
+                <span className="truncate">{label}</span>
+              </a>
+            ))}
+          </div>
+          {!switchLabel && (
+            <p className="text-xs mt-2.5" style={{ color: 'var(--text-muted)' }}>
+              להחלפה מהירה בין החשבון שלך לחשבון ההריון של דנה - הוסיפי ב-Vercel את משתני הסביבה
+              SWITCH_A_EMAIL / SWITCH_A_PASSWORD / SWITCH_B_EMAIL / SWITCH_B_PASSWORD ואז Redeploy.
+            </p>
+          )}
         </div>
 
         {/* ── Back-office nav ─────────────────────────────────────────────────── */}

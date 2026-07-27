@@ -65,6 +65,7 @@ export default function Sidebar({ userName, trackingType, showBoth }: {
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
     { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },
     { href: '/settings',              icon: Settings,          label: 'הגדרות' },
+    ...(showBoth ? [{ href: '/admin', icon: LayoutDashboard,   label: 'ניהול (אדמין)' } as NavItem] : []),
   ]
   const pathname  = usePathname()
   const router    = useRouter()
