@@ -35,7 +35,7 @@ export async function POST(req: Request) {
 
   try {
     if (event === 'register') {
-      await notifyRegistrationOnce(user.id, name, user.email ?? null)
+      await notifyRegistrationOnce(user.id, name, user.email ?? null, (user.app_metadata?.provider as string | undefined) ?? null)
     } else if (event === 'pwa') {
       await notifyPwaInstallOnce(user.id, name)
     } else {

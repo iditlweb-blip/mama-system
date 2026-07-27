@@ -7,10 +7,22 @@ import { sendTelegram, escapeHtml } from '@/lib/telegram'
  * if called from several places (client + OAuth callback) or concurrently.
  */
 
+// Human-readable sign-up method for the admin alert. Supabase reports the auth
+// provider as 'google', 'email', etc.
+function providerLabel(provider: string | null | undefined): string {
+  switch ((provider || '').toLowerCase()) {
+    case 'google': return 'Google'
+    case 'email':  return 'מייל'
+    case '':       return 'לא ידוע'
+    default:       return provider as string
+  }
+}
+
 export async function notifyRegistrationOnce(
   userId: string,
   name: string | null,
   email: string | null,
+  provider: string | null = null,
 ): Promise<void> {
   const admin = createAdminClient()
   // Atomically claim the notification: only the first caller gets a row back.
@@ -24,8 +36,9 @@ export async function notifyRegistrationOnce(
 
   const displayName = escapeHtml(name?.trim() || 'ללא שם')
   const displayEmail = escapeHtml(email || 'ללא מייל')
+  const displayVia = escapeHtml(providerLabel(provider))
   await sendTelegram(
-    `🎉 <b>נרשמה משתמשת חדשה</b>\n\nשם: <b>${displayName}</b>\nמייל: ${displayEmail}`,
+    `🎉 <b>נרשמה משתמשת חדשה</b>\n\nשם: <b>${displayName}</b>\nמייל: ${displayEmail}\nנרשמה דרך: <b>${displayVia}</b>`,
   )
 }
 

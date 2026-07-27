@@ -24,6 +24,7 @@ export async function GET(request: Request) {
           user.id,
           (user.user_metadata?.full_name as string | undefined) ?? null,
           user.email ?? null,
+          (user.app_metadata?.provider as string | undefined) ?? null,
         ).catch(err => console.error('[notify] registration (callback):', err))
       }
       return NextResponse.redirect(`${origin}${next}`)
