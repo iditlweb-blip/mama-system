@@ -2,24 +2,40 @@
 // (pregnancy mode) and the weekly-development page.
 
 export interface StandardTest {
-  week: number
+  week: number         // recommended week to do the test
+  until: number        // last week of the recommended window (drives reminders)
   name: string
+  explanation: string  // plain, calm explanation of what the test is
 }
 
-// Standard pregnancy tests by week (Israeli routine schedule).
+// Standard pregnancy tests by week (Israeli routine schedule). Windows and
+// explanations are general guidance - the exact timing is set by the treating
+// doctor/midwife.
 export const STANDARD_TESTS: StandardTest[] = [
-  { week: 6,  name: 'בדיקת דם ראשונה (HCG, TSH, ספירת דם)' },
-  { week: 10, name: 'בדיקת שקיפות עורפית' },
-  { week: 11, name: 'בדיקת סיסי שליה (CVS)' },
-  { week: 12, name: 'בדיקת טרי-טסט / ביוכימיה' },
-  { week: 16, name: 'בדיקת מי שפיר (אמניוצנטזה)' },
-  { week: 19, name: 'אקו מורפולוגי מפורט' },
-  { week: 24, name: 'העמסת סוכר (OGTT)' },
-  { week: 28, name: 'בדיקת GBS + אנטיגלובולין' },
-  { week: 32, name: 'אקו גדילה' },
-  { week: 36, name: 'בדיקה וגינלית, תרבית GBS' },
-  { week: 38, name: 'NST (מוניטור)' },
-  { week: 40, name: 'ביקור אחרון + תיאום לידה' },
+  { week: 6,  until: 10, name: 'בדיקת דם ראשונה (HCG, TSH, ספירת דם)',
+    explanation: 'בדיקות דם ראשוניות לתחילת ההריון: רמת HCG לאישוש ההריון, תפקודי בלוטת התריס (TSH), ספירת דם וסוג דם. אלו מהוות בסיס למעקב לאורך ההריון.' },
+  { week: 10, until: 13, name: 'בדיקת שקיפות עורפית',
+    explanation: 'סקירת אולטרסאונד המודדת את עובי העורף של העובר, יחד עם בדיקת דם, להערכת סיכון לתסמונות כרומוזומליות. מתבצעת לרוב בשבועות 11-13.' },
+  { week: 11, until: 13, name: 'בדיקת סיסי שליה (CVS)',
+    explanation: 'דגימת רקמה מהשליה לבדיקה גנטית מדויקת. מוצעת בעיקר כשקיים סיכון מוגבר - אינה בדיקה שגרתית לכל אישה.' },
+  { week: 12, until: 14, name: 'בדיקת טרי-טסט / ביוכימיה',
+    explanation: 'בדיקת דם ביוכימית שמשולבת עם השקיפות העורפית להערכת סיכון לתסמונת דאון ולמומים. חלק מסקר הטרימסטר הראשון.' },
+  { week: 16, until: 20, name: 'בדיקת מי שפיר (אמניוצנטזה)',
+    explanation: 'דיקור עדין לשאיבת מעט מי שפיר לבדיקה גנטית מקיפה. מוצעת בעיקר כשהסקר מצביע על סיכון או לפי גיל - אינה שגרתית.' },
+  { week: 19, until: 24, name: 'אקו מורפולוגי מפורט',
+    explanation: 'סקירת מערכות מפורטת שבודקת את מבנה האיברים של העובר: לב, מוח, כליות, עמוד שדרה ועוד. מהבדיקות החשובות בהריון.' },
+  { week: 24, until: 28, name: 'העמסת סוכר (OGTT)',
+    explanation: 'בדיקה לאיתור סוכרת הריון: שותים תמיסת סוכר ובודקים את רמת הסוכר בדם לאורך זמן.' },
+  { week: 28, until: 30, name: 'בדיקת GBS + אנטיגלובולין',
+    explanation: 'ספירת דם חוזרת ובדיקת נוגדנים. לנשים עם סוג דם Rh שלילי ניתנת זריקת אנטי-D להגנה על ההריון.' },
+  { week: 32, until: 34, name: 'אקו גדילה',
+    explanation: 'אולטרסאונד להערכת קצב הגדילה של העובר, כמות מי השפיר ומיקום השליה לקראת הלידה.' },
+  { week: 36, until: 37, name: 'בדיקה וגינלית, תרבית GBS',
+    explanation: 'תרבית לנשאות חיידק GBS (סטרפטוקוק מקבוצה B) ובדיקה לקראת הלידה, כדי להיערך למתן אנטיביוטיקה בלידה במידת הצורך.' },
+  { week: 38, until: 40, name: 'NST (מוניטור)',
+    explanation: 'מעקב אחר דופק העובר והצירים, כדי לוודא שהעובר מרגיש טוב לקראת הלידה.' },
+  { week: 40, until: 42, name: 'ביקור אחרון + תיאום לידה',
+    explanation: 'ביקור סיכום לקראת הלידה: בדיקת מצב, תיאום המשך והנחיות לגבי מתי לגשת לבית החולים.' },
 ]
 
 // Precise gestational age from the due date, as completed weeks + extra days

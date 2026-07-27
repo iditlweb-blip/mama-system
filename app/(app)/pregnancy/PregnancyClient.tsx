@@ -9,25 +9,12 @@ import GaveBirthModal from '@/components/GaveBirthModal'
 import {
   PartyPopper, Baby, ClipboardList, Upload, X, Lightbulb, Check,
   Sprout, Grape, Cherry, Citrus, Apple, Banana,
-  FileText, Download, Share2, ZoomIn,
+  FileText, Download, Share2, ZoomIn, Info, ChevronDown,
   type LucideIcon,
 } from 'lucide-react'
+import { STANDARD_TESTS } from '@/lib/pregnancy'
 
 // Standard pregnancy tests by week
-const STANDARD_TESTS = [
-  { week: 6,  name: 'בדיקת דם ראשונה (HCG, TSH, ספירת דם)' },
-  { week: 10, name: 'בדיקת שקיפות עורפית' },
-  { week: 11, name: 'בדיקת סיסי שליה (CVS)' },
-  { week: 12, name: 'בדיקת טרי-טסט / ביוכימיה' },
-  { week: 16, name: 'בדיקת מי שפיר (אמניוצנטזה)' },
-  { week: 19, name: 'אקו מורפולוגי מפורט' },
-  { week: 24, name: 'העמסת סוכר (OGTT)' },
-  { week: 28, name: 'בדיקת GBS + אנטיגלובולין' },
-  { week: 32, name: 'אקו גדילה' },
-  { week: 36, name: 'בדיקה וגינלית, תרבית GBS' },
-  { week: 38, name: 'NST (מוניטור)' },
-  { week: 40, name: 'ביקור אחרון + תיאום לידה' },
-]
 
 interface PregnancyTest {
   id: string
@@ -115,6 +102,7 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
   const [selectedTestId, setSelectedTestId] = useState<string | null>(null)
   const [newNote, setNewNote]     = useState('')
   const [lightbox, setLightbox]   = useState<{ url: string; name: string } | null>(null)
+  const [openTest, setOpenTest]   = useState<string | null>(null) // which test's explanation is expanded
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -316,41 +304,62 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
             const isPast    = weeks >= st.week
             const isCurrent = Math.abs(weeks - st.week) <= 2
 
+            const open = openTest === st.name
             return (
               <div key={st.name} style={{
-                display: 'flex', alignItems: 'center', gap: 12,
-                background: '#fff', borderRadius: 12, padding: '12px 14px',
+                background: '#fff', borderRadius: 12, overflow: 'hidden',
                 border: isCurrent ? '1.5px solid #7F5268' : '1px solid rgba(127,82,104,0.1)',
                 opacity: !isPast && !isCurrent ? 0.5 : 1,
               }}>
-                <div style={{
-                  width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: done ? '#4A7C59' : 'rgba(127,82,104,0.08)',
-                  color: done ? '#fff' : '#7F5268', fontSize: '0.75rem', fontWeight: 700,
-                }}>
-                  {done ? <Check size={14} /> : st.week}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ margin: 0, fontSize: '0.87rem', fontWeight: 500, color: '#3a1e2d' }}>{st.name}</p>
-                  <p style={{ margin: 0, fontSize: '0.73rem', color: '#aaa' }}>שבוע {st.week}</p>
-                </div>
-                {isCurrent && (
-                  <span style={{ fontSize: '0.7rem', background: '#7F5268', color: '#fff', borderRadius: 8, padding: '3px 8px', flexShrink: 0 }}>
-                    עכשיו
-                  </span>
-                )}
-                {!existing && (isPast || isCurrent) && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px' }}>
+                  <div style={{
+                    width: 30, height: 30, borderRadius: '50%', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: done ? '#4A7C59' : 'rgba(127,82,104,0.08)',
+                    color: done ? '#fff' : '#7F5268', fontSize: '0.75rem', fontWeight: 700,
+                  }}>
+                    {done ? <Check size={14} /> : st.week}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: 0, fontSize: '0.87rem', fontWeight: 500, color: '#3a1e2d' }}>{st.name}</p>
+                    <p style={{ margin: 0, fontSize: '0.73rem', color: '#aaa' }}>שבוע {st.week}</p>
+                  </div>
                   <button
-                    onClick={() => addStandardTest(st.name, st.week)}
+                    onClick={() => setOpenTest(open ? null : st.name)}
+                    title="מידע על הבדיקה"
                     style={{
-                      background: 'rgba(127,82,104,0.1)', border: 'none', borderRadius: 8,
-                      padding: '4px 10px', fontSize: '0.73rem', color: '#7F5268',
-                      cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0,
+                      background: open ? 'rgba(127,82,104,0.12)' : 'transparent', border: 'none',
+                      borderRadius: 8, padding: 5, color: '#7F5268', cursor: 'pointer', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', gap: 2,
                     }}
                   >
-                    + הוסיפי
+                    <Info size={16} />
+                    <ChevronDown size={13} style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.15s' }} />
                   </button>
+                  {isCurrent && (
+                    <span style={{ fontSize: '0.7rem', background: '#7F5268', color: '#fff', borderRadius: 8, padding: '3px 8px', flexShrink: 0 }}>
+                      עכשיו
+                    </span>
+                  )}
+                  {!existing && (isPast || isCurrent) && (
+                    <button
+                      onClick={() => addStandardTest(st.name, st.week)}
+                      style={{
+                        background: 'rgba(127,82,104,0.1)', border: 'none', borderRadius: 8,
+                        padding: '4px 10px', fontSize: '0.73rem', color: '#7F5268',
+                        cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0,
+                      }}
+                    >
+                      + הוסיפי
+                    </button>
+                  )}
+                </div>
+                {open && (
+                  <div style={{ padding: '0 14px 13px', borderTop: '1px solid rgba(127,82,104,0.07)' }}>
+                    <p style={{ margin: '10px 0 0', fontSize: '0.8rem', lineHeight: 1.65, color: '#6a5560' }}>
+                      {st.explanation}
+                    </p>
+                  </div>
                 )}
               </div>
             )
