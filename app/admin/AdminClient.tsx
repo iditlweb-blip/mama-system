@@ -462,12 +462,9 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               </a>
             ))}
           </div>
-          {!switchLabel && (
-            <p className="text-xs mt-2.5" style={{ color: 'var(--text-muted)' }}>
-              להחלפה מהירה בין החשבון שלך לחשבון ההריון של דנה - הוסיפי ב-Vercel את משתני הסביבה
-              SWITCH_A_EMAIL / SWITCH_A_PASSWORD / SWITCH_B_EMAIL / SWITCH_B_PASSWORD ואז Redeploy.
-            </p>
-          )}
+          <p className="text-xs mt-2.5" style={{ color: 'var(--text-muted)' }}>
+            מעקב הריון מוצג עם הנתונים של החשבון הנוכחי. לצפייה בנתוני ההריון של דנה - לחצי על כפתור המעבר.
+          </p>
         </div>
 
         {/* ── Back-office nav ─────────────────────────────────────────────────── */}

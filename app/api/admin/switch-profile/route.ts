@@ -1,43 +1,53 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { ADMIN_EMAIL, isAdminEmail } from '@/lib/admin'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+// Email of the pregnancy test profile. Override with TEST_PROFILE_EMAIL in env.
+const TEST_EMAIL = process.env.TEST_PROFILE_EMAIL || 'dana@gmail.com'
+
 /**
- * One-click switch between the owner account and a test profile, so the admin
- * can preview pregnancy mode without logging out and back in.
+ * One-click switch between the owner account and the pregnancy test profile,
+ * so pregnancy mode can be previewed without logging out and back in.
  *
- * Credentials live ONLY in server env vars - they are never sent to the
- * browser. Set these in Vercel (Production):
- *   SWITCH_A_EMAIL / SWITCH_A_PASSWORD   - the owner/admin account
- *   SWITCH_B_EMAIL / SWITCH_B_PASSWORD   - the pregnancy test profile
+ * No passwords anywhere: the service-role key mints a one-time magic-link token
+ * for the target account, which we immediately redeem into a session on this
+ * request. That means it works even though the owner signs in with Google (an
+ * OAuth account has no password to store).
  *
- * The caller must already be signed in as one of the two accounts, so this
- * cannot be used to log in from nowhere.
+ * Only a session that is already the owner or the test profile may call this,
+ * so it can never be used to log in from nothing.
  */
 export async function POST() {
-  const a = { email: process.env.SWITCH_A_EMAIL, password: process.env.SWITCH_A_PASSWORD }
-  const b = { email: process.env.SWITCH_B_EMAIL, password: process.env.SWITCH_B_PASSWORD }
-  if (!a.email || !a.password || !b.email || !b.password) {
-    return NextResponse.json({ ok: false, error: 'החלפת פרופיל לא הוגדרה (חסרים משתני סביבה)' }, { status: 400 })
-  }
-
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const current = user?.email?.trim().toLowerCase()
   if (!current) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
-  const isA = current === a.email.trim().toLowerCase()
-  const isB = current === b.email.trim().toLowerCase()
-  if (!isA && !isB) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
+  const isOwner = isAdminEmail(current)
+  const isTest = current === TEST_EMAIL.trim().toLowerCase()
+  if (!isOwner && !isTest) return NextResponse.json({ ok: false, error: 'forbidden' }, { status: 403 })
 
-  // Toggle to the other account.
-  const target = isA ? b : a
-  const { error } = await supabase.auth.signInWithPassword({
-    email: target.email!, password: target.password!,
+  const target = isOwner ? TEST_EMAIL : ADMIN_EMAIL
+
+  const admin = createAdminClient()
+  const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email: target })
+  if (error || !data?.properties?.hashed_token) {
+    return NextResponse.json(
+      { ok: false, error: error?.message ?? `לא נמצא משתמש עם המייל ${target}` },
+      { status: 400 },
+    )
+  }
+
+  // Redeeming the token here swaps the session cookies to the target account.
+  const { error: verifyErr } = await supabase.auth.verifyOtp({
+    type: 'magiclink',
+    token_hash: data.properties.hashed_token,
   })
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 400 })
+  if (verifyErr) return NextResponse.json({ ok: false, error: verifyErr.message }, { status: 400 })
 
-  return NextResponse.json({ ok: true, email: target.email })
+  return NextResponse.json({ ok: true, email: target })
 }

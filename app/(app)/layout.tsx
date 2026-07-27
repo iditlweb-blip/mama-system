@@ -29,14 +29,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
 
-  // Quick profile switch (owner <-> pregnancy test profile). Only rendered when
-  // both accounts are configured in env and the session is one of them.
+  // Quick profile switch (owner <-> pregnancy test profile). No credentials
+  // needed - the API mints a one-time token with the service-role key.
   const email = user?.email?.trim().toLowerCase()
-  const swA = process.env.SWITCH_A_EMAIL?.trim().toLowerCase()
-  const swB = process.env.SWITCH_B_EMAIL?.trim().toLowerCase()
-  const switchLabel = swA && swB && process.env.SWITCH_A_PASSWORD && process.env.SWITCH_B_PASSWORD
-    ? email === swA ? 'פרופיל הריון' : email === swB ? 'פרופיל ראשי' : null
-    : null
+  const testEmail = (process.env.TEST_PROFILE_EMAIL || 'dana@gmail.com').trim().toLowerCase()
+  const switchLabel = isAdmin ? 'פרופיל הריון' : email === testEmail ? 'פרופיל ראשי' : null
 
   const showSleepTimer = profile?.show_sleep_timer !== false
   const showReminders  = profile?.show_reminders !== false
