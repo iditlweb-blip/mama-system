@@ -9,6 +9,7 @@ import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
+import { getActiveParent } from '@/lib/activeParent'
 import { STANDARD_TESTS, calcPregnancyWeek, formatGestational, weeksRemaining, babySizeForWeek } from '@/lib/pregnancy'
 
 export interface PregnancyTest {
@@ -157,6 +158,7 @@ export default function DashboardClient({
   // Full log-entry form state (matches the baby tracker)
   const [showForm,   setShowForm]   = useState<'feed'|'sleep'|'diaper'|null>(null)
   const [feedType,   setFeedType]   = useState<'breast'|'bottle'>('breast')
+  const [feedSide,   setFeedSide]   = useState<'left'|'right'|'both'>('left')
   const [amount,     setAmount]     = useState('')
   const [duration,   setDuration]   = useState('')
   const [diaperType, setDiaperType] = useState<'wet'|'dirty'|'both'>('wet')
@@ -246,7 +248,7 @@ export default function DashboardClient({
     setShowForm(null)
     setEditingLogId(null)
     setAmount(''); setDuration(''); setNotes('')
-    setFeedType('breast'); setDiaperType('wet')
+    setFeedType('breast'); setFeedSide('left'); setDiaperType('wet')
     setStartTime(toLocalInput(new Date()))
     setWakeTime('')
   }
@@ -264,6 +266,7 @@ export default function DashboardClient({
     setStartTime(toLocalInput(new Date(log.start_time)))
     setWakeTime(log.end_time ? toLocalInput(new Date(log.end_time)) : '')
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
+    setFeedSide((log.feed_side as 'left'|'right'|'both') || 'left')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
     setDiaperType((log.diaper_type as 'wet'|'dirty'|'both') || 'wet')
@@ -279,13 +282,16 @@ export default function DashboardClient({
       start_time: new Date(startTime).toISOString(),
       notes: notes || null,
       feed_type: null,
+      feed_side: null,
       amount_ml: null,
       diaper_type: null,
       duration_min: null,
       end_time: null,
+      logged_by: getActiveParent(),
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
+      if (feedType === 'breast') payload.feed_side = feedSide
       if (amount)   payload.amount_ml   = parseInt(amount)
       if (duration) payload.duration_min = parseInt(duration)
     }
@@ -1074,6 +1080,21 @@ export default function DashboardClient({
                       ))}
                     </div>
                   </div>
+                  {feedType === 'breast' && (
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>צד</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([['left', 'שמאל'], ['right', 'ימין'], ['both', 'שני הצדדים']] as const).map(([sd, lbl]) => (
+                          <button key={sd} type="button" onClick={() => setFeedSide(sd)}
+                            className="py-2 rounded-xl text-sm font-medium transition-all"
+                            style={feedSide === sd
+                              ? { background: '#7F5268', color: 'white' }
+                              : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+                          >{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3">
                     {feedType === 'bottle' && (
                       <div>

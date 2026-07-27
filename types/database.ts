@@ -64,9 +64,11 @@ export interface BabyLog {
   user_id: string
   type: LogType
   feed_type: 'breast' | 'bottle' | null
+  feed_side: 'left' | 'right' | 'both' | null
   amount_ml: number | null
   duration_min: number | null
   diaper_type: 'wet' | 'dirty' | 'both' | null
+  logged_by: 'mom' | 'dad' | null
   notes: string | null
   start_time: string
   end_time: string | null

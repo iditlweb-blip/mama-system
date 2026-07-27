@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { getActiveParent } from '@/lib/activeParent'
 import type { BabyLog } from '@/types/database'
 
 // A sleep timer whose running state is persisted BOTH in localStorage (a
@@ -158,6 +159,7 @@ export function useSleepTimer(userId: string) {
       start_time: new Date(s).toISOString(),
       end_time: new Date(endMs).toISOString(),
       duration_min: durationMin,
+      logged_by: getActiveParent(),
     }
 
     // First attempt: include is_night (day/night distinction).
