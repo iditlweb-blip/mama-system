@@ -12,7 +12,7 @@ import {
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
-import { getActiveParent, setActiveParent, PARENT_EVT, PARENT_LABEL, type Parent } from '@/lib/activeParent'
+import { getActiveParent, setActiveParent, PARENT_EVT, PARENT_LABEL, PARENT_COLOR, type Parent } from '@/lib/activeParent'
 import dynamic from 'next/dynamic'
 import type { HealthEvent } from './HealthTab'
 
@@ -416,7 +416,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
   const [saving, setSaving] = useState(false)
   const timer = useSleepTimer(userId)
   const [feedType, setFeedType] = useState<'breast' | 'bottle'>('breast')
-  const [feedSide, setFeedSide] = useState<'left' | 'right' | 'both'>('left')
+  const [feedLeft, setFeedLeft] = useState('')    // minutes on the left breast
+  const [feedRight, setFeedRight] = useState('')  // minutes on the right breast
+  const [logBy, setLogBy] = useState<Parent | ''>('')  // who logged this entry ('' = don't state)
   const [amount, setAmount] = useState('')
   const [duration, setDuration] = useState('')
   const [wakeTime, setWakeTime] = useState('')
@@ -440,10 +442,10 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
 
   // Which parent is logging on this device (mom/dad) - every entry is stamped
   // with it. Synced across the app via a custom event + localStorage.
-  const [activeParent, setActiveParentState] = useState<Parent>('mom')
+  const [activeParent, setActiveParentState] = useState<Parent | null>(null)
   useEffect(() => {
     setActiveParentState(getActiveParent())
-    const on = (e: Event) => setActiveParentState((e as CustomEvent<Parent>).detail)
+    const on = (e: Event) => setActiveParentState((e as CustomEvent<Parent | null>).detail)
     window.addEventListener(PARENT_EVT, on)
     return () => window.removeEventListener(PARENT_EVT, on)
   }, [])
@@ -502,17 +504,29 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       notes: notes || null,
       feed_type: null,
       feed_side: null,
+      feed_left_min: null,
+      feed_right_min: null,
       amount_ml: null,
       diaper_type: null,
       duration_min: null,
       end_time: null,
-      logged_by: activeParent,
+      logged_by: logBy || null,
     }
     if (showForm === 'feed') {
       payload.feed_type = feedType
-      if (feedType === 'breast') payload.feed_side = feedSide
-      if (amount) payload.amount_ml = parseInt(amount)
-      if (duration) payload.duration_min = parseInt(duration)
+      if (feedType === 'breast') {
+        // Per-side minutes; total duration is their sum.
+        const l = parseInt(feedLeft) || 0
+        const r = parseInt(feedRight) || 0
+        payload.feed_left_min = l || null
+        payload.feed_right_min = r || null
+        payload.feed_side = l && r ? null : l ? 'left' : r ? 'right' : null
+        if (l + r > 0) payload.duration_min = l + r
+        else if (duration) payload.duration_min = parseInt(duration)
+      } else {
+        if (amount) payload.amount_ml = parseInt(amount)
+        if (duration) payload.duration_min = parseInt(duration)
+      }
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'sleep') {
@@ -545,7 +559,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setShowForm(null)
     setEditingId(null)
     setAmount(''); setDuration(''); setNotes(''); setWakeTime('')
-    setFeedType('breast'); setFeedSide('left'); setDiaperType('wet')
+    setFeedType('breast'); setFeedLeft(''); setFeedRight(''); setDiaperType('wet')
+    setLogBy(activeParent ?? '')
     setStartTime(toLocalInput(new Date()))
   }
 
@@ -555,7 +570,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setStartTime(toLocalInput(new Date(log.start_time)))
     setWakeTime(log.end_time ? toLocalInput(new Date(log.end_time)) : '')
     setFeedType(log.feed_type === 'bottle' ? 'bottle' : 'breast')
-    setFeedSide((log.feed_side as 'left' | 'right' | 'both') || 'left')
+    setFeedLeft(log.feed_left_min != null ? String(log.feed_left_min) : (log.feed_side === 'left' && log.duration_min ? String(log.duration_min) : ''))
+    setFeedRight(log.feed_right_min != null ? String(log.feed_right_min) : (log.feed_side === 'right' && log.duration_min ? String(log.duration_min) : ''))
+    setLogBy((log.logged_by as Parent) ?? '')
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
     setDiaperType((log.diaper_type as 'wet' | 'dirty' | 'both') || 'wet')
@@ -579,13 +596,13 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       <div className="flex items-center justify-between flex-wrap gap-2 px-1">
         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>מי מתעד/ת עכשיו?</span>
         <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
-          {(['mom', 'dad'] as const).map(p => (
-            <button key={p} onClick={() => setActiveParent(p)}
+          {([null, 'mom', 'dad'] as const).map(p => (
+            <button key={p ?? 'none'} onClick={() => { setActiveParent(p); setLogBy(p ?? '') }}
               className="px-3 py-1 rounded-lg text-xs font-semibold transition-all"
               style={activeParent === p
-                ? { background: '#7F5268', color: 'white' }
+                ? (p ? { background: PARENT_COLOR[p].bg, color: PARENT_COLOR[p].text } : { background: '#7F5268', color: 'white' })
                 : { background: 'transparent', color: 'var(--text-muted)' }}>
-              {PARENT_LABEL[p]}
+              {p ? PARENT_LABEL[p] : 'ללא'}
             </button>
           ))}
         </div>
@@ -846,39 +863,63 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                     ))}
                   </div>
                 </div>
-                {feedType === 'breast' && (
+                {feedType === 'breast' ? (
                   <div>
-                    <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>צד</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {([['left', 'שמאל'], ['right', 'ימין'], ['both', 'שני הצדדים']] as const).map(([sd, lbl]) => (
-                        <button key={sd} type="button" onClick={() => setFeedSide(sd)}
-                          className="py-2 rounded-xl text-sm font-medium transition-all"
-                          style={feedSide === sd
-                            ? { background: '#7F5268', color: 'white' }
-                            : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-                          }>{lbl}</button>
-                      ))}
+                    <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך לפי צד (דקות)</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <span className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>שמאל</span>
+                        <input type="number" min="0" value={feedLeft} onChange={e => setFeedLeft(e.target.value)} placeholder="0"
+                          className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                      </div>
+                      <div>
+                        <span className="text-xs block mb-1" style={{ color: 'var(--text-muted)' }}>ימין</span>
+                        <input type="number" min="0" value={feedRight} onChange={e => setFeedRight(e.target.value)} placeholder="0"
+                          className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                      </div>
                     </div>
+                    {(parseInt(feedLeft) || 0) + (parseInt(feedRight) || 0) > 0 && (
+                      <p className="text-xs mt-1.5 font-medium" style={{ color: '#7F5268' }}>
+                        סה"כ {(parseInt(feedLeft) || 0) + (parseInt(feedRight) || 0)} דק’
+                      </p>
+                    )}
                   </div>
-                )}
-                <div className="grid grid-cols-2 gap-3">
-                  {feedType === 'bottle' && (
+                ) : (
+                  <div className="grid grid-cols-2 gap-3">
                     <div>
                       <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>כמות (מ"ל)</label>
                       <input type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="120"
                         className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
                         style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
                     </div>
-                  )}
-                  <div>
-                    <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך (דקות)</label>
-                    <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="15"
-                      className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
-                      style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך (דקות)</label>
+                      <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="15"
+                        className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+                        style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
+                    </div>
                   </div>
-                </div>
+                )}
               </>
             )}
+
+            {/* Who is recording this entry (optional - blank means unstated) */}
+            <div>
+              <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>מי מתעד/ת? (לא חובה)</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([['', 'ללא'], ['mom', PARENT_LABEL.mom], ['dad', PARENT_LABEL.dad]] as const).map(([val, lbl]) => (
+                  <button key={val || 'none'} type="button" onClick={() => setLogBy(val as Parent | '')}
+                    className="py-2 rounded-xl text-sm font-medium transition-all"
+                    style={logBy === val
+                      ? (val ? { background: PARENT_COLOR[val as Parent].bg, color: PARENT_COLOR[val as Parent].text, border: `1.5px solid ${PARENT_COLOR[val as Parent].border}` }
+                             : { background: '#7F5268', color: 'white' })
+                      : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                    }>{lbl}</button>
+                ))}
+              </div>
+            </div>
 
             {showForm === 'sleep' && (
               <div className="space-y-3">
@@ -985,7 +1026,10 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                   }
                 }
                 return (
-                  <div key={log.id} className="flex items-start gap-3 group">
+                  <div key={log.id} className="flex items-start gap-3 group rounded-xl px-1.5 py-0.5"
+                    style={(log.logged_by === 'mom' || log.logged_by === 'dad')
+                      ? { background: PARENT_COLOR[log.logged_by].bg }
+                      : undefined}>
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 z-10"
                       style={{ background: bg, border: `2px solid ${color}40` }}>
                       <Icon className="w-4 h-4" style={{ color }} />
@@ -1000,6 +1044,12 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                               <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                                 style={{ background: 'rgba(60,60,110,0.12)', color: '#3C3C6E' }}>
                                 <Moon className="w-2.5 h-2.5" /> לילה
+                              </span>
+                            )}
+                            {(log.logged_by === 'mom' || log.logged_by === 'dad') && (
+                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{ background: PARENT_COLOR[log.logged_by].bg, color: PARENT_COLOR[log.logged_by].text }}>
+                                {PARENT_LABEL[log.logged_by]}
                               </span>
                             )}
                           </p>
@@ -1035,7 +1085,7 @@ function NightExtras({ userId }: { userId: string }) {
   const supabase = createClient()
   const [feedStart, setFeedStart] = useState<number | null>(null)
   const [feedType, setFeedType] = useState<'breast' | 'bottle'>('breast')
-  const [feedSide, setFeedSide] = useState<'left' | 'right' | 'both'>('left')
+  const [feedSide, setFeedSide] = useState<'left' | 'right'>('left')
   const [tick, setTick] = useState(() => Date.now())
   const [busy, setBusy] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
@@ -1065,6 +1115,8 @@ function NightExtras({ userId }: { userId: string }) {
     const { data } = await supabase.from('baby_logs').insert({
       user_id: userId, type: 'feed', feed_type: feedType,
       feed_side: feedType === 'breast' ? feedSide : null,
+      feed_left_min: feedType === 'breast' && feedSide === 'left' ? durationMin : null,
+      feed_right_min: feedType === 'breast' && feedSide === 'right' ? durationMin : null,
       start_time: new Date(feedStart).toISOString(),
       end_time: new Date(end).toISOString(),
       duration_min: durationMin,
@@ -1127,8 +1179,8 @@ function NightExtras({ userId }: { userId: string }) {
               ))}
             </div>
             {feedType === 'breast' && (
-              <div className="grid grid-cols-3 gap-2 mb-2">
-                {([['left', 'שמאל'], ['right', 'ימין'], ['both', 'שניהם']] as const).map(([sd, lbl]) => (
+              <div className="grid grid-cols-2 gap-2 mb-2">
+                {([['left', 'שמאל'], ['right', 'ימין']] as const).map(([sd, lbl]) => (
                   <button key={sd} onClick={() => setFeedSide(sd)}
                     className="py-1.5 rounded-lg text-xs font-medium transition-all"
                     style={feedSide === sd
@@ -1178,26 +1230,38 @@ function NightExtras({ userId }: { userId: string }) {
 const FEED_SIDE_LABEL: Record<string, string> = { left: 'צד שמאל', right: 'צד ימין', both: 'שני הצדדים' }
 
 function buildLogDescription(log: BabyLog): string {
-  const by = log.logged_by ? ` · ${log.logged_by === 'dad' ? 'אבא' : 'אמא'}` : ''
   if (log.type === 'feed') {
     const parts = []
     if (log.feed_type) parts.push(log.feed_type === 'breast' ? 'שד' : 'בקבוק')
-    if (log.feed_type === 'breast' && log.feed_side) parts.push(FEED_SIDE_LABEL[log.feed_side])
-    if (log.amount_ml) parts.push(`${log.amount_ml} מ"ל`)
-    if (log.duration_min) parts.push(`${log.duration_min} דק’`)
-    return `האכלה${parts.length ? ' - ' + parts.join(', ') : ''}${by}`
+    if (log.feed_type === 'breast') {
+      const l = log.feed_left_min ?? 0, r = log.feed_right_min ?? 0
+      if (l || r) {
+        const sides = []
+        if (l) sides.push(`שמאל ${l} דק’`)
+        if (r) sides.push(`ימין ${r} דק’`)
+        parts.push(sides.join(' + '))
+        parts.push(`סה"כ ${l + r} דק’`)
+      } else {
+        if (log.feed_side) parts.push(FEED_SIDE_LABEL[log.feed_side])
+        if (log.duration_min) parts.push(`${log.duration_min} דק’`)
+      }
+    } else {
+      if (log.amount_ml) parts.push(`${log.amount_ml} מ"ל`)
+      if (log.duration_min) parts.push(`${log.duration_min} דק’`)
+    }
+    return `האכלה${parts.length ? ' - ' + parts.join(', ') : ''}`
   }
   if (log.type === 'sleep') {
     if (log.duration_min) {
       const h = Math.floor(log.duration_min / 60)
       const m = log.duration_min % 60
-      return `שינה - ${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}${by}`
+      return `שינה - ${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}`
     }
-    return `שינה${by}`
+    return 'שינה'
   }
   if (log.type === 'diaper') {
     const labels = { wet: 'רטוב', dirty: 'מלוכלך', both: 'רטוב + מלוכלך' }
-    return `חיתול${log.diaper_type ? ' - ' + labels[log.diaper_type] : ''}${by}`
+    return `חיתול${log.diaper_type ? ' - ' + labels[log.diaper_type] : ''}`
   }
   return ''
 }

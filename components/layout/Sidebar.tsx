@@ -38,18 +38,24 @@ function PregnancyIcon() {
   )
 }
 
-export default function Sidebar({ userName, trackingType }: {
+export default function Sidebar({ userName, trackingType, showBoth }: {
   userName?: string | null
   trackingType?: 'pregnancy' | 'baby' | null
+  showBoth?: boolean   // admin preview: show pregnancy AND baby tracking at once
 }) {
   const isPregnancy = trackingType === 'pregnancy'
 
   const navItems: NavItem[] = [
     { href: '/dashboard',             icon: LayoutDashboard,   label: 'דשבורד' },
-    isPregnancy
-      ? { href: '/pregnancy', customIcon: <PregnancyIcon />,   label: 'מעקב הריון' }
-      : { href: '/tracker',           icon: Activity,          label: 'מעקב תינוק' },
-    ...(isPregnancy
+    ...(showBoth
+      ? [
+          { href: '/tracker',         icon: Activity,          label: 'מעקב תינוק' } as NavItem,
+          { href: '/pregnancy', customIcon: <PregnancyIcon />, label: 'מעקב הריון' } as NavItem,
+        ]
+      : [isPregnancy
+          ? { href: '/pregnancy', customIcon: <PregnancyIcon />, label: 'מעקב הריון' } as NavItem
+          : { href: '/tracker',       icon: Activity,          label: 'מעקב תינוק' } as NavItem]),
+    ...(isPregnancy || showBoth
       ? [{ href: '/contractions',     icon: Activity,          label: 'מד צירים' } as NavItem]
       : []),
     { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },

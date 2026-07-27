@@ -39,6 +39,11 @@ export interface Profile {
   pwa_notified: boolean | null
   // Sleep age-band for which a nap was dropped (migration 019).
   nap_dropped_band: string | null
+  // Popup / feature preferences (migration 021).
+  default_parent: 'mom' | 'dad' | null
+  show_parent_popup: boolean | null
+  show_sleep_timer: boolean | null
+  show_reminders: boolean | null
 }
 
 export interface Contraction {
@@ -71,6 +76,8 @@ export interface BabyLog {
   type: LogType
   feed_type: 'breast' | 'bottle' | null
   feed_side: 'left' | 'right' | 'both' | null
+  feed_left_min: number | null
+  feed_right_min: number | null
   amount_ml: number | null
   duration_min: number | null
   diaper_type: 'wet' | 'dirty' | 'both' | null

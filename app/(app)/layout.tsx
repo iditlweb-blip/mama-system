@@ -9,6 +9,9 @@ import PreloaderLottie from '@/components/PreloaderLottie'
 import BottomNav from '@/components/layout/BottomNav'
 import PageTimeTracker from '@/components/PageTimeTracker'
 import RemindersPopup from '@/components/RemindersPopup'
+import ParentPopup from '@/components/ParentPopup'
+import { createClient } from '@/lib/supabase/server'
+import { isAdminEmail } from '@/lib/admin'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const userId = await getAuthUserId()
@@ -21,17 +24,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // cannot loop.
   if (!profile?.setup_complete) redirect('/onboarding')
 
+  // The admin account previews BOTH trackers without switching profiles.
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAdmin = isAdminEmail(user?.email)
+
+  const showSleepTimer = profile?.show_sleep_timer !== false
+  const showReminders  = profile?.show_reminders !== false
+  const showParentPopup = profile?.show_parent_popup !== false
+
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
       <PreloaderLottie />
-      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} />
+      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} showBoth={isAdmin} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
           babyName={profile?.baby_name}
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
         />
-        {profile?.tracking_type === 'baby' && <GlobalTimerBar userId={userId} />}
+        {(profile?.tracking_type === 'baby' || isAdmin) && showSleepTimer && <GlobalTimerBar userId={userId} />}
         {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId} />}
         <main className="flex-1 overflow-y-auto">
           {/* Full-width content with symmetric side gutters (equal left/right)
@@ -44,12 +56,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <PwaTracker />
         <PageTimeTracker />
       </div>
-      <RemindersPopup
+      {showReminders && (
+        <RemindersPopup
+          userId={userId}
+          dueDate={profile?.due_date ?? null}
+          trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null}
+        />
+      )}
+      <ParentPopup
         userId={userId}
-        dueDate={profile?.due_date ?? null}
-        trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null}
+        defaultParent={(profile?.default_parent as 'mom' | 'dad' | null) ?? null}
+        showPopup={showParentPopup}
       />
-      <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
+      <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} showBoth={isAdmin} />
     </div>
   )
 }

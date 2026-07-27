@@ -12,7 +12,7 @@ import {
   FileText, Download, Share2, ZoomIn, Info, ChevronDown,
   type LucideIcon,
 } from 'lucide-react'
-import { STANDARD_TESTS } from '@/lib/pregnancy'
+import { STANDARD_TESTS, calcPregnancyWeek, formatGestational } from '@/lib/pregnancy'
 
 // Standard pregnancy tests by week
 
@@ -45,17 +45,15 @@ interface Props {
 
 function calcWeeks(dueDate: string | null): { weeks: number; label: string; almostTime: boolean } {
   if (!dueDate) return { weeks: 0, label: 'תאריך לידה לא הוגדר', almostTime: false }
-  const due  = new Date(dueDate)
-  const now  = new Date()
-  const daysLeft = Math.round((due.getTime() - now.getTime()) / 86400000)
-  const weeksPregnant = Math.round(40 - daysLeft / 7)
-  const clamped = Math.max(1, Math.min(42, weeksPregnant))
+  // Precise gestational age ("34+5"), floored - never rounded up.
+  const clamped = calcPregnancyWeek(dueDate)
+  const ga = formatGestational(dueDate)
   const remaining = 40 - clamped
   return {
     weeks: clamped,
     label: remaining > 0
-      ? `שבוע ${clamped} (עוד ${remaining} שבועות ללידה)`
-      : `שבוע ${clamped} - כמעט זמן!`,
+      ? `שבוע ${ga} (עוד ${remaining} שבועות ללידה)`
+      : `שבוע ${ga} - כמעט זמן!`,
     almostTime: remaining <= 0,
   }
 }

@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   User, Baby, Check, Loader2, Camera, AlertTriangle, X, Heart,
-  UserRound, LogOut, MessageCircle
+  UserRound, LogOut, MessageCircle, Bell
 } from 'lucide-react'
+import { setActiveParent } from '@/lib/activeParent'
 
 function PregnancyIcon({ className }: { className?: string }) {
   return (
@@ -35,6 +36,10 @@ interface ProfileFull {
   due_date?: string | null
   hospital_address?: string | null
   whatsapp_number?: string | null
+  default_parent?: 'mom' | 'dad' | null
+  show_parent_popup?: boolean | null
+  show_sleep_timer?: boolean | null
+  show_reminders?: boolean | null
 }
 
 interface Props {
@@ -68,6 +73,12 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   // ── Baby
   const [babyName,      setBabyName]      = useState(profile?.baby_name || '')
   const [babyBirthdate, setBabyBirthdate] = useState(profile?.baby_birthdate || '')
+  // Popup / feature preferences (migration 021)
+  const [defaultParent,   setDefaultParent]   = useState<'mom' | 'dad' | ''>((profile?.default_parent as 'mom' | 'dad') ?? '')
+  const [showParentPopup, setShowParentPopup] = useState(profile?.show_parent_popup !== false)
+  const [showSleepTimer,  setShowSleepTimer]  = useState(profile?.show_sleep_timer !== false)
+  const [showReminders,   setShowReminders]   = useState(profile?.show_reminders !== false)
+
   const [babyGender,    setBabyGender]    = useState<'boy' | 'girl' | ''>(
     (profile?.baby_gender as 'boy' | 'girl') || ''
   )
@@ -114,7 +125,14 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       baby_birthdate:      babyBirthdate  || null,
       baby_gender:         babyGender     || null,
       profile_picture_url: profilePicUrl  || null,
+      default_parent:      defaultParent  || null,
+      show_parent_popup:   showParentPopup,
+      show_sleep_timer:    showSleepTimer,
+      show_reminders:      showReminders,
     }
+
+    // Keep this device in sync with a fixed-parent choice straight away.
+    setActiveParent(defaultParent || null)
 
     const { error: saveErr } = await supabase.from('profiles').upsert(payload)
     if (saveErr) {
@@ -280,6 +298,33 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       )}
 
       {/* ── WhatsApp personal assistant (coming soon) ─────────────── */}
+      {/* ── Popups & features ────────────────────────────────────── */}
+      <Section icon={Bell} title="פופ-אפים והתראות" color="#5C6BA0">
+        <div className="space-y-3">
+          <Toggle label="חלונית ״מי מתעד/ת עכשיו?״ בכניסה לאפליקציה"
+            checked={showParentPopup} onChange={setShowParentPopup} />
+          <Toggle label="טיימר שינה צף" checked={showSleepTimer} onChange={setShowSleepTimer} />
+          <Toggle label="תזכורות (משימות ובדיקות)" checked={showReminders} onChange={setShowReminders} />
+
+          <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+            <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>
+              הורה מתעד קבוע (כשנבחר, לא נשאל בכניסה)
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {([['', 'לשאול כל פעם'], ['mom', 'תמיד אמא'], ['dad', 'תמיד אבא']] as const).map(([val, lbl]) => (
+                <button key={val || 'ask'} type="button" onClick={() => setDefaultParent(val)}
+                  className="py-2 rounded-xl text-xs font-medium transition-all"
+                  style={defaultParent === val
+                    ? { background: '#7F5268', color: 'white' }
+                    : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                  {lbl}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <Section icon={MessageCircle} title="עוזרת אישית בוואטסאפ" color="#25D366">
         <div className="py-8 text-center">
           <p className="text-2xl font-bold mb-2" style={{ color: '#7F5268' }}>בקרוב</p>
@@ -324,6 +369,22 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+function Toggle({ label, checked, onChange }: {
+  label: string; checked: boolean; onChange: (v: boolean) => void
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 cursor-pointer">
+      <span className="text-sm" style={{ color: 'var(--text)' }}>{label}</span>
+      <button type="button" onClick={() => onChange(!checked)}
+        className="relative flex-shrink-0 rounded-full transition-colors"
+        style={{ width: 42, height: 24, background: checked ? '#7F5268' : 'var(--border)' }}>
+        <span className="absolute top-0.5 rounded-full bg-white transition-all"
+          style={{ width: 20, height: 20, right: checked ? 2 : 20 }} />
+      </button>
+    </label>
+  )
+}
+
 function Section({ icon: Icon, title, color, children }: {
   icon: React.ElementType; title: string; color: string; children: React.ReactNode
 }) {

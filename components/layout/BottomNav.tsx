@@ -5,11 +5,12 @@ import { usePathname } from 'next/navigation'
 // Mobile-only fixed bottom navigation, 4 items
 // Props: trackingType - determines whether "מעקב" goes to /tracker or /pregnancy
 
-export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' | 'baby' }) {
+export default function BottomNav({ trackingType, showBoth }: { trackingType: 'pregnancy' | 'baby'; showBoth?: boolean }) {
   const pathname = usePathname()
 
-  const trackHref = trackingType === 'pregnancy' ? '/pregnancy' : '/tracker'
-  const trackLabel = trackingType === 'pregnancy' ? 'הריון' : 'מעקב'
+  // Admin preview shows both trackers; otherwise "מעקב" follows the profile.
+  const trackHref = showBoth ? '/tracker' : trackingType === 'pregnancy' ? '/pregnancy' : '/tracker'
+  const trackLabel = showBoth ? 'תינוק' : trackingType === 'pregnancy' ? 'הריון' : 'מעקב'
 
   const items = [
     {
@@ -25,7 +26,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
     {
       href: trackHref,
       label: trackLabel,
-      icon: trackingType === 'pregnancy'
+      icon: !showBoth && trackingType === 'pregnancy'
         ? (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="8" r="4"/>
@@ -40,6 +41,17 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           </svg>
         ),
     },
+    ...(showBoth ? [{
+      href: '/pregnancy',
+      label: 'הריון',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M12 12c-4 0-7 3-7 6h14c0-3-3-6-7-6z"/>
+          <ellipse cx="12" cy="15" rx="3" ry="2.5" strokeWidth="1.4" opacity=".5"/>
+        </svg>
+      ),
+    }] : []),
     {
       href: '/products',
       label: 'מוצרים',
