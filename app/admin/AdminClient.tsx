@@ -20,7 +20,7 @@ import {
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminPayments, { type AdminPayment } from './AdminPayments'
-import ProfileSwitcher from '@/components/layout/ProfileSwitcher'
+import ProfileSwitcher, { type SwitchOption } from '@/components/layout/ProfileSwitcher'
 
 interface UserRow {
   id: string
@@ -79,14 +79,14 @@ interface Props {
   adminContent: AdminContent[]
   adminPayments: AdminPayment[]
   adminNotes: AdminNote[]
-  switchLabel: string | null   // profile quick-switch target, null when unconfigured
+  switchOptions: SwitchOption[]   // owner-only account quick-switch
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, switchLabel }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, switchOptions }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
@@ -441,7 +441,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             <p className="text-sm font-bold flex items-center gap-1.5" style={{ color: '#7F5268' }}>
               <LayoutDashboard className="w-4 h-4" /> מרכז בקרה - מעבר מהיר
             </p>
-            {switchLabel && <ProfileSwitcher label={switchLabel} />}
+            {switchOptions.length > 1 && <ProfileSwitcher options={switchOptions} />}
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
             {([

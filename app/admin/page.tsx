@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import AdminClient from './AdminClient'
 import { isAdminEmail } from '@/lib/admin'
+import { switchOptionsFor } from '@/lib/switchProfiles'
 
 export default async function AdminPage() {
   // 1. Auth check
@@ -67,9 +68,9 @@ export default async function AdminPage() {
     sheetUrl: proVal.sheetUrl ?? 'https://docs.google.com/spreadsheets/d/1uTXpGRxSo8z6biHy_Ffwq-bzJISreI5-4rVMnNsvR2k/edit?gid=1154268236',
   }
 
-  // Quick profile-switch target (owner <-> pregnancy test profile). Works with
-  // no stored credentials - see app/api/admin/switch-profile.
-  const switchLabel = 'מעבר לפרופיל הריון'
+  // Quick switch between the owner's accounts. No stored credentials - see
+  // app/api/admin/switch-profile.
+  const switchOptions = switchOptionsFor(user.email)
 
   // Build PWA lookup map
   const pwaMap: Record<string, string> = {}
@@ -128,7 +129,7 @@ export default async function AdminPage() {
       adminContent={adminContent ?? []}
       adminPayments={adminPayments ?? []}
       adminNotes={adminNotes ?? []}
-      switchLabel={switchLabel}
+      switchOptions={switchOptions}
     />
   )
 }

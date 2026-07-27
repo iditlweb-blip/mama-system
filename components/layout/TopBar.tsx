@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Moon, Sun, Bell, X, Check, Shield } from 'lucide-react'
-import ProfileSwitcher from './ProfileSwitcher'
+import ProfileSwitcher, { type SwitchOption } from './ProfileSwitcher'
 
 interface AppNotification {
   id: string
@@ -15,8 +15,8 @@ interface Props {
   babyName?: string | null
   babyGender?: string | null
   profilePicUrl?: string | null
-  // Owner-only: label of the profile the quick-switch button jumps to.
-  switchLabel?: string | null
+  // Owner-only: the accounts available for the quick profile switch.
+  switchOptions?: SwitchOption[]
   isAdmin?: boolean
 }
 
@@ -31,7 +31,7 @@ function saveNotifications(list: AppNotification[]) {
   localStorage.setItem('mama_notifications', JSON.stringify(list))
 }
 
-export default function TopBar({ babyName, profilePicUrl, switchLabel, isAdmin }: Props) {
+export default function TopBar({ babyName, profilePicUrl, switchOptions, isAdmin }: Props) {
   const [dark, setDark] = useState(false)
   const [date, setDate] = useState('')
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -145,7 +145,7 @@ export default function TopBar({ babyName, profilePicUrl, switchLabel, isAdmin }
           </a>
         )}
 
-        {switchLabel && <ProfileSwitcher label={switchLabel} />}
+        {switchOptions && switchOptions.length > 1 && <ProfileSwitcher options={switchOptions} />}
 
         {/* Bell with badge */}
         <div ref={dropRef} style={{ position: 'relative' }}>

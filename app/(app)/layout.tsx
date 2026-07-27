@@ -12,6 +12,7 @@ import RemindersPopup from '@/components/RemindersPopup'
 import ParentPopup from '@/components/ParentPopup'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin'
+import { switchOptionsFor } from '@/lib/switchProfiles'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const userId = await getAuthUserId()
@@ -29,11 +30,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
 
-  // Quick profile switch (owner <-> pregnancy test profile). No credentials
-  // needed - the API mints a one-time token with the service-role key.
-  const email = user?.email?.trim().toLowerCase()
-  const testEmail = (process.env.TEST_PROFILE_EMAIL || 'dana@gmail.com').trim().toLowerCase()
-  const switchLabel = isAdmin ? 'פרופיל הריון' : email === testEmail ? 'פרופיל ראשי' : null
+  // Quick switch between the owner's personal / pregnancy / admin accounts.
+  // No credentials needed - the API mints a one-time service-role token.
+  const switchOptions = switchOptionsFor(user?.email)
 
   const showSleepTimer = profile?.show_sleep_timer !== false
   const showReminders  = profile?.show_reminders !== false
@@ -48,7 +47,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyName={profile?.baby_name}
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
-          switchLabel={switchLabel}
+          switchOptions={switchOptions}
           isAdmin={isAdmin}
         />
         {(profile?.tracking_type === 'baby' || isAdmin) && showSleepTimer && <GlobalTimerBar userId={userId} />}
