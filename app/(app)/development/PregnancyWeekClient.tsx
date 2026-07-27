@@ -4,11 +4,12 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, Baby, Sparkles, Ruler, CalendarClock, ChevronDown, ChevronUp } from 'lucide-react'
 import { FETAL_WEEKS, getFetalWeek } from '@/lib/fetalWeeks'
-import { calcPregnancyWeek } from '@/lib/pregnancy'
+import { calcPregnancyWeek, formatGestational } from '@/lib/pregnancy'
 
 export default function PregnancyWeekClient({ dueDate }: { dueDate: string | null }) {
   const router = useRouter()
   const currentWeek = calcPregnancyWeek(dueDate)
+  const gaLabel = formatGestational(dueDate)
   const current = getFetalWeek(currentWeek)
   const [activeWeek, setActiveWeek] = useState<number>(current?.week ?? FETAL_WEEKS[0].week)
 
@@ -33,7 +34,7 @@ export default function PregnancyWeekClient({ dueDate }: { dueDate: string | nul
           מה קורה השבוע
         </h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-          {currentWeek > 0 ? `את בשבוע ${currentWeek} להריון - מה מתפתח אצל התינוק/ת` : 'התפתחות העובר שבוע אחר שבוע'}
+          {currentWeek > 0 ? `את בשבוע ${gaLabel} להריון - מה מתפתח אצל התינוק/ת` : 'התפתחות העובר שבוע אחר שבוע'}
         </p>
       </div>
 

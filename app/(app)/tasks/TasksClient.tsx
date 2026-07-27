@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Plus, X, Play, Pause, RotateCcw, Timer, ChevronDown, Baby, Home, Briefcase,
+  Plus, X, ChevronDown, Baby, Home, Briefcase,
   CheckCircle2, AlertCircle, Circle, ChevronRight, ClipboardList, Zap, Target,
-  Clock, Sprout, Coffee, Undo2, AlertTriangle, Calendar, Sparkles,
+  Clock, Sprout, Undo2, AlertTriangle, Calendar, Sparkles,
 } from 'lucide-react'
 import { Task, TaskCategory, TaskStatus, TaskPriority } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -40,54 +40,7 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
   const [newDue,   setNewDue]   = useState('')
   const [saving,   setSaving]   = useState(false)
 
-  // Pomodoro
-  const [pomoDuration, setPomoDuration] = useState(25 * 60)
-  const [pomoRunning,  setPomoRunning]  = useState(false)
-  const [pomoTime,     setPomoTime]     = useState(25 * 60)
-  const [pomoMode,     setPomoMode]     = useState<'work' | 'break'>('work')
-  const [pomoCount,    setPomoCount]    = useState(0)
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
-
   const supabase = createClient()
-
-  useEffect(() => {
-    if (pomoRunning) {
-      intervalRef.current = setInterval(() => {
-        setPomoTime(t => {
-          if (t <= 1) {
-            setPomoRunning(false)
-            if (pomoMode === 'work') {
-              setPomoCount(c => c + 1)
-              setPomoMode('break')
-              return 5 * 60
-            } else {
-              setPomoMode('work')
-              return pomoDuration
-            }
-          }
-          return t - 1
-        })
-      }, 1000)
-    } else {
-      if (intervalRef.current) clearInterval(intervalRef.current)
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
-  }, [pomoRunning, pomoMode, pomoDuration])
-
-  function resetPomo() {
-    setPomoRunning(false)
-    setPomoMode('work')
-    setPomoTime(pomoDuration)
-  }
-
-  function formatPomo(s: number) {
-    return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
-  }
-
-  const pomoPercent = (1 - pomoTime / (pomoMode === 'work' ? pomoDuration : 5 * 60)) * 100
-  const r = 45
-  const circumference = 2 * Math.PI * r
-  const dashOffset = circumference * (1 - pomoPercent / 100)
 
   async function addTask() {
     if (!newTitle.trim()) return
@@ -168,70 +121,6 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
           </p>
         </div>
       )}
-
-      {/* Pomodoro */}
-      <div className="card"
-        style={{ background: pomoMode === 'work'
-          ? 'linear-gradient(135deg, rgba(127,82,104,0.06), rgba(127,82,104,0.02))'
-          : 'linear-gradient(135deg, rgba(74,124,89,0.06), rgba(74,124,89,0.02))' }}>
-        <div className="flex items-center gap-6">
-          <div className="relative w-28 h-28 flex-shrink-0">
-            <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
-              <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="8" />
-              <circle cx="50" cy="50" r={r} fill="none"
-                stroke={pomoMode === 'work' ? '#7F5268' : '#4A7C59'}
-                strokeWidth="8" strokeLinecap="round"
-                strokeDasharray={circumference}
-                strokeDashoffset={dashOffset}
-                style={{ transition: 'stroke-dashoffset 1s linear' }}
-              />
-            </svg>
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-xl font-bold" style={{ color: 'var(--text)' }}>{formatPomo(pomoTime)}</span>
-              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{pomoMode === 'work' ? 'עבודה' : 'הפסקה'}</span>
-            </div>
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1">
-              <Timer className="w-4 h-4" style={{ color: 'var(--primary)' }} />
-              <span className="font-semibold" style={{ color: 'var(--text)' }}>טיימר פומודורו</span>
-              {pomoCount > 0 && (
-                <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
-                  style={{ background: 'rgba(127,82,104,0.12)', color: '#7F5268' }}>
-                  <Timer className="w-3 h-3" /> {pomoCount} סשנים
-                </span>
-              )}
-            </div>
-            <p className="text-sm mb-3 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-              {pomoMode === 'work' ? 'מיקוד מלא - הניחי את הטלפון' : <><Coffee className="w-3.5 h-3.5" /> הפסקה! קחי נשימה</>}
-            </p>
-            <div className="flex items-center gap-2 flex-wrap">
-              <button onClick={() => setPomoRunning(!pomoRunning)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white transition-opacity hover:opacity-90"
-                style={{ background: pomoMode === 'work' ? '#7F5268' : '#4A7C59' }}
-              >
-                {pomoRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-                {pomoRunning ? 'עצרי' : 'התחילי'}
-              </button>
-              <button onClick={resetPomo}
-                className="p-2 rounded-xl border hover:opacity-70 transition-opacity"
-                style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                <RotateCcw className="w-4 h-4" />
-              </button>
-              <select value={pomoDuration}
-                onChange={e => { setPomoDuration(+e.target.value); setPomoTime(+e.target.value); setPomoRunning(false) }}
-                className="text-sm px-3 py-2 rounded-xl border outline-none"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-              >
-                <option value={10 * 60}>10 דקות</option>
-                <option value={15 * 60}>15 דקות</option>
-                <option value={25 * 60}>25 דקות</option>
-                <option value={45 * 60}>45 דקות</option>
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">

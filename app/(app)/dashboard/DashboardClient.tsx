@@ -9,7 +9,7 @@ import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
 import GaveBirthModal from '@/components/GaveBirthModal'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
-import { STANDARD_TESTS, calcPregnancyWeek, weeksRemaining, babySizeForWeek } from '@/lib/pregnancy'
+import { STANDARD_TESTS, calcPregnancyWeek, formatGestational, weeksRemaining, babySizeForWeek } from '@/lib/pregnancy'
 
 export interface PregnancyTest {
   id: string
@@ -435,7 +435,7 @@ export default function DashboardClient({
               <div className="flex items-center gap-2">
                 <Baby className="w-4 h-4" style={{ color: 'var(--primary)' }} />
                 <span className="font-medium text-sm" style={{ color: 'var(--text)' }}>
-                  שבוע {pregnancyWeek}
+                  שבוע {formatGestational(dueDate) || pregnancyWeek}
                 </span>
               </div>
               <span

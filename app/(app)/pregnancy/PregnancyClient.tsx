@@ -497,7 +497,6 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         ref={fileInputRef}
         type="file"
         accept="image/*,application/pdf"
-        capture="environment"
         style={{ display: 'none' }}
         onChange={e => {
           const file = e.target.files?.[0]

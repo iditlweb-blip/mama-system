@@ -22,14 +22,33 @@ export const STANDARD_TESTS: StandardTest[] = [
   { week: 40, name: 'ביקור אחרון + תיאום לידה' },
 ]
 
-// Current pregnancy week from the due date (clamped to 1-42).
-export function calcPregnancyWeek(dueDate: string | null | undefined): number {
-  if (!dueDate) return 0
+// Precise gestational age from the due date, as completed weeks + extra days
+// (the obstetric "34+2" convention). The due date is 40+0; we count backwards
+// in whole days and FLOOR the weeks — never round up — so week 34 + 2 days
+// reads as "34+2", not "35". Clamped to 1+0 .. 42+0.
+export function calcGestationalAge(dueDate: string | null | undefined): { week: number; days: number } {
+  if (!dueDate) return { week: 0, days: 0 }
   const due = new Date(dueDate)
   const now = new Date()
   const daysLeft = Math.round((due.getTime() - now.getTime()) / 86400000)
-  const weeksPregnant = Math.round(40 - daysLeft / 7)
-  return Math.max(1, Math.min(42, weeksPregnant))
+  const totalDays = 280 - daysLeft // 280 = 40 weeks to the due date
+  const clamped = Math.max(7, Math.min(294, totalDays))
+  return { week: Math.floor(clamped / 7), days: clamped % 7 }
+}
+
+// Current pregnancy week as a whole number (floored) — used for the fetal-week
+// lookup, the test schedule and size-by-week. For display prefer
+// formatGestational(), which also shows the extra days.
+export function calcPregnancyWeek(dueDate: string | null | undefined): number {
+  return calcGestationalAge(dueDate).week
+}
+
+// Display string: "34+2" (or just "34" on an exact week boundary). Empty when
+// there's no due date yet.
+export function formatGestational(dueDate: string | null | undefined): string {
+  const { week, days } = calcGestationalAge(dueDate)
+  if (week <= 0) return ''
+  return days > 0 ? `${week}+${days}` : `${week}`
 }
 
 // The next few standard tests due from the current week onward.
