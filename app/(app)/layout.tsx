@@ -29,6 +29,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
 
+  // Quick profile switch (owner <-> pregnancy test profile). Only rendered when
+  // both accounts are configured in env and the session is one of them.
+  const email = user?.email?.trim().toLowerCase()
+  const swA = process.env.SWITCH_A_EMAIL?.trim().toLowerCase()
+  const swB = process.env.SWITCH_B_EMAIL?.trim().toLowerCase()
+  const switchLabel = swA && swB && process.env.SWITCH_A_PASSWORD && process.env.SWITCH_B_PASSWORD
+    ? email === swA ? 'פרופיל הריון' : email === swB ? 'פרופיל ראשי' : null
+    : null
+
   const showSleepTimer = profile?.show_sleep_timer !== false
   const showReminders  = profile?.show_reminders !== false
   const showParentPopup = profile?.show_parent_popup !== false
@@ -42,6 +51,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyName={profile?.baby_name}
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
+          switchLabel={switchLabel}
         />
         {(profile?.tracking_type === 'baby' || isAdmin) && showSleepTimer && <GlobalTimerBar userId={userId} />}
         {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId} />}

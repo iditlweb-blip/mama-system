@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Moon, Sun, Bell, X, Check } from 'lucide-react'
+import ProfileSwitcher from './ProfileSwitcher'
 
 interface AppNotification {
   id: string
@@ -14,6 +15,8 @@ interface Props {
   babyName?: string | null
   babyGender?: string | null
   profilePicUrl?: string | null
+  // Owner-only: label of the profile the quick-switch button jumps to.
+  switchLabel?: string | null
 }
 
 function loadNotifications(): AppNotification[] {
@@ -27,7 +30,7 @@ function saveNotifications(list: AppNotification[]) {
   localStorage.setItem('mama_notifications', JSON.stringify(list))
 }
 
-export default function TopBar({ babyName, profilePicUrl }: Props) {
+export default function TopBar({ babyName, profilePicUrl, switchLabel }: Props) {
   const [dark, setDark] = useState(false)
   const [date, setDate] = useState('')
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -131,6 +134,8 @@ export default function TopBar({ babyName, profilePicUrl }: Props) {
             : <Moon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
           }
         </button>
+
+        {switchLabel && <ProfileSwitcher label={switchLabel} />}
 
         {/* Bell with badge */}
         <div ref={dropRef} style={{ position: 'relative' }}>

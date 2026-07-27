@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Bell, X, ClipboardList, Stethoscope } from 'lucide-react'
 import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
+import { pushNotification } from '@/lib/notifications'
 
 // In-app reminder popup shown once when the app opens. It surfaces two things:
 //  1. Task reminders whose time has arrived (#4) - tasks with remind_at in the
@@ -68,6 +69,13 @@ export default function RemindersPopup({ userId, dueDate, trackingType }: {
       if (!cancelled && found.length > 0) {
         setReminders(found)
         setVisible(true)
+        // Also drop them into the bell, so closing the popup without marking
+        // them read leaves the red dot waiting in the TopBar.
+        for (const r of found) {
+          pushNotification(r.key, r.kind === 'exam'
+            ? `לא סימנת את הבדיקה: ${r.text}`
+            : `תזכורת: ${r.text}`)
+        }
       }
     }
     load()
