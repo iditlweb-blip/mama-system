@@ -49,6 +49,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
           switchLabel={switchLabel}
+          isAdmin={isAdmin}
         />
         {(profile?.tracking_type === 'baby' || isAdmin) && showSleepTimer && <GlobalTimerBar userId={userId} />}
         {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId} />}
