@@ -184,9 +184,10 @@ export default function DashboardClient({
     setCreatingTask(true)
     const row: Record<string, unknown> = { user_id: userId, title, priority: 'high', category: 'baby', status: 'todo' }
     if (newTaskRemind) { row.remind_at = new Date(newTaskRemind).toISOString(); row.reminded = false }
-    const { data } = await supabase.from('tasks').insert(row).select().single()
-    if (data) setLocalTasks(prev => [data as Task, ...prev])
+    const { data, error } = await supabase.from('tasks').insert(row).select().single()
     setCreatingTask(false)
+    if (error || !data) { alert(`שמירת המשימה נכשלה: ${error?.message ?? 'שגיאה'}`); return }
+    setLocalTasks(prev => [data as Task, ...prev])
     setNewTaskTitle(''); setNewTaskRemind('')
     setAddingTaskOpen(false)
   }

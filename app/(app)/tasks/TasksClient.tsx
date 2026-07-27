@@ -3,250 +3,194 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import {
-  Plus, X, ChevronDown, Baby, Home, Briefcase,
-  CheckCircle2, AlertCircle, Circle, ChevronRight, ClipboardList, Zap, Target,
-  Clock, Sprout, Undo2, AlertTriangle, Calendar, Sparkles, Bell,
+  Plus, X, Home, Baby, CheckCircle2, Circle, Calendar, Bell, Pencil,
+  Trash2, Paperclip, ChevronRight, Sparkles, AlertTriangle, ClipboardList,
+  Loader2, FileText,
 } from 'lucide-react'
-import { Task, TaskCategory, TaskStatus, TaskPriority } from '@/types/database'
+import { Task, TaskCategory, TaskPriority } from '@/types/database'
 import { useRouter } from 'next/navigation'
 
-interface Props { tasks: Task[]; userId: string }
+interface Props { tasks: Task[]; userId: string; trackingType: 'pregnancy' | 'baby' | null }
 
-const columns: { status: TaskStatus; label: string; color: string; icon: React.ElementType }[] = [
-  { status: 'todo',       label: 'לביצוע',  color: '#7F5268', icon: ClipboardList },
-  { status: 'inprogress', label: 'בתהליך',  color: '#B8860B', icon: Zap },
-  { status: 'done',       label: 'הושלם',   color: '#4A7C59', icon: CheckCircle2 },
-]
+// "work" was removed - tasks are either home or baby/pregnancy (per settings).
+type Cat = 'home' | 'baby'
 
-const catConfig: Record<TaskCategory, { label: string; icon: React.ElementType; cls: string }> = {
-  work: { label: 'עבודה',  icon: Briefcase, cls: 'cat-work' },
-  home: { label: 'בית',    icon: Home,      cls: 'cat-home' },
-  baby: { label: 'תינוק',  icon: Baby,      cls: 'cat-baby' },
-}
 const prioConfig: Record<TaskPriority, { label: string; color: string }> = {
   high:   { label: 'דחוף',   color: '#C0392B' },
   medium: { label: 'בינוני', color: '#B8860B' },
   low:    { label: 'נמוך',   color: '#4A7C59' },
 }
 
-export default function TasksClient({ tasks: initialTasks, userId }: Props) {
+export default function TasksClient({ tasks: initialTasks, userId, trackingType }: Props) {
   const router = useRouter()
-  const [tasks, setTasks]       = useState(initialTasks)
-  const [showForm, setShowForm] = useState(false)
-  const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all')
-  const [newTitle, setNewTitle] = useState('')
-  const [newCat,   setNewCat]   = useState<TaskCategory>('work')
-  const [newPrio,  setNewPrio]  = useState<TaskPriority>('medium')
-  const [newDue,   setNewDue]   = useState('')
-  const [newRemind, setNewRemind] = useState('')
-  const [saving,   setSaving]   = useState(false)
-
   const supabase = createClient()
+  const [tasks, setTasks] = useState(initialTasks)
+  const [showForm, setShowForm] = useState(false)
+  const [filterCat, setFilterCat] = useState<Cat | 'all'>('all')
+  const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
+
+  // New-task form
+  const [nTitle, setNTitle] = useState('')
+  const [nCat, setNCat] = useState<Cat>('baby')
+  const [nPrio, setNPrio] = useState<TaskPriority>('medium')
+  const [nDue, setNDue] = useState('')
+  const [nRemind, setNRemind] = useState('')
+  const [nNotes, setNNotes] = useState('')
+
+  const babyLabel = trackingType === 'pregnancy' ? 'הריון' : 'תינוק'
+  const catLabel = (c: string) => (c === 'home' ? 'בית' : babyLabel)
+  const CatIcon = (c: string) => (c === 'home' ? Home : Baby)
+  const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
+
+  const today = new Date().toISOString().split('T')[0]
+  const isDone = (t: Task) => t.status === 'done'
+  const filtered = tasks.filter(t => filterCat === 'all' ? true : t.category === filterCat)
+  // Open tasks first (by created desc), done at the bottom.
+  const sorted = [...filtered].sort((a, b) => (isDone(a) === isDone(b) ? 0 : isDone(a) ? 1 : -1))
+  const openCount = tasks.filter(t => !isDone(t)).length
+  const doneCount = tasks.filter(t => isDone(t)).length
 
   async function addTask() {
-    if (!newTitle.trim()) return
+    if (!nTitle.trim()) return
     setSaving(true)
-    // remind_at/reminded are only sent when a reminder is set, so tasks added
-    // without one keep working even before migration 019 is applied.
     const row: Record<string, unknown> = {
-      user_id: userId, title: newTitle.trim(), category: newCat, priority: newPrio,
-      due_date: newDue || null, status: 'todo',
+      user_id: userId, title: nTitle.trim(), category: nCat, priority: nPrio,
+      due_date: nDue || null, status: 'todo',
     }
-    if (newRemind) { row.remind_at = new Date(newRemind).toISOString(); row.reminded = false }
-    const { data } = await supabase.from('tasks').insert(row).select().single()
-    if (data) setTasks([data, ...tasks])
-    setNewTitle(''); setNewDue(''); setNewRemind(''); setShowForm(false); setSaving(false)
+    if (nRemind) { row.remind_at = new Date(nRemind).toISOString(); row.reminded = false }
+    if (nNotes.trim()) row.notes = nNotes.trim()
+    const { data, error } = await supabase.from('tasks').insert(row).select().single()
+    setSaving(false)
+    if (error || !data) { alert(`שמירת המשימה נכשלה: ${error?.message ?? 'שגיאה'}`); return }
+    setTasks(prev => [data as Task, ...prev])
+    setNTitle(''); setNDue(''); setNRemind(''); setNNotes(''); setNPrio('medium'); setShowForm(false)
   }
 
-  async function moveTask(id: string, status: TaskStatus) {
-    await supabase.from('tasks').update({ status }).eq('id', id)
-    setTasks(tasks.map(t => t.id === id ? { ...t, status } : t))
+  async function toggleDone(t: Task) {
+    const next = isDone(t) ? 'todo' : 'done'
+    setTasks(prev => prev.map(x => x.id === t.id ? { ...x, status: next } : x))
+    await supabase.from('tasks').update({ status: next }).eq('id', t.id)
   }
 
   async function deleteTask(id: string) {
+    if (!confirm('למחוק את המשימה?')) return
+    setTasks(prev => prev.filter(x => x.id !== id))
     await supabase.from('tasks').delete().eq('id', id)
-    setTasks(tasks.filter(t => t.id !== id))
   }
 
-  const today = new Date().toISOString().split('T')[0]
-  const filtered = filterCat === 'all' ? tasks : tasks.filter(t => t.category === filterCat)
+  async function saveEdit(id: string, patch: Partial<Task>) {
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, ...patch } as Task : x))
+    const { error } = await supabase.from('tasks').update(patch).eq('id', id)
+    if (error) alert(`עדכון נכשל: ${error.message}`)
+    else setEditingId(null)
+  }
 
-  // Stats
-  const openCount    = tasks.filter(t => t.status !== 'done').length
-  const doneCount    = tasks.filter(t => t.status === 'done').length
-  const highCount    = tasks.filter(t => t.priority === 'high' && t.status !== 'done').length
-  const dueTodayCount = tasks.filter(t => t.due_date === today && t.status !== 'done').length
-  const overdueCount = tasks.filter(t => t.due_date && t.due_date < today && t.status !== 'done').length
+  async function uploadFile(id: string, file: File) {
+    setUploadingId(id)
+    const ext = (file.name.split('.').pop() || 'dat').toLowerCase()
+    const path = `${userId}/tasks/${id}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('task-files').upload(path, file, { upsert: true, contentType: file.type || undefined })
+    if (error) {
+      alert(/bucket|not found|exist/i.test(error.message) ? 'האחסון עדיין לא הוגדר - יש להריץ מיגרציה 020 ב-Supabase' : `שגיאה בהעלאה: ${error.message}`)
+      setUploadingId(null); return
+    }
+    const { data: url } = supabase.storage.from('task-files').getPublicUrl(path)
+    setTasks(prev => prev.map(x => x.id === id ? { ...x, file_url: url.publicUrl } : x))
+    await supabase.from('tasks').update({ file_url: url.publicUrl }).eq('id', id)
+    setUploadingId(null)
+  }
 
   return (
-    <div className="space-y-5 max-w-5xl">
-      {/* Back button */}
+    <div className="space-y-5 max-w-2xl">
       <div className="flex justify-end">
-        <button
-          onClick={() => router.back()}
+        <button onClick={() => router.back()}
           className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
-          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-        >
-          <ChevronRight className="w-3.5 h-3.5" />
-          חזרה
+          style={{ color: 'var(--text-muted)', background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
+          <ChevronRight className="w-3.5 h-3.5" /> חזרה
         </button>
       </div>
-      {/* Header */}
+
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: 'var(--text)' }}>ניהול משימות</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            {openCount} משימות פתוחות · {doneCount} הושלמו
-          </p>
+          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>{openCount} פתוחות · {doneCount} הושלמו</p>
         </div>
-        <button onClick={() => setShowForm(true)}
-          className="btn-brand text-sm px-4 py-2"
-        >
-          <Plus className="w-4 h-4" />
-          משימה חדשה
+        <button onClick={() => setShowForm(true)} className="btn-brand text-sm px-4 py-2">
+          <Plus className="w-4 h-4" /> משימה חדשה
         </button>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <StatPill icon={ClipboardList} label="פתוחות" value={openCount}    color="#7F5268" />
-        <StatPill icon={CheckCircle2} label="הושלמו" value={doneCount}    color="#4A7C59" />
-        <StatPill icon={Circle} iconFill label="דחוף"   value={highCount}    color="#C0392B" />
-        <StatPill icon={Calendar} label="היום"   value={dueTodayCount} color="#B8860B"
-          extra={overdueCount > 0 ? `${overdueCount} באיחור` : undefined} />
-      </div>
-
-      {/* Overdue alert */}
-      {overdueCount > 0 && (
-        <div className="rounded-xl px-4 py-3 flex items-center gap-3"
-          style={{ background: 'rgba(192,57,43,0.08)', border: '1px solid rgba(192,57,43,0.2)' }}>
-          <AlertCircle className="w-4 h-4 flex-shrink-0" style={{ color: '#C0392B' }} />
-          <p className="text-sm" style={{ color: '#C0392B' }}>
-            יש לך <strong>{overdueCount}</strong> משימות שפג תוקפן - כדאי לטפל בהן היום
-          </p>
-        </div>
-      )}
-
       {/* Filter */}
       <div className="flex items-center gap-2 flex-wrap">
-        {(['all', 'work', 'home', 'baby'] as const).map(cat => {
-          const CatIcon = cat !== 'all' ? catConfig[cat].icon : null
-          return (
-            <button key={cat} onClick={() => setFilterCat(cat)}
-              className="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
-              style={filterCat === cat
-                ? { background: 'var(--primary)', color: 'white' }
-                : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
-              }
-            >
-              {CatIcon && <CatIcon className="w-3.5 h-3.5" />}
-              {cat === 'all' ? `הכל (${tasks.length})` : `${catConfig[cat].label} (${tasks.filter(t => t.category === cat).length})`}
-            </button>
-          )
-        })}
+        {(['all', 'home', 'baby'] as const).map(cat => (
+          <button key={cat} onClick={() => setFilterCat(cat)}
+            className="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
+            style={filterCat === cat
+              ? { background: 'var(--primary)', color: 'white' }
+              : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+            {cat === 'all' ? `הכל (${tasks.length})` : `${catLabel(cat)} (${tasks.filter(t => t.category === cat).length})`}
+          </button>
+        ))}
       </div>
 
-      {/* Kanban */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {columns.map(({ status, label, color, icon: ColIcon }) => {
-          const colTasks = filtered.filter(t => t.status === status)
-          const EmptyIcon = status === 'done' ? Target : status === 'inprogress' ? Clock : Sprout
-          return (
-            <div key={status} className="card" style={{ minHeight: 200 }}>
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <ColIcon className="w-4 h-4" style={{ color }} />
-                  <span className="font-semibold text-sm" style={{ color: 'var(--text)' }}>{label}</span>
-                </div>
-                <span className="text-xs px-2.5 py-0.5 rounded-full font-bold"
-                  style={{ background: `${color}20`, color }}>
-                  {colTasks.length}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {colTasks.map(task => (
-                  <TaskCard key={task.id} task={task} today={today} onMove={moveTask} onDelete={deleteTask} />
-                ))}
-                {colTasks.length === 0 && (
-                  <div className="text-center py-6">
-                    <EmptyIcon className="w-6 h-6 mx-auto mb-1" style={{ color: 'var(--text-muted)' }} />
-                    <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                      {status === 'done' ? 'עדיין לא הושלם כלום' : status === 'inprogress' ? 'אין משימות בתהליך' : 'לחצי + להוסיף'}
-                    </p>
-                  </div>
-                )}
-              </div>
-              {status === 'todo' && (
-                <button onClick={() => { setNewCat(filterCat === 'all' ? 'work' : filterCat); setShowForm(true) }}
-                  className="mt-3 w-full py-2 rounded-xl text-sm flex items-center justify-center gap-1 transition-opacity hover:opacity-70"
-                  style={{ color: 'var(--text-muted)', border: '1px dashed var(--border)' }}>
-                  <Plus className="w-3.5 h-3.5" />
-                  הוסיפי משימה
-                </button>
-              )}
-            </div>
-          )
-        })}
+      {/* List */}
+      <div className="space-y-2">
+        {sorted.length === 0 ? (
+          <div className="card text-center py-10">
+            <ClipboardList className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+            <p className="text-sm" style={{ color: 'var(--text-muted)' }}>אין משימות עדיין - לחצי "משימה חדשה"</p>
+          </div>
+        ) : sorted.map(task => (
+          <TaskRow
+            key={task.id} task={task} today={today}
+            catLabel={catLabel} CatIcon={CatIcon} babyLabel={babyLabel}
+            editing={editingId === task.id} uploading={uploadingId === task.id}
+            onToggle={() => toggleDone(task)}
+            onDelete={() => deleteTask(task.id)}
+            onEdit={() => setEditingId(task.id)}
+            onCancelEdit={() => setEditingId(null)}
+            onSave={patch => saveEdit(task.id, patch)}
+            onUpload={file => uploadFile(task.id, file)}
+          />
+        ))}
       </div>
 
-      {/* Add Task Modal */}
+      {/* Add modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/40">
-          <div className="card w-full max-w-sm space-y-4">
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/40" onClick={() => setShowForm(false)}>
+          <div className="card w-full max-w-sm space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>משימה חדשה <Sparkles className="w-4 h-4" style={{ color: '#7F5268' }} /></h3>
               <button onClick={() => setShowForm(false)}><X className="w-5 h-5" style={{ color: 'var(--text-muted)' }} /></button>
             </div>
-            <input value={newTitle} onChange={e => setNewTitle(e.target.value)}
-              placeholder="מה צריך לעשות?" autoFocus
-              className="w-full px-3 py-2.5 rounded-xl border outline-none text-sm"
-              style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+            <input value={nTitle} onChange={e => setNTitle(e.target.value)} placeholder="מה צריך לעשות?" autoFocus
               onKeyDown={e => e.key === 'Enter' && addTask()}
-            />
+              className="w-full px-3 py-2.5 rounded-xl border outline-none text-sm" style={inputSty} />
             <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>קטגוריה</label>
-                <select value={newCat} onChange={e => setNewCat(e.target.value as TaskCategory)}
-                  className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-                >
-                  <option value="work">עבודה</option>
-                  <option value="home">בית</option>
-                  <option value="baby">תינוק</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>עדיפות</label>
-                <select value={newPrio} onChange={e => setNewPrio(e.target.value as TaskPriority)}
-                  className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
-                  style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-                >
-                  <option value="high">דחוף</option>
-                  <option value="medium">בינוני</option>
-                  <option value="low">נמוך</option>
-                </select>
-              </div>
+              <select value={nCat} onChange={e => setNCat(e.target.value as Cat)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+                <option value="baby">{babyLabel}</option>
+                <option value="home">בית</option>
+              </select>
+              <select value={nPrio} onChange={e => setNPrio(e.target.value as TaskPriority)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+                <option value="high">דחוף</option>
+                <option value="medium">בינוני</option>
+                <option value="low">נמוך</option>
+              </select>
             </div>
             <div>
               <label className="text-xs font-medium block mb-1" style={{ color: 'var(--text-muted)' }}>תאריך יעד (אופציונלי)</label>
-              <input type="date" value={newDue} onChange={e => setNewDue(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-              />
+              <input type="date" value={nDue} onChange={e => setNDue(e.target.value)} className="w-full px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty} />
             </div>
             <div>
-              <label className="text-xs font-medium flex items-center gap-1 mb-1" style={{ color: 'var(--text-muted)' }}>
-                <Bell className="w-3 h-3" /> תזכורת (אופציונלי) - יקפוץ באפליקציה בזמן שתבחרי
-              </label>
-              <input type="datetime-local" value={newRemind} onChange={e => setNewRemind(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border outline-none text-sm"
-                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-              />
+              <label className="text-xs font-medium flex items-center gap-1 mb-1" style={{ color: 'var(--text-muted)' }}><Bell className="w-3 h-3" /> תזכורת (אופציונלי)</label>
+              <input type="datetime-local" value={nRemind} onChange={e => setNRemind(e.target.value)} className="w-full px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty} />
             </div>
-            <button onClick={addTask} disabled={saving || !newTitle.trim()}
-              className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-60 transition-opacity"
-              style={{ background: '#7F5268' }}
-            >
+            <textarea value={nNotes} onChange={e => setNNotes(e.target.value)} placeholder="הערות (אופציונלי)" rows={2}
+              className="w-full px-3 py-2 rounded-xl border outline-none text-sm resize-none" style={inputSty} />
+            <button onClick={addTask} disabled={saving || !nTitle.trim()}
+              className="w-full py-3 rounded-xl font-semibold text-white disabled:opacity-60" style={{ background: '#7F5268' }}>
               {saving ? 'שומרת...' : '+ הוסיפי משימה'}
             </button>
           </div>
@@ -256,106 +200,106 @@ export default function TasksClient({ tasks: initialTasks, userId }: Props) {
   )
 }
 
-function TaskCard({ task, today, onMove, onDelete }: {
+function TaskRow({ task, today, catLabel, CatIcon, editing, uploading, onToggle, onDelete, onEdit, onCancelEdit, onSave, onUpload }: {
   task: Task; today: string
-  onMove: (id: string, s: TaskStatus) => void
-  onDelete: (id: string) => void
+  catLabel: (c: string) => string; CatIcon: (c: string) => React.ElementType; babyLabel: string
+  editing: boolean; uploading: boolean
+  onToggle: () => void; onDelete: () => void; onEdit: () => void; onCancelEdit: () => void
+  onSave: (patch: Partial<Task>) => void; onUpload: (file: File) => void
 }) {
-  const [open, setOpen] = useState(false)
-  const { cls, label, icon: CatIcon } = catConfig[task.category]
+  const done = task.status === 'done'
   const { color } = prioConfig[task.priority]
+  const Icon = CatIcon(task.category)
+  const isOverdue = task.due_date && task.due_date < today && !done
 
-  const isOverdue = task.due_date && task.due_date < today && task.status !== 'done'
-  const isDueToday = task.due_date === today && task.status !== 'done'
-
-  const nextStatus: Record<TaskStatus, TaskStatus> = { todo: 'inprogress', inprogress: 'done', done: 'todo' }
-  const nextLabel: Record<TaskStatus, { icon: React.ElementType; text: string }> = {
-    todo: { icon: Zap, text: 'העבירי לבתהליך' },
-    inprogress: { icon: CheckCircle2, text: 'סמני כהושלם' },
-    done: { icon: Undo2, text: 'החזירי לרשימה' },
-  }
+  const [title, setTitle] = useState(task.title)
+  const [notes, setNotes] = useState(task.notes ?? '')
+  const [prio, setPrio] = useState<TaskPriority>(task.priority)
+  const [cat, setCat] = useState<TaskCategory>(task.category)
+  const [due, setDue] = useState(task.due_date ?? '')
+  const [remind, setRemind] = useState(task.remind_at ? task.remind_at.slice(0, 16) : '')
+  const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
 
   return (
-    <div className="p-3 rounded-xl group transition-all"
-      style={{
-        background: isOverdue ? 'rgba(192,57,43,0.04)' : 'var(--bg)',
-        border: `1px solid ${isOverdue ? 'rgba(192,57,43,0.25)' : 'var(--border)'}`,
-      }}>
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex items-start gap-2 flex-1 min-w-0">
-          {/* Quick complete */}
-          <button
-            onClick={() => task.status === 'done' ? onMove(task.id, 'todo') : onMove(task.id, 'done')}
-            className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform"
-          >
-            {task.status === 'done'
-              ? <CheckCircle2 className="w-4 h-4" style={{ color: '#4A7C59' }} />
-              : <Circle className="w-4 h-4" style={{ color: 'var(--border)' }} />
-            }
-          </button>
-          <p className="text-sm font-medium leading-snug"
-            style={{ color: 'var(--text)', textDecoration: task.status === 'done' ? 'line-through' : 'none', opacity: task.status === 'done' ? 0.6 : 1 }}>
-            {task.title}
-          </p>
+    <div className="card p-3" style={{ background: isOverdue ? 'rgba(192,57,43,0.04)' : undefined, opacity: done ? 0.7 : 1 }}>
+      <div className="flex items-start gap-3">
+        <button onClick={onToggle} className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform" title="סימון כבוצע">
+          {done ? <CheckCircle2 className="w-5 h-5" style={{ color: '#4A7C59' }} /> : <Circle className="w-5 h-5" style={{ color: 'var(--border)' }} />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{task.title}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
+              <Icon className="w-3 h-3" /> {catLabel(task.category)}
+            </span>
+            <span className="text-xs flex items-center gap-1" style={{ color }}><Circle className="w-2.5 h-2.5" fill={color} stroke="none" /> {prioConfig[task.priority].label}</span>
+            {task.due_date && (
+              <span className="text-xs font-medium flex items-center gap-1" style={{ color: isOverdue ? '#C0392B' : 'var(--text-muted)' }}>
+                {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                {new Date(task.due_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+            {task.remind_at && (
+              <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#7F5268' }}>
+                <Bell className="w-3 h-3" /> {new Date(task.remind_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })} {new Date(task.remind_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {task.file_url && (
+              <a href={task.file_url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium flex items-center gap-1" style={{ color: '#5C6BA0' }}>
+                <FileText className="w-3 h-3" /> קובץ מצורף
+              </a>
+            )}
+          </div>
+          {task.notes && !editing && <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>{task.notes}</p>}
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button onClick={() => setOpen(!open)} className="p-1 rounded-lg hover:opacity-70">
-            <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)', transform: open ? 'rotate(180deg)' : '' }} />
+          <button onClick={editing ? onCancelEdit : onEdit} className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }} title="עריכה">
+            {editing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={() => onDelete(task.id)} className="p-1 rounded-lg hover:opacity-70">
-            <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+          <button onClick={onDelete} className="p-1.5 rounded-lg" style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }} title="מחיקה">
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
-        <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${cls}`}>
-          <CatIcon className="w-3 h-3" /> {label}
-        </span>
-        <span className="text-xs px-1.5 py-0.5 rounded-full flex items-center" style={{ background: `${color}15`, color }}>
-          <Circle className="w-2.5 h-2.5" fill={color} stroke="none" />
-        </span>
-        {task.due_date && (
-          <span className="text-xs font-medium flex items-center gap-1"
-            style={{ color: isOverdue ? '#C0392B' : isDueToday ? '#B8860B' : 'var(--text-muted)' }}>
-            {isOverdue ? <AlertTriangle className="w-3 h-3" /> : isDueToday ? <Calendar className="w-3 h-3" /> : null}
-            {new Date(task.due_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
-          </span>
-        )}
-        {task.remind_at && (
-          <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#7F5268' }}>
-            <Bell className="w-3 h-3" />
-            {new Date(task.remind_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })} {new Date(task.remind_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        )}
-      </div>
-
-      {open && (() => {
-        const { icon: NextIcon, text: nextText } = nextLabel[task.status]
-        return (
-          <button onClick={() => onMove(task.id, nextStatus[task.status])}
-            className="mt-2 text-xs font-medium py-1.5 px-3 rounded-lg w-full flex items-center justify-center gap-1.5 transition-opacity hover:opacity-80"
-            style={{ background: 'rgba(127,82,104,0.08)', color: 'var(--primary)' }}
-          >
-            <NextIcon className="w-3.5 h-3.5" />
-            {nextText}
-          </button>
-        )
-      })()}
-    </div>
-  )
-}
-
-function StatPill({ icon: Icon, iconFill, label, value, color, extra }: {
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties; fill?: string }>
-  iconFill?: boolean; label: string; value: number; color: string; extra?: string
-}) {
-  return (
-    <div className="card py-3 text-center">
-      <Icon className="w-5 h-5 mx-auto mb-0.5" style={{ color }} fill={iconFill ? color : 'none'} />
-      <p className="text-2xl font-bold" style={{ color }}>{value}</p>
-      <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{label}</p>
-      {extra && <p className="text-xs mt-0.5 font-medium" style={{ color: '#C0392B' }}>{extra}</p>}
+      {editing && (
+        <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+          <input value={title} onChange={e => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty} />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={cat} onChange={e => setCat(e.target.value as TaskCategory)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+              <option value="baby">{catLabel('baby')}</option>
+              <option value="home">בית</option>
+            </select>
+            <select value={prio} onChange={e => setPrio(e.target.value as TaskPriority)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+              <option value="high">דחוף</option>
+              <option value="medium">בינוני</option>
+              <option value="low">נמוך</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>תאריך יעד
+              <input type="date" value={due} onChange={e => setDue(e.target.value)} className="px-2 py-1.5 rounded-lg border outline-none text-sm" style={inputSty} /></label>
+            <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>תזכורת
+              <input type="datetime-local" value={remind} onChange={e => setRemind(e.target.value)} className="px-2 py-1.5 rounded-lg border outline-none text-sm" style={inputSty} /></label>
+          </div>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="הערות" rows={2} className="w-full px-3 py-2 rounded-xl border outline-none text-sm resize-none" style={inputSty} />
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium flex items-center gap-1.5 px-3 py-2 rounded-xl cursor-pointer" style={{ background: 'rgba(92,107,160,0.1)', color: '#5C6BA0' }}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+              {task.file_url ? 'החלפת קובץ' : 'צירוף קובץ'}
+              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f) }} />
+            </label>
+            <button
+              onClick={() => onSave({
+                title: title.trim() || task.title, notes: notes.trim() || null, priority: prio, category: cat,
+                due_date: due || null, remind_at: remind ? new Date(remind).toISOString() : null, reminded: false,
+              })}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: '#4A7C59' }}>
+              שמירה
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

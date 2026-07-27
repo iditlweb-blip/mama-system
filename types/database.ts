@@ -60,6 +60,8 @@ export interface Task {
   due_date: string | null
   remind_at: string | null
   reminded: boolean | null
+  notes: string | null
+  file_url: string | null
   created_at: string
 }
 
