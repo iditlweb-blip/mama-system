@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Bell, X, ClipboardList, Stethoscope } from 'lucide-react'
+import { Bell, X, ClipboardList, Stethoscope, ChevronDown } from 'lucide-react'
 import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
 import { pushNotification } from '@/lib/notifications'
 
@@ -30,6 +30,8 @@ export default function RemindersPopup({ userId, dueDate, trackingType }: {
   const supabase = createClient()
   const [reminders, setReminders] = useState<Reminder[]>([])
   const [visible, setVisible] = useState(false)
+  // Accordion state - only the first reminder starts open, the rest collapsed.
+  const [openKey, setOpenKey] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -68,6 +70,7 @@ export default function RemindersPopup({ userId, dueDate, trackingType }: {
 
       if (!cancelled && found.length > 0) {
         setReminders(found)
+        setOpenKey(found[0].key)
         setVisible(true)
         // Also drop them into the bell, so closing the popup without marking
         // them read leaves the red dot waiting in the TopBar.
@@ -106,54 +109,107 @@ export default function RemindersPopup({ userId, dueDate, trackingType }: {
       style={{
         position: 'fixed', inset: 0, zIndex: 9999,
         background: 'rgba(30,20,26,0.45)', backdropFilter: 'blur(2px)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20,
+        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16,
+        overflowY: 'auto',
       }}
     >
       <div
         onClick={e => e.stopPropagation()}
         dir="rtl"
         style={{
-          background: 'var(--surface, #fff)', borderRadius: 20, padding: 22,
-          maxWidth: 400, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          background: 'var(--surface, #fff)', borderRadius: 20, padding: 16,
+          maxWidth: 360, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          // Never taller than the screen - the list itself scrolls, so the
+          // backdrop always stays reachable for a tap-outside dismiss.
+          maxHeight: 'min(70dvh, 520px)', display: 'flex', flexDirection: 'column',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(127,82,104,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Bell size={19} style={{ color: '#7F5268' }} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(127,82,104,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Bell size={17} style={{ color: '#7F5268' }} />
           </div>
-          <h2 style={{ margin: 0, fontSize: '1.05rem', fontWeight: 700, color: 'var(--text, #3a1e2d)' }}>תזכורות</h2>
+          <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: 'var(--text, #3a1e2d)' }}>
+            תזכורות
+            {reminders.length > 1 && (
+              <span style={{ fontSize: '0.75rem', fontWeight: 500, color: 'var(--text-muted, #8a7a80)', marginRight: 6 }}>
+                ({reminders.length})
+              </span>
+            )}
+          </h2>
+          <button
+            onClick={dismiss}
+            aria-label="סגירה"
+            style={{
+              marginRight: 'auto', width: 28, height: 28, borderRadius: 8, border: 'none',
+              background: 'transparent', cursor: 'pointer', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <X size={16} style={{ color: 'var(--text-muted, #8a7a80)' }} />
+          </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {reminders.map(r => (
-            <div key={r.key} style={{
-              display: 'flex', alignItems: 'flex-start', gap: 10,
-              background: r.kind === 'exam' ? 'rgba(92,107,160,0.08)' : 'rgba(127,82,104,0.06)',
-              border: `1px solid ${r.kind === 'exam' ? 'rgba(92,107,160,0.2)' : 'rgba(127,82,104,0.15)'}`,
-              borderRadius: 12, padding: '10px 12px',
-            }}>
-              {r.kind === 'exam'
-                ? <Stethoscope size={17} style={{ color: '#5C6BA0', flexShrink: 0, marginTop: 1 }} />
-                : <ClipboardList size={17} style={{ color: '#7F5268', flexShrink: 0, marginTop: 1 }} />}
-              <p style={{ margin: 0, fontSize: '0.86rem', lineHeight: 1.5, color: 'var(--text, #3a1e2d)' }}>
-                {r.kind === 'exam'
-                  ? <>ראיתי שעדיין לא סימנת את הבדיקה <b>{r.text}</b> - כדאי לוודא שלא שכחת לבצע אותה.</>
-                  : <>תזכורת: <b>{r.text}</b></>}
-              </p>
-            </div>
-          ))}
+        {/* Accordion: only one row is expanded at a time, so a long list of
+            unmarked tests stays a short, scannable list instead of a wall. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, overflowY: 'auto', flex: 1, minHeight: 0 }}>
+          {reminders.map(r => {
+            const isOpen = openKey === r.key
+            const accent = r.kind === 'exam' ? '#5C6BA0' : '#7F5268'
+            return (
+              <div key={r.key} style={{
+                background: r.kind === 'exam' ? 'rgba(92,107,160,0.06)' : 'rgba(127,82,104,0.05)',
+                border: `1px solid ${r.kind === 'exam' ? 'rgba(92,107,160,0.18)' : 'rgba(127,82,104,0.14)'}`,
+                borderRadius: 12, overflow: 'hidden',
+              }}>
+                <button
+                  onClick={() => setOpenKey(isOpen ? null : r.key)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '9px 11px', background: 'transparent', border: 'none',
+                    cursor: 'pointer', textAlign: 'right', fontFamily: 'var(--font-body)',
+                  }}
+                >
+                  {r.kind === 'exam'
+                    ? <Stethoscope size={15} style={{ color: accent, flexShrink: 0 }} />
+                    : <ClipboardList size={15} style={{ color: accent, flexShrink: 0 }} />}
+                  <span style={{
+                    flex: 1, fontSize: '0.82rem', fontWeight: 600, color: 'var(--text, #3a1e2d)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {r.text}
+                  </span>
+                  <ChevronDown
+                    size={15}
+                    style={{
+                      color: 'var(--text-muted, #8a7a80)', flexShrink: 0,
+                      transform: isOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.18s',
+                    }}
+                  />
+                </button>
+                {isOpen && (
+                  <p style={{
+                    margin: 0, padding: '0 11px 10px 11px', fontSize: '0.8rem',
+                    lineHeight: 1.55, color: 'var(--text-muted, #6b5a60)',
+                  }}>
+                    {r.kind === 'exam'
+                      ? <>עדיין לא סימנת את הבדיקה הזו. כדאי לוודא שלא שכחת לבצע אותה, ואם כבר ביצעת - אפשר לסמן אותה בעמוד ההריון.</>
+                      : <>הגיע הזמן של המשימה הזו. אפשר לסמן אותה כבוצעה בעמוד המשימות.</>}
+                  </p>
+                )}
+              </div>
+            )
+          })}
         </div>
 
         <button
           onClick={dismiss}
           style={{
-            marginTop: 16, width: '100%', padding: '11px', borderRadius: 12, border: 'none',
-            background: '#7F5268', color: '#fff', fontSize: '0.9rem', fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'var(--font-body)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center', gap: 6,
+            marginTop: 12, width: '100%', padding: '10px', borderRadius: 12, border: 'none',
+            background: '#7F5268', color: '#fff', fontSize: '0.87rem', fontWeight: 600,
+            cursor: 'pointer', fontFamily: 'var(--font-body)', flexShrink: 0,
           }}
         >
-          <X size={16} /> הבנתי, תודה
+          הבנתי, תודה
         </button>
       </div>
     </div>

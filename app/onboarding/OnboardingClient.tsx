@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
-import { Loader2, Camera, Baby, BookOpen, ClipboardList, ShoppingBag, Flower2 } from 'lucide-react'
+import { Loader2, Camera, Baby, BookOpen, ClipboardList, ShoppingBag, Flower2, Bell, BedDouble, Users } from 'lucide-react'
 import Image from 'next/image'
 
 function PregnancyIcon() {
@@ -27,6 +27,11 @@ export default function OnboardingClient() {
     baby_gender: '' as 'boy' | 'girl' | '',
     user_goal: '' as 'learn' | 'organize' | 'recommendations' | '',
     profileFile: null as File | null,
+    // Popup preferences - all on by default, each one can be turned off here
+    // and later from the settings page.
+    show_reminders: true,
+    show_sleep_timer: true,
+    show_parent_popup: true,
   })
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -70,7 +75,7 @@ export default function OnboardingClient() {
         setUploading(false)
       }
 
-      await supabase.from('profiles').upsert({
+      const base = {
         id: user.id,
         name: form.name,
         tracking_type: form.trackingType || 'baby',
@@ -81,8 +86,22 @@ export default function OnboardingClient() {
         user_goal: form.user_goal || null,
         ...(profile_picture_url ? { profile_picture_url } : {}),
         setup_complete: true,
-        setup_step: 4,
-      })
+        setup_step: 5,
+      }
+      const prefs = {
+        show_reminders: form.show_reminders,
+        show_sleep_timer: form.show_sleep_timer,
+        show_parent_popup: form.show_parent_popup,
+      }
+
+      const { error } = await supabase.from('profiles').upsert({ ...base, ...prefs })
+      // The preference columns arrived in a later migration - if they aren't
+      // there yet, saving the rest of the answers still has to succeed rather
+      // than leaving a brand new user stuck on the last step.
+      if (error) {
+        const { error: fallbackError } = await supabase.from('profiles').upsert(base)
+        if (fallbackError) { alert(`שמירת הפרטים נכשלה: ${fallbackError.message}`); return }
+      }
 
       router.push('/dashboard')
     } catch (err) {
@@ -104,7 +123,7 @@ export default function OnboardingClient() {
       <div className="w-full max-w-md">
         {/* Progress bar */}
         <div className="flex gap-2 mb-8">
-          {[1, 2, 3, 4].map(s => (
+          {[1, 2, 3, 4, 5].map(s => (
             <div
               key={s}
               className="flex-1 h-1.5 rounded-full transition-all duration-500"
@@ -334,8 +353,93 @@ export default function OnboardingClient() {
           </div>
         )}
 
-        {/* Step 4 - Profile photo */}
+        {/* Step 4 - Popup preferences */}
         {step === 4 && (
+          <div>
+            <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>
+              מה תרצי לראות?
+            </h1>
+            <p className="text-center mb-6" style={{ color: '#7a5a5a' }}>
+              אפשר לבחור אילו תזכורות וחלונות יופיעו לך. תמיד אפשר לשנות בהגדרות.
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {([
+                {
+                  key: 'show_reminders' as const,
+                  icon: Bell,
+                  label: 'תזכורות',
+                  desc: 'חלון קצר בכניסה לאפליקציה עם משימות ובדיקות שממתינות לך',
+                },
+                {
+                  key: 'show_sleep_timer' as const,
+                  icon: BedDouble,
+                  label: 'טיימר שינה',
+                  desc: 'סרגל מעקב שינה שמלווה אותך בכל העמודים',
+                  onlyBaby: true,
+                },
+                {
+                  key: 'show_parent_popup' as const,
+                  icon: Users,
+                  label: 'תיעוד אמא / אבא',
+                  desc: 'שאלה קצרה מי מתעד/ת עכשיו, כדי לסמן כל רישום בצבע מתאים',
+                  onlyBaby: true,
+                },
+              ]).filter(o => !o.onlyBaby || form.trackingType !== 'pregnancy')
+                .map(({ key, icon: PrefIcon, label, desc }) => {
+                  const on = form[key]
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => update(key, !on)}
+                      className="w-full text-right p-4 rounded-2xl transition-all"
+                      style={{
+                        background: on ? 'rgba(127,82,104,0.05)' : '#fff',
+                        border: `2px solid ${on ? '#7F5268' : '#e5d0c5'}`,
+                      }}
+                    >
+                      <div className="flex items-center gap-3">
+                        <PrefIcon className="w-5 h-5 flex-shrink-0" style={{ color: '#7F5268' }} />
+                        <div className="flex-1">
+                          <p className="font-semibold text-base" style={{ color: '#3d2b2b' }}>{label}</p>
+                          <p className="text-xs mt-0.5" style={{ color: '#7a5a5a' }}>{desc}</p>
+                        </div>
+                        {/* Toggle */}
+                        <span
+                          className="flex-shrink-0 flex items-center transition-all"
+                          style={{
+                            width: 40, height: 23, borderRadius: 999, padding: 2,
+                            background: on ? '#7F5268' : '#e5d0c5',
+                            justifyContent: on ? 'flex-start' : 'flex-end',
+                          }}
+                        >
+                          <span style={{ width: 19, height: 19, borderRadius: '50%', background: '#fff' }} />
+                        </span>
+                      </div>
+                    </button>
+                  )
+                })}
+            </div>
+
+            <button
+              onClick={() => setStep(5)}
+              className="w-full py-3.5 rounded-xl font-semibold text-white text-base transition-all mb-3"
+              style={{ background: '#7F5268' }}
+            >
+              הבא
+            </button>
+            <button
+              onClick={() => setStep(3)}
+              className="w-full py-2 text-sm font-medium transition-all"
+              style={{ color: '#7F5268', background: 'transparent', border: 'none' }}
+            >
+              חזרה
+            </button>
+          </div>
+        )}
+
+        {/* Step 5 - Profile photo */}
+        {step === 5 && (
           <div>
             <h1 className="text-2xl font-bold mb-2 text-center" style={{ color: '#3d2b2b' }}>
               רוצה להוסיף תמונה?
@@ -399,7 +503,7 @@ export default function OnboardingClient() {
               דלגי
             </button>
             <button
-              onClick={() => setStep(3)}
+              onClick={() => setStep(4)}
               disabled={loading || uploading}
               className="w-full py-2 text-sm font-medium mt-1 transition-all"
               style={{ color: '#7a5a5a', background: 'transparent', border: 'none' }}

@@ -25,14 +25,20 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // cannot loop.
   if (!profile?.setup_complete) redirect('/onboarding')
 
-  // The admin account previews BOTH trackers without switching profiles.
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
 
-  // Quick switch between the owner's personal / pregnancy / admin accounts.
+  // Quick switch between the owner's baby / pregnancy / admin accounts.
   // No credentials needed - the API mints a one-time service-role token.
   const switchOptions = switchOptionsFor(user?.email)
+
+  // Back-office link in the sidebar: a plain link when we're already the admin
+  // account, a session swap when we're on one of the tracking profiles.
+  const adminAccess: 'none' | 'direct' | 'switch' =
+    isAdmin ? 'direct'
+    : switchOptions.some(o => o.key === 'admin') ? 'switch'
+    : 'none'
 
   const showSleepTimer = profile?.show_sleep_timer !== false
   const showReminders  = profile?.show_reminders !== false
@@ -41,16 +47,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
       <PreloaderLottie />
-      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} showBoth={isAdmin} />
+      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} adminAccess={adminAccess} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
           babyName={profile?.baby_name}
           babyGender={profile?.baby_gender}
           profilePicUrl={profile?.profile_picture_url}
           switchOptions={switchOptions}
-          isAdmin={isAdmin}
         />
-        {(profile?.tracking_type === 'baby' || isAdmin) && showSleepTimer && <GlobalTimerBar userId={userId} />}
+        {profile?.tracking_type !== 'pregnancy' && showSleepTimer && <GlobalTimerBar userId={userId} />}
         {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId} />}
         <main className="flex-1 overflow-y-auto">
           {/* Full-width content with symmetric side gutters (equal left/right)
@@ -75,7 +80,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         defaultParent={(profile?.default_parent as 'mom' | 'dad' | null) ?? null}
         showPopup={showParentPopup}
       />
-      <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} showBoth={isAdmin} />
+      <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )
 }

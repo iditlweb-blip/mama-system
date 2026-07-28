@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun, Bell, X, Check, Shield } from 'lucide-react'
+import { Moon, Sun, Bell, X, Check } from 'lucide-react'
 import ProfileSwitcher, { type SwitchOption } from './ProfileSwitcher'
 
 interface AppNotification {
@@ -17,7 +17,6 @@ interface Props {
   profilePicUrl?: string | null
   // Owner-only: the accounts available for the quick profile switch.
   switchOptions?: SwitchOption[]
-  isAdmin?: boolean
 }
 
 function loadNotifications(): AppNotification[] {
@@ -31,7 +30,7 @@ function saveNotifications(list: AppNotification[]) {
   localStorage.setItem('mama_notifications', JSON.stringify(list))
 }
 
-export default function TopBar({ babyName, profilePicUrl, switchOptions, isAdmin }: Props) {
+export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props) {
   const [dark, setDark] = useState(false)
   const [date, setDate] = useState('')
   const [notifications, setNotifications] = useState<AppNotification[]>([])
@@ -136,15 +135,9 @@ export default function TopBar({ babyName, profilePicUrl, switchOptions, isAdmin
           }
         </button>
 
-        {isAdmin && (
-          <a href="/admin" title="עמוד ניהול"
-            className="h-8 px-2.5 rounded-lg flex items-center gap-1.5 transition-all hover:opacity-70"
-            style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}>
-            <Shield className="w-3.5 h-3.5" style={{ color: '#7F5268' }} />
-            <span className="text-xs font-semibold" style={{ color: '#7F5268' }}>ניהול</span>
-          </a>
-        )}
-
+        {/* Only the tracking profiles live here (baby / pregnancy). The admin
+            back-office moved into the sidebar menu to keep this row short on
+            mobile. */}
         {switchOptions && switchOptions.length > 1 && <ProfileSwitcher options={switchOptions} />}
 
         {/* Bell with badge */}

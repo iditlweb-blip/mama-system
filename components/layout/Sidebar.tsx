@@ -5,9 +5,10 @@ import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Baby, CheckSquare, Activity,
-  MessageCircle, LogOut, Menu, X, Briefcase, Settings, Heart,
+  MessageCircle, LogOut, Menu, X, Briefcase, Settings, Heart, Shield, Loader2,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
+import { switchToProfile } from '@/lib/switchProfileClient'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -38,24 +39,25 @@ function PregnancyIcon() {
   )
 }
 
-export default function Sidebar({ userName, trackingType, showBoth }: {
+export default function Sidebar({ userName, trackingType, adminAccess }: {
   userName?: string | null
   trackingType?: 'pregnancy' | 'baby' | null
-  showBoth?: boolean   // admin preview: show pregnancy AND baby tracking at once
+  // 'none'   - regular user, no back-office link
+  // 'direct' - already signed in as the admin account, plain link
+  // 'switch' - owner account that must hop to the admin account first
+  adminAccess?: 'none' | 'direct' | 'switch'
 }) {
   const isPregnancy = trackingType === 'pregnancy'
 
+  // Every profile shows only the pages that belong to it - a baby profile
+  // never gets the (empty) pregnancy tracker or the contraction timer, and
+  // vice versa. Previewing the other mode is what the profile switch is for.
   const navItems: NavItem[] = [
     { href: '/dashboard',             icon: LayoutDashboard,   label: 'דשבורד' },
-    ...(showBoth
-      ? [
-          { href: '/tracker',         icon: Activity,          label: 'מעקב תינוק' } as NavItem,
-          { href: '/pregnancy', customIcon: <PregnancyIcon />, label: 'מעקב הריון' } as NavItem,
-        ]
-      : [isPregnancy
-          ? { href: '/pregnancy', customIcon: <PregnancyIcon />, label: 'מעקב הריון' } as NavItem
-          : { href: '/tracker',       icon: Activity,          label: 'מעקב תינוק' } as NavItem]),
-    ...(isPregnancy || showBoth
+    isPregnancy
+      ? { href: '/pregnancy', customIcon: <PregnancyIcon />,   label: 'מעקב הריון' } as NavItem
+      : { href: '/tracker',           icon: Activity,          label: 'מעקב תינוק' } as NavItem,
+    ...(isPregnancy
       ? [{ href: '/contractions',     icon: Activity,          label: 'מד צירים' } as NavItem]
       : []),
     { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },
@@ -65,16 +67,31 @@ export default function Sidebar({ userName, trackingType, showBoth }: {
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
     { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },
     { href: '/settings',              icon: Settings,          label: 'הגדרות' },
-    ...(showBoth ? [{ href: '/admin', icon: LayoutDashboard,   label: 'ניהול (אדמין)' } as NavItem] : []),
   ]
   const pathname  = usePathname()
   const router    = useRouter()
   const supabase  = createClient()
   const [open, setOpen] = useState(false)
+  const [goingAdmin, setGoingAdmin] = useState(false)
 
   async function handleLogout() {
     await supabase.auth.signOut()
     router.push('/auth')
+  }
+
+  // Owner-only shortcut to the back-office. From a tracking profile this first
+  // swaps the session over to the admin account, then lands on /admin.
+  async function goAdmin() {
+    if (goingAdmin) return
+    setGoingAdmin(true)
+    if (adminAccess === 'switch') {
+      const ok = await switchToProfile('admin')
+      if (!ok) { setGoingAdmin(false); return }
+    }
+    setOpen(false)
+    router.push('/admin')
+    router.refresh()
+    setGoingAdmin(false)
   }
 
   const Content = () => (
@@ -116,6 +133,27 @@ export default function Sidebar({ userName, trackingType, showBoth }: {
           )
         })}
       </nav>
+
+      {/* Back-office entry - owner only, tucked away at the bottom of the menu
+          instead of crowding the mobile header. */}
+      {adminAccess && adminAccess !== 'none' && (
+        <>
+          <div className="my-3 mx-2 h-px" style={{ background: 'var(--border)' }} />
+          <button
+            onClick={goAdmin}
+            disabled={goingAdmin}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm w-full transition-all hover:opacity-70 disabled:opacity-50"
+            style={pathname === '/admin'
+              ? { background: 'var(--purple)', color: '#fff', fontWeight: 600 }
+              : { color: '#7F5268', fontWeight: 600 }}
+          >
+            {goingAdmin
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : <Shield className="w-4 h-4" />}
+            עמוד ניהול
+          </button>
+        </>
+      )}
 
       <div className="my-3 mx-2 h-px" style={{ background: 'var(--border)' }} />
 

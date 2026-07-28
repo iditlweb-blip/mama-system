@@ -11,9 +11,9 @@ export interface SwitchProfile { key: string; label: string; email: string }
 
 export function switchProfiles(): SwitchProfile[] {
   const raw: SwitchProfile[] = [
-    { key: 'personal',  label: 'אישי',  email: process.env.PERSONAL_PROFILE_EMAIL || 'iditlweb@gmail.com' },
+    { key: 'personal',  label: 'תינוק', email: process.env.PERSONAL_PROFILE_EMAIL || 'iditlweb@gmail.com' },
     { key: 'pregnancy', label: 'הריון', email: process.env.TEST_PROFILE_EMAIL     || 'dana@gmail.com' },
-    { key: 'admin',     label: 'אדמין', email: process.env.ADMIN_PROFILE_EMAIL    || ADMIN_EMAIL },
+    { key: 'admin',     label: 'ניהול', email: process.env.ADMIN_PROFILE_EMAIL    || ADMIN_EMAIL },
   ].map(p => ({ ...p, email: p.email.trim().toLowerCase() }))
 
   // If two roles happen to be the same account, keep only the first.
