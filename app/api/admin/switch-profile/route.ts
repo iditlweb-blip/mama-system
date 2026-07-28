@@ -41,6 +41,20 @@ export async function POST(req: Request) {
   }
 
   const admin = createAdminClient()
+
+  // generateLink('magiclink') happily CREATES an account when no user has that
+  // email yet, which silently dropped the owner into a blank brand-new profile
+  // instead of her real one. Refuse to switch unless the account exists.
+  const { data: list, error: listErr } = await admin.auth.admin.listUsers({ perPage: 1000 })
+  if (listErr) return NextResponse.json({ ok: false, error: listErr.message }, { status: 500 })
+  const exists = (list?.users ?? []).some(u => u.email?.trim().toLowerCase() === target.email)
+  if (!exists) {
+    return NextResponse.json(
+      { ok: false, error: `אין חשבון קיים עם המייל ${target.email} - הפרופיל לא הוחלף.` },
+      { status: 400 },
+    )
+  }
+
   const { data, error } = await admin.auth.admin.generateLink({ type: 'magiclink', email: target.email })
   if (error || !data?.properties?.hashed_token) {
     return NextResponse.json(

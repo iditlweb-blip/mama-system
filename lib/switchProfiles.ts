@@ -10,14 +10,15 @@ import { ADMIN_EMAIL } from './admin'
 export interface SwitchProfile { key: string; label: string; email: string }
 
 export function switchProfiles(): SwitchProfile[] {
-  const raw: SwitchProfile[] = [
-    { key: 'personal',  label: 'תינוק', email: process.env.PERSONAL_PROFILE_EMAIL || 'iditlweb@gmail.com' },
+  // 'personal' and 'admin' are the SAME account by default: the owner's real
+  // baby tracking lives on the admin account. They stay two separate entries
+  // because they land on different pages (/tracker vs /admin) - do not dedupe
+  // them by email, or the sidebar's back-office shortcut loses its target.
+  return [
+    { key: 'personal',  label: 'תינוק', email: process.env.PERSONAL_PROFILE_EMAIL || ADMIN_EMAIL },
     { key: 'pregnancy', label: 'הריון', email: process.env.TEST_PROFILE_EMAIL     || 'dana@gmail.com' },
     { key: 'admin',     label: 'ניהול', email: process.env.ADMIN_PROFILE_EMAIL    || ADMIN_EMAIL },
   ].map(p => ({ ...p, email: p.email.trim().toLowerCase() }))
-
-  // If two roles happen to be the same account, keep only the first.
-  return raw.filter((p, i) => raw.findIndex(o => o.email === p.email) === i)
 }
 
 export function findProfileByEmail(email: string | null | undefined): SwitchProfile | null {
