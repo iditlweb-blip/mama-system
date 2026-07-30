@@ -9,8 +9,8 @@ export default function Markdown({ children }: { children: string }) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
-          h2: (props) => <h2 style={{ fontFamily: 'var(--font-display, serif)', fontSize: '1.5rem', fontWeight: 700, color: '#7F5268', margin: '1.6em 0 0.5em' }} {...props} />,
-          h3: (props) => <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#7F5268', margin: '1.3em 0 0.4em' }} {...props} />,
+          h2: (props) => <h2 style={{ fontFamily: 'var(--font-body)', fontSize: '1.3rem', fontWeight: 500, color: '#1a1a1a', margin: '1.6em 0 0.5em' }} {...props} />,
+          h3: (props) => <h3 style={{ fontFamily: 'var(--font-body)', fontSize: '1.12rem', fontWeight: 500, color: '#1a1a1a', margin: '1.3em 0 0.4em' }} {...props} />,
           p:  (props) => <p style={{ margin: '0 0 1em' }} {...props} />,
           ul: (props) => <ul style={{ margin: '0 0 1em', paddingInlineStart: '1.4em', listStyleType: 'disc' }} {...props} />,
           ol: (props) => <ol style={{ margin: '0 0 1em', paddingInlineStart: '1.4em' }} {...props} />,

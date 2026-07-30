@@ -45,7 +45,7 @@ export default async function CommunityPage() {
   return (
     <div>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'var(--font-display, serif)', fontSize: 'clamp(1.7rem,4vw,2.4rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px' }}>
+        <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
           קהילת אמא בסדר
         </h1>
         <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>

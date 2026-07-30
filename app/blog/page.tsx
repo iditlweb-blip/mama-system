@@ -17,6 +17,18 @@ export const metadata: Metadata = {
 // Content changes rarely and is owner-edited - cache the list for an hour.
 export const revalidate = 3600
 
+// A topical emoji per category, used on the branded placeholder when a post has
+// no cover image yet.
+function coverEmoji(category: string | null): string {
+  const c = (category ?? '').trim()
+  if (c.includes('שינה')) return '🌙'
+  if (c.includes('הנקה')) return '🤱'
+  if (c.includes('הבית') || c.includes('בית')) return '🏠'
+  if (c.includes('עצמי') || c.includes('טיפול')) return '🌸'
+  if (c.includes('התפתחות')) return '👶'
+  return '💜'
+}
+
 interface PostCard {
   slug: string
   title: string
@@ -40,7 +52,7 @@ export default async function BlogIndexPage() {
   return (
     <div>
       <header style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: 'var(--font-display, serif)', fontSize: 'clamp(1.7rem,4vw,2.4rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px' }}>
+        <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
           הבלוג של אמא בסדר
         </h1>
         <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>
@@ -69,7 +81,9 @@ export default async function BlogIndexPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={p.cover_image_url} alt={p.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
               ) : (
-                <div style={{ height: 120, background: 'linear-gradient(135deg,#7F5268,#C4A0B4)' }} />
+                <div style={{ height: 140, background: 'linear-gradient(135deg,#7F5268,#C4A0B4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>
+                  <span>{coverEmoji(p.category)}</span>
+                </div>
               )}
               <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {p.category && (

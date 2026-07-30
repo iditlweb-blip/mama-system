@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { Plus, Loader2, Trash2, Pencil, ExternalLink, Image as ImageIcon, FileText } from 'lucide-react'
+import { useState, useTransition, useRef } from 'react'
+import { Plus, Loader2, Trash2, Pencil, ExternalLink, Image as ImageIcon, Upload, FileText } from 'lucide-react'
 import { upsertBlogPost, deleteBlogPost, fetchProductImage } from './actions'
+import { createClient } from '@/lib/supabase/client'
 
 export interface BlogPost {
   id: string
@@ -27,9 +28,32 @@ export default function AdminBlog({ initialPosts, onToast }: {
   const [form, setForm] = useState(emptyForm)
   const [showForm, setShowForm] = useState(false)
   const [fetchingImage, setFetchingImage] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const [isPending, startTransition] = useTransition()
 
   const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
+
+  async function uploadFromDevice(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingImage(true)
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { onToast('צריך להתחבר', false); return }
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `${user.id}/${Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('blog-images').upload(path, file, { upsert: true, contentType: file.type || undefined })
+      if (error) { onToast(`העלאה נכשלה: ${error.message}`, false); return }
+      const { data } = supabase.storage.from('blog-images').getPublicUrl(path)
+      setForm(f => ({ ...f, cover_image_url: data.publicUrl }))
+      onToast('התמונה הועלתה')
+    } finally {
+      setUploadingImage(false)
+      if (fileRef.current) fileRef.current.value = ''
+    }
+  }
 
   function reset() { setForm(emptyForm); setShowForm(false) }
 
@@ -120,15 +144,21 @@ export default function AdminBlog({ initialPosts, onToast }: {
           <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}
             placeholder="תוכן הכתבה (Markdown) *" rows={10} required
             className="w-full px-3 py-2 rounded-xl border text-sm outline-none" style={{ ...inputSty, lineHeight: 1.7 }} />
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <input value={form.cover_image_url} onChange={e => setForm(f => ({ ...f, cover_image_url: e.target.value }))}
               placeholder="קישור לתמונת שער" dir="ltr"
-              className="flex-1 px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
+              className="flex-1 min-w-[160px] px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
             <button type="button" onClick={grabImage} disabled={fetchingImage}
               className="px-3 py-2 rounded-xl text-sm border flex items-center gap-1.5 disabled:opacity-60"
               style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>
-              {fetchingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}שלוף
+              {fetchingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImageIcon className="w-4 h-4" />}שלוף מקישור
             </button>
+            <button type="button" onClick={() => fileRef.current?.click()} disabled={uploadingImage}
+              className="px-3 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-1.5 disabled:opacity-60"
+              style={{ background: '#7F5268' }}>
+              {uploadingImage ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}העלאה מהמכשיר
+            </button>
+            <input ref={fileRef} type="file" accept="image/*" onChange={uploadFromDevice} className="hidden" />
           </div>
           {form.cover_image_url && (
             // eslint-disable-next-line @next/next/no-img-element

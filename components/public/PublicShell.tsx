@@ -39,7 +39,7 @@ export default function PublicShell({
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/icon-192.png" alt="אמא בסדר" width={30} height={30} style={{ borderRadius: 8 }} />
-            <span style={{ fontFamily: 'var(--font-display, serif)', fontSize: '1.15rem', fontWeight: 700, color: '#7F5268', letterSpacing: '0.01em' }}>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 700, color: '#7F5268', letterSpacing: '0.01em' }}>
               אמא בסדר
             </span>
           </Link>

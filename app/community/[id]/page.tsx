@@ -75,7 +75,7 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         {question.category && (
           <span style={{ display: 'inline-block', fontSize: '0.7rem', fontWeight: 700, color: '#7F5268', background: 'rgba(127,82,104,0.10)', borderRadius: 8, padding: '3px 9px', marginBottom: 10 }}>{question.category}</span>
         )}
-        <h1 style={{ fontFamily: 'var(--font-display, serif)', fontSize: 'clamp(1.4rem,3.2vw,1.9rem)', fontWeight: 700, color: '#3a1e2d', margin: '0 0 10px', lineHeight: 1.35 }}>
+        <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(1.6rem,3.6vw,2.2rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 10px', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
           {question.title}
         </h1>
         {question.body && (
