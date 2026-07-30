@@ -2,6 +2,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import GradientTitle from '@/components/public/GradientTitle'
 import AskQuestionForm from './AskQuestionForm'
 
 export const metadata: Metadata = {
@@ -45,9 +46,7 @@ export default async function CommunityPage() {
   return (
     <div>
       <header style={{ marginBottom: 24 }}>
-        <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-          קהילת אמא בסדר
-        </h1>
+        <GradientTitle>קהילה</GradientTitle>
         <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>
           מקום לשאול, לענות ולתמוך. אין שאלה טיפשית, וכל אמא כאן עברה משהו דומה.
         </p>

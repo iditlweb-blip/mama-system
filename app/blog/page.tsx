@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
+import GradientTitle from '@/components/public/GradientTitle'
 
 export const metadata: Metadata = {
   title: 'בלוג לאימהות טריות',
@@ -52,9 +53,7 @@ export default async function BlogIndexPage() {
   return (
     <div>
       <header style={{ marginBottom: 28 }}>
-        <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(2rem,5vw,3rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 8px', letterSpacing: '-0.01em' }}>
-          הבלוג של אמא בסדר
-        </h1>
+        <GradientTitle>בלוג</GradientTitle>
         <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>
           כתבות, טיפים ומדריכים שיעזרו לך בחודשים הראשונים - בגובה העיניים ובלי שיפוטיות.
         </p>

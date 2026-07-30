@@ -35,7 +35,7 @@ export default function PublicShell({
           borderBottom: '1px solid rgba(127,82,104,0.15)',
         }}
       >
-        <div style={{ maxWidth: 920, margin: '0 auto', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+        <div style={{ maxWidth: 1920, margin: '0 auto', padding: '12px clamp(18px,4vw,75px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/icon-192.png" alt="אמא בסדר" width={30} height={30} style={{ borderRadius: 8 }} />
@@ -60,7 +60,7 @@ export default function PublicShell({
         </div>
       </header>
 
-      <main style={{ flex: 1, width: '100%', maxWidth: 920, margin: '0 auto', padding: 'clamp(20px,4vw,44px) 20px' }}>
+      <main style={{ flex: 1, width: '100%', maxWidth: 1920, margin: '0 auto', padding: 'clamp(20px,4vw,44px) clamp(18px,4vw,75px)' }}>
         {children}
       </main>
 
