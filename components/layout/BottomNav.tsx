@@ -55,6 +55,16 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
       ),
     },
     {
+      href: '/community',
+      label: 'קהילה',
+      icon: (
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 9a3 3 0 01-3 3H7l-3 3V5a2 2 0 012-2h6a2 2 0 012 2z"/>
+          <path d="M18 9h1a2 2 0 012 2v9l-3-3h-5a2 2 0 01-2-2"/>
+        </svg>
+      ),
+    },
+    {
       href: '/chat',
       label: "צ'אט AI",
       icon: (

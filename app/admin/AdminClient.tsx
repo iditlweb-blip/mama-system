@@ -9,7 +9,7 @@ import {
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
   LayoutDashboard, Wallet, MapPin, Phone, Ticket, ExternalLink,
-  ClipboardList, FileSpreadsheet, Copy,
+  ClipboardList, FileSpreadsheet, Copy, FileText, MessagesSquare,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
@@ -20,6 +20,8 @@ import {
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminPayments, { type AdminPayment } from './AdminPayments'
+import AdminBlog, { type BlogPost } from './AdminBlog'
+import AdminCommunity, { type CommunityQuestion } from './AdminCommunity'
 import ProfileSwitcher, { type SwitchOption } from '@/components/layout/ProfileSwitcher'
 
 interface UserRow {
@@ -79,14 +81,16 @@ interface Props {
   adminContent: AdminContent[]
   adminPayments: AdminPayment[]
   adminNotes: AdminNote[]
+  blogPosts: BlogPost[]
+  communityQuestions: CommunityQuestion[]
   switchOptions: SwitchOption[]   // owner-only account quick-switch
 }
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
-type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments'
+type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments' | 'blog' | 'community'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, switchOptions }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
@@ -472,6 +476,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           {([
             { key: 'overview',  label: 'סקירה',   Icon: LayoutDashboard },
             { key: 'content',   label: 'מוצרים ואנשי מקצוע', Icon: ShoppingBag },
+            { key: 'blog',      label: 'בלוג',    Icon: FileText },
+            { key: 'community', label: 'קהילה',   Icon: MessagesSquare },
             { key: 'tasks',     label: 'משימות',  Icon: CheckSquare },
             { key: 'marketing', label: 'שיווק',   Icon: MessageCircle },
             { key: 'payments',  label: 'תשלומים', Icon: Wallet },
@@ -486,6 +492,12 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           ))}
         </div>
 
+        {view === 'blog' && (
+          <AdminBlog initialPosts={blogPosts} onToast={showToast} />
+        )}
+        {view === 'community' && (
+          <AdminCommunity initialQuestions={communityQuestions} onToast={showToast} />
+        )}
         {view === 'tasks' && (
           <AdminTasks initialTasks={adminTasks} onToast={showToast} />
         )}

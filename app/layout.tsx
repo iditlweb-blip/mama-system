@@ -1,10 +1,19 @@
 import type { Metadata, Viewport } from "next"
+import { Analytics } from "@vercel/analytics/next"
+import { SITE_URL, SITE_NAME } from "@/lib/site"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "אמא בסדר",
-  description: "מערכת ניהול לאמהות - משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "אמא בסדר",
+    template: "%s · אמא בסדר",
+  },
+  description: "מערכת ותוכן לאימהות טריות - מעקב תינוק, התפתחות, משימות, בלוג וקהילת שאלות ותשובות.",
   manifest: "/manifest.json",
+  alternates: {
+    canonical: "/",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -16,16 +25,23 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "אמא בסדר",
-    description: "מערכת ניהול לאמהות עצמאיות - משימות, מעקב תינוק, התפתחות, וצ'אטבוט AI",
-    siteName: "אמא בסדר",
+    description: "מערכת ותוכן לאימהות טריות - מעקב תינוק, התפתחות, משימות, בלוג וקהילה.",
+    siteName: SITE_NAME,
+    url: SITE_URL,
     locale: "he_IL",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "אמא בסדר",
-    description: "מערכת ניהול לאמהות עצמאיות",
+    description: "מערכת ותוכן לאימהות טריות",
   },
+  // Google Search Console verification. Set GOOGLE_SITE_VERIFICATION in the
+  // environment once the property exists. Applies to Next-rendered routes; the
+  // static landing page at / is verified via a file in /public instead.
+  ...(process.env.GOOGLE_SITE_VERIFICATION
+    ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } }
+    : {}),
 }
 
 export const viewport: Viewport = {
@@ -70,6 +86,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen" style={{ backgroundColor: '#f7ede2' }}>
         {children}
+        <Analytics />
       </body>
     </html>
   )

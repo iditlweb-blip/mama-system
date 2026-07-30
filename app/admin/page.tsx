@@ -42,6 +42,8 @@ export default async function AdminPage() {
     { data: adminContent },
     { data: adminPayments },
     { data: adminNotes },
+    { data: blogPosts },
+    { data: communityQuestions },
   ] = await Promise.all([
     admin.from('tasks').select('*', { count: 'exact', head: true }),
     admin.from('baby_logs').select('*', { count: 'exact', head: true }),
@@ -56,6 +58,10 @@ export default async function AdminPage() {
     admin.from('admin_content').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_payments').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_notes').select('*').order('created_at', { ascending: false }).limit(200),
+    // Blog + community may not be migrated yet - errors are swallowed by the
+    // destructure (data is null) so the admin page still renders.
+    admin.from('blog_posts').select('*').order('created_at', { ascending: false }).limit(200),
+    admin.from('community_questions').select('*, community_answers(count)').order('created_at', { ascending: false }).limit(200),
   ])
   const productsEnabled = productsSetting?.value === true
   const waVal = (whatsappSetting?.value ?? {}) as { url?: string; visible?: boolean }
@@ -129,6 +135,8 @@ export default async function AdminPage() {
       adminContent={adminContent ?? []}
       adminPayments={adminPayments ?? []}
       adminNotes={adminNotes ?? []}
+      blogPosts={blogPosts ?? []}
+      communityQuestions={communityQuestions ?? []}
       switchOptions={switchOptions}
     />
   )

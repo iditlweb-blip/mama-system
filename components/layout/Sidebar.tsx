@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import {
   LayoutDashboard, Baby, CheckSquare, Activity,
   MessageCircle, LogOut, Menu, X, Briefcase, Settings, Heart, Shield, Loader2,
+  FileText, MessagesSquare,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { switchToProfile } from '@/lib/switchProfileClient'
@@ -64,6 +65,8 @@ export default function Sidebar({ userName, trackingType, adminAccess }: {
     { href: '/business',              icon: Briefcase,         label: 'ניהול' },
     { href: '/development',           icon: Baby,              label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות' },
     { href: '/products', customIcon: <ShoppingBagIcon />,      label: 'מוצרים ובעלי מקצוע' },
+    { href: '/blog',                  icon: FileText,          label: 'בלוג' },
+    { href: '/community',             icon: MessagesSquare,    label: 'קהילה' },
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
     { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },
     { href: '/settings',              icon: Settings,          label: 'הגדרות' },

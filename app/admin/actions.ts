@@ -415,3 +415,113 @@ export async function deleteProduct(id: string): Promise<{ ok: boolean; error?: 
     return { ok: false, error: (e as Error).message }
   }
 }
+
+// ─── Blog CRUD ─────────────────────────────────────────────────────────────────
+// Keeps Hebrew letters and digits, turns everything else into single hyphens.
+// Hebrew slugs are URL-encoded by the browser but render readably in Search.
+function slugify(input: string): string {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/['"״׳]/g, '')
+    .replace(/[^a-z0-9֐-׿]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80)
+}
+
+export async function upsertBlogPost(data: {
+  id?: string
+  slug?: string
+  title: string
+  excerpt?: string
+  body: string
+  cover_image_url?: string
+  category?: string
+  status?: string
+}): Promise<{ ok: boolean; error?: string; slug?: string; id?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const status = data.status === 'published' ? 'published' : 'draft'
+    const slug = (data.slug?.trim() ? slugify(data.slug) : slugify(data.title)) || `post-${Date.now()}`
+
+    const payload: Record<string, unknown> = {
+      slug,
+      title: data.title.trim(),
+      excerpt: data.excerpt?.trim() || null,
+      body: data.body ?? '',
+      cover_image_url: data.cover_image_url?.trim() || null,
+      category: data.category?.trim() || null,
+      status,
+      // Stamp published_at the first time a post goes live.
+      published_at: status === 'published' ? new Date().toISOString() : null,
+    }
+    if (data.id) payload.id = data.id
+
+    const { data: row, error } = await admin.from('blog_posts').upsert(payload, { onConflict: 'id' }).select('id').single()
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/blog')
+    revalidatePath(`/blog/${slug}`)
+    return { ok: true, slug, id: row?.id }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteBlogPost(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('blog_posts').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/blog')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// ─── Community moderation ──────────────────────────────────────────────────────
+// The owner can hide (soft, reversible) or delete (permanent) any question or
+// answer. Hiding flips status so the public SELECT policy stops returning it.
+export async function setQuestionStatus(id: string, status: 'published' | 'hidden'): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('community_questions').update({ status }).eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/community')
+    revalidatePath(`/community/${id}`)
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteQuestion(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    // Answers cascade-delete via the FK, so this removes the whole thread.
+    const { error } = await admin.from('community_questions').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/community')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function deleteAnswer(id: string, questionId?: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('community_answers').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    if (questionId) revalidatePath(`/community/${questionId}`)
+    revalidatePath('/community')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
