@@ -10,6 +10,7 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', category: '' })
+  const [anonymous, setAnonymous] = useState(false)
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
@@ -32,9 +33,10 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
     setError('')
     if (!form.title.trim()) { setError('צריך לכתוב שאלה'); return }
     startTransition(async () => {
-      const res = await postQuestion({ title: form.title, body: form.body || undefined, category: form.category || undefined })
+      const res = await postQuestion({ title: form.title, body: form.body || undefined, category: form.category || undefined, anonymous })
       if (!res.ok) { setError(res.error ?? 'שגיאה'); return }
       setForm({ title: '', body: '', category: '' })
+      setAnonymous(false)
       setOpen(false)
       if (res.id) router.push(`/community/${res.id}`)
       else router.refresh()
@@ -64,6 +66,11 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
         placeholder="פרטים נוספים (אופציונלי)" rows={4} style={{ ...inputSty, resize: 'vertical' }} />
       <input value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
         placeholder="נושא (למשל: שינה, הנקה)" style={inputSty} />
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: '#6b5560', cursor: 'pointer' }}>
+        <input type="checkbox" checked={anonymous} onChange={e => setAnonymous(e.target.checked)}
+          style={{ width: 17, height: 17, accentColor: '#7F5268', cursor: 'pointer' }} />
+        לפרסם כאנונימית (השם ותמונת הפרופיל שלך לא יוצגו)
+      </label>
       {error && <p style={{ color: '#C0392B', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
       <div style={{ display: 'flex', gap: 10 }}>
         <button type="submit" disabled={isPending}

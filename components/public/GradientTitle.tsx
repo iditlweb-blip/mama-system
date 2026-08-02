@@ -4,10 +4,10 @@
 export default function GradientTitle({ children }: { children: React.ReactNode }) {
   return (
     <h1
+      className="gradient-title"
       style={{
         fontFamily: 'var(--font-body)',
         fontWeight: 700,
-        fontSize: 'clamp(3rem,11vw,8rem)',
         lineHeight: 0.9,
         letterSpacing: '-0.01em',
         margin: '0 0 6px',
@@ -17,7 +17,6 @@ export default function GradientTitle({ children }: { children: React.ReactNode 
         backgroundClip: 'text',
         WebkitTextFillColor: 'transparent',
         color: 'transparent',
-        width: 'fit-content',
       }}
     >
       {children}

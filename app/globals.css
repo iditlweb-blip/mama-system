@@ -272,3 +272,21 @@ body {
   color: var(--text-muted);
   text-align: center;
 }
+
+/* Public blog/community hero (opener). Large gradient title, right-aligned on
+   desktop; on mobile it becomes much bigger and centered, and the whole header
+   (title + subtitle) centers too. */
+.gradient-title {
+  font-size: clamp(3rem, 10vw, 8rem);
+  width: fit-content;
+}
+@media (max-width: 640px) {
+  .gradient-title {
+    font-size: clamp(4.5rem, 26vw, 7rem);
+    width: 100%;
+    text-align: center;
+    margin-inline: auto;
+  }
+  .public-hero-head { text-align: center; }
+  .public-hero-head p { text-align: center; }
+}

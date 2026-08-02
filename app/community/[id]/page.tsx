@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
+import CommunityAvatar from '@/components/public/CommunityAvatar'
 import AnswerForm from '../AnswerForm'
 
 export const revalidate = 60
@@ -10,6 +11,7 @@ export const revalidate = 60
 interface Question {
   id: string
   author_name: string | null
+  author_avatar_url: string | null
   title: string
   body: string | null
   category: string | null
@@ -20,26 +22,38 @@ interface Question {
 interface Answer {
   id: string
   author_name: string | null
+  author_avatar_url: string | null
   body: string
   created_at: string
 }
 
 async function getThread(id: string) {
   const supabase = await createClient()
-  const { data: question } = await supabase
+  // Avatar columns are preferred but optional (migration 028); fall back if a
+  // missing column errors the query.
+  let question = (await supabase
     .from('community_questions')
-    .select('id, author_name, title, body, category, created_at, status')
-    .eq('id', id)
-    .eq('status', 'published')
-    .maybeSingle()
+    .select('id, author_name, author_avatar_url, title, body, category, created_at, status')
+    .eq('id', id).eq('status', 'published').maybeSingle()).data as Question | null
+  if (!question) {
+    question = (await supabase
+      .from('community_questions')
+      .select('id, author_name, title, body, category, created_at, status')
+      .eq('id', id).eq('status', 'published').maybeSingle()).data as unknown as Question | null
+  }
   if (!question) return null
-  const { data: answers } = await supabase
+
+  let answers = (await supabase
     .from('community_answers')
-    .select('id, author_name, body, created_at')
-    .eq('question_id', id)
-    .eq('status', 'published')
-    .order('created_at', { ascending: true })
-  return { question: question as Question, answers: (answers ?? []) as Answer[] }
+    .select('id, author_name, author_avatar_url, body, created_at')
+    .eq('question_id', id).eq('status', 'published').order('created_at', { ascending: true })).data as Answer[] | null
+  if (!answers) {
+    answers = (await supabase
+      .from('community_answers')
+      .select('id, author_name, body, created_at')
+      .eq('question_id', id).eq('status', 'published').order('created_at', { ascending: true })).data as unknown as Answer[] | null
+  }
+  return { question, answers: answers ?? [] }
 }
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -81,8 +95,10 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         {question.body && (
           <p style={{ color: '#3a1e2d', fontSize: '1rem', lineHeight: 1.75, margin: '0 0 12px', whiteSpace: 'pre-wrap' }}>{question.body}</p>
         )}
-        <div style={{ fontSize: '0.8rem', color: '#9a8790' }}>
-          {question.author_name ?? 'אמא מהקהילה'} · {new Date(question.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.8rem', color: '#9a8790' }}>
+          <CommunityAvatar url={question.author_avatar_url} size={28} />
+          <span>{question.author_name ?? 'אמא מהקהילה'}</span>
+          <span>· {new Date(question.created_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </div>
       </article>
 
@@ -97,8 +113,10 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
         ) : answers.map((a) => (
           <div key={a.id} style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(127,82,104,0.10)', padding: '14px 16px' }}>
             <p style={{ color: '#3a1e2d', fontSize: '0.97rem', lineHeight: 1.7, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{a.body}</p>
-            <div style={{ fontSize: '0.78rem', color: '#9a8790' }}>
-              {a.author_name ?? 'אמא מהקהילה'} · {new Date(a.created_at).toLocaleDateString('he-IL')}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.78rem', color: '#9a8790' }}>
+              <CommunityAvatar url={a.author_avatar_url} size={24} />
+              <span>{a.author_name ?? 'אמא מהקהילה'}</span>
+              <span>· {new Date(a.created_at).toLocaleDateString('he-IL')}</span>
             </div>
           </div>
         ))}

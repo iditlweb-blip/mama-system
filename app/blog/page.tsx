@@ -52,7 +52,7 @@ export default async function BlogIndexPage() {
 
   return (
     <div>
-      <header style={{ marginBottom: 28 }}>
+      <header className="public-hero-head" style={{ marginBottom: 28 }}>
         <GradientTitle>בלוג</GradientTitle>
         <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>
           כתבות, טיפים ומדריכים שיעזרו לך בחודשים הראשונים - בגובה העיניים ובלי שיפוטיות.

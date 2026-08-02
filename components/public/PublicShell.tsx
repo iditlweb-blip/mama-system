@@ -36,25 +36,25 @@ export default function PublicShell({
         }}
       >
         <div style={{ maxWidth: 1920, margin: '0 auto', padding: '12px clamp(18px,4vw,75px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none' }}>
+          <Link href="/" aria-label="אמא בסדר" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icons/icon-192.png" alt="אמא בסדר" width={30} height={30} style={{ borderRadius: 8 }} />
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '1.15rem', fontWeight: 700, color: '#7F5268', letterSpacing: '0.01em' }}>
-              אמא בסדר
-            </span>
           </Link>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+            <Link href="/" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#6b5560', textDecoration: 'none', padding: '6px 4px' }}>
+              עמוד בית
+            </Link>
             {navLink('/blog', 'בלוג', 'blog')}
             {navLink('/community', 'קהילה', 'community')}
             <Link
               href="/auth"
               style={{
                 background: '#7F5268', color: '#fff', borderRadius: 20,
-                padding: '7px 16px', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none',
+                padding: '7px 16px', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
               }}
             >
-              כניסה לאפליקציה
+              תתחילי לנסות
             </Link>
           </nav>
         </div>

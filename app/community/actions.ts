@@ -10,15 +10,26 @@ async function currentUser() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return null
-  const { data: profile } = await supabase.from('profiles').select('name').eq('id', user.id).maybeSingle()
+  const { data: profile } = await supabase
+    .from('profiles').select('name, profile_picture_url').eq('id', user.id).maybeSingle()
   const name = (profile?.name as string) || (user.user_metadata?.full_name as string) || 'אמא מהקהילה'
-  return { supabase, userId: user.id, name }
+  const avatar = (profile?.profile_picture_url as string) || null
+  return { supabase, userId: user.id, name, avatar }
+}
+
+// Resolves how the author is shown. Anonymous hides name + avatar; otherwise we
+// denormalize the profile picture onto the row so anon reads can render it.
+function authorFields(ctx: { name: string; avatar: string | null }, anonymous?: boolean) {
+  return anonymous
+    ? { author_name: 'אנונימית', author_avatar_url: null, is_anonymous: true }
+    : { author_name: ctx.name, author_avatar_url: ctx.avatar, is_anonymous: false }
 }
 
 export async function postQuestion(data: {
   title: string
   body?: string
   category?: string
+  anonymous?: boolean
 }): Promise<{ ok: boolean; error?: string; id?: string }> {
   const ctx = await currentUser()
   if (!ctx) return { ok: false, error: 'צריך להתחבר כדי לפרסם שאלה' }
@@ -28,10 +39,10 @@ export async function postQuestion(data: {
     .from('community_questions')
     .insert({
       user_id: ctx.userId,
-      author_name: ctx.name,
       title: data.title.trim(),
       body: data.body?.trim() || null,
       category: data.category?.trim() || null,
+      ...authorFields(ctx, data.anonymous),
     })
     .select('id')
     .single()
@@ -44,6 +55,7 @@ export async function postQuestion(data: {
 export async function postAnswer(data: {
   questionId: string
   body: string
+  anonymous?: boolean
 }): Promise<{ ok: boolean; error?: string }> {
   const ctx = await currentUser()
   if (!ctx) return { ok: false, error: 'צריך להתחבר כדי לענות' }
@@ -54,8 +66,8 @@ export async function postAnswer(data: {
     .insert({
       question_id: data.questionId,
       user_id: ctx.userId,
-      author_name: ctx.name,
       body: data.body.trim(),
+      ...authorFields(ctx, data.anonymous),
     })
 
   if (error) return { ok: false, error: error.message }
