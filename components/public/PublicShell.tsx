@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PublicHeader from './PublicHeader'
 
 // Shared chrome for the PUBLIC content sections (blog + community). These pages
 // live outside the (app) route group, so they don't get the logged-in sidebar/
@@ -10,55 +11,9 @@ export default function PublicShell({
   children: React.ReactNode
   active?: 'blog' | 'community'
 }) {
-  const navLink = (href: string, label: string, key: 'blog' | 'community') => (
-    <Link
-      href={href}
-      style={{
-        fontSize: '0.95rem',
-        fontWeight: active === key ? 700 : 500,
-        color: active === key ? '#7F5268' : '#6b5560',
-        textDecoration: 'none',
-        padding: '6px 4px',
-        borderBottom: active === key ? '2px solid #7F5268' : '2px solid transparent',
-      }}
-    >
-      {label}
-    </Link>
-  )
-
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'var(--font-body)', direction: 'rtl', background: '#F7EDE2' }}>
-      <header
-        style={{
-          position: 'sticky', top: 0, zIndex: 50,
-          background: 'rgba(247,237,226,0.92)', backdropFilter: 'blur(8px)',
-          borderBottom: '1px solid rgba(127,82,104,0.15)',
-        }}
-      >
-        <div style={{ maxWidth: 1920, margin: '0 auto', padding: '12px clamp(18px,4vw,75px)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-          <Link href="/" aria-label="אמא בסדר" style={{ display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icons/icon-192.png" alt="אמא בסדר" width={30} height={30} style={{ borderRadius: 8 }} />
-          </Link>
-
-          <nav style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            <Link href="/" style={{ fontSize: '0.95rem', fontWeight: 500, color: '#6b5560', textDecoration: 'none', padding: '6px 4px' }}>
-              עמוד בית
-            </Link>
-            {navLink('/blog', 'בלוג', 'blog')}
-            {navLink('/community', 'קהילה', 'community')}
-            <Link
-              href="/auth"
-              style={{
-                background: '#7F5268', color: '#fff', borderRadius: 20,
-                padding: '7px 16px', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
-              }}
-            >
-              תתחילי לנסות
-            </Link>
-          </nav>
-        </div>
-      </header>
+      <PublicHeader active={active} />
 
       <main style={{ flex: 1, width: '100%', maxWidth: 1920, margin: '0 auto', padding: 'clamp(20px,4vw,44px) clamp(18px,4vw,75px)' }}>
         {children}

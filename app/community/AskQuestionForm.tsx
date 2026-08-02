@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Loader2, HelpCircle } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { postQuestion } from './actions'
 
 export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean }) {
@@ -14,17 +14,21 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
 
+  // Shared pill used for both the logged-out and collapsed states so the button
+  // looks identical to the Figma regardless of auth.
+  const pill: React.CSSProperties = {
+    display: 'inline-flex', alignItems: 'center', gap: 9, background: '#7F5268', color: '#fff',
+    borderRadius: 999, padding: '13px 30px', fontSize: '1rem', fontWeight: 600,
+    border: 'none', cursor: 'pointer', textDecoration: 'none',
+  }
+
+  // Not signed in: the pill routes to login (posting requires an account).
   if (!isLoggedIn) {
     return (
-      <div style={{ background: '#fff', borderRadius: 16, border: '1px solid rgba(127,82,104,0.12)', padding: '18px 20px', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <HelpCircle style={{ width: 22, height: 22, color: '#7F5268' }} />
-          <span style={{ color: '#6b5560', fontSize: '0.95rem' }}>רוצה לשאול שאלה? התחברי כדי לפרסם בקהילה.</span>
-        </div>
-        <Link href="/auth?next=/community" style={{ background: '#7F5268', color: '#fff', borderRadius: 20, padding: '8px 20px', fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none' }}>
-          כניסה לפרסום שאלה
-        </Link>
-      </div>
+      <Link href="/auth?next=/community" style={pill}>
+        שאלי שאלה חדשה
+        <Plus style={{ width: 19, height: 19 }} />
+      </Link>
     )
   }
 
@@ -51,15 +55,15 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
 
   if (!open) {
     return (
-      <button onClick={() => setOpen(true)}
-        style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#7F5268', color: '#fff', borderRadius: 16, padding: '13px', fontSize: '0.95rem', fontWeight: 700, border: 'none', cursor: 'pointer', marginBottom: 24 }}>
-        <Plus style={{ width: 18, height: 18 }} />שאלי שאלה חדשה
+      <button onClick={() => setOpen(true)} style={pill}>
+        שאלי שאלה חדשה
+        <Plus style={{ width: 19, height: 19 }} />
       </button>
     )
   }
 
   return (
-    <form onSubmit={submit} style={{ background: '#fff', borderRadius: 16, border: '1px solid rgba(127,82,104,0.12)', padding: 18, marginBottom: 24, display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <form onSubmit={submit} style={{ width: '100%', maxWidth: 560, textAlign: 'right', background: '#fff', borderRadius: 16, border: '1px solid rgba(127,82,104,0.12)', padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
       <input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
         placeholder="מה השאלה שלך? *" style={inputSty} autoFocus />
       <textarea value={form.body} onChange={e => setForm(f => ({ ...f, body: e.target.value }))}

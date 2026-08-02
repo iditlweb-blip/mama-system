@@ -273,20 +273,53 @@ body {
   text-align: center;
 }
 
-/* Public blog/community hero (opener). Large gradient title, right-aligned on
-   desktop; on mobile it becomes much bigger and centered, and the whole header
-   (title + subtitle) centers too. */
+/* Public blog/community hero (opener). Large gradient title, centered on the
+   page (title + subtitle + action button), matching the Figma. */
+.public-hero-head { text-align: center; }
 .gradient-title {
-  font-size: clamp(3rem, 10vw, 8rem);
-  width: fit-content;
+  font-size: clamp(3.5rem, 12vw, 9rem);
+  width: 100%;
+  text-align: center;
+  margin-inline: auto;
 }
 @media (max-width: 640px) {
-  .gradient-title {
-    font-size: clamp(4.5rem, 26vw, 7rem);
-    width: 100%;
-    text-align: center;
-    margin-inline: auto;
+  .gradient-title { font-size: clamp(4.5rem, 26vw, 7rem); }
+}
+
+/* Public content card grids: blog = 4 across, community = 2 across, collapsing
+   on smaller screens (matches the Figma). */
+.blog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px; }
+.community-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
+@media (max-width: 1100px) {
+  .blog-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 680px) {
+  .blog-grid, .community-grid { grid-template-columns: 1fr; }
+}
+
+/* Public marketing header: desktop grid (logo / centered nav / CTA), collapsing
+   to a hamburger dropdown on mobile. */
+.public-header-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  max-width: 1920px;
+  margin: 0 auto;
+  padding: 14px clamp(18px, 4vw, 75px);
+}
+.public-nav-desktop { display: flex; align-items: center; gap: 26px; justify-self: center; }
+.public-cta-desktop { justify-self: end; }
+.public-hamburger { display: none; }
+.public-mobile-menu { display: none; }
+@media (max-width: 760px) {
+  .public-header-inner { grid-template-columns: 1fr auto; }
+  .public-nav-desktop, .public-cta-desktop { display: none; }
+  .public-hamburger { display: inline-flex; justify-self: end; }
+  .public-mobile-menu.open {
+    display: flex;
+    flex-direction: column;
+    padding: 8px clamp(18px, 4vw, 75px) 18px;
+    border-top: 1px solid rgba(127,82,104,0.12);
   }
-  .public-hero-head { text-align: center; }
-  .public-hero-head p { text-align: center; }
 }

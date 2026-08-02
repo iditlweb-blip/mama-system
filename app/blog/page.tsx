@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import GradientTitle from '@/components/public/GradientTitle'
 
@@ -52,10 +53,10 @@ export default async function BlogIndexPage() {
 
   return (
     <div>
-      <header className="public-hero-head" style={{ marginBottom: 28 }}>
+      <header className="public-hero-head" style={{ marginBottom: 36 }}>
         <GradientTitle>בלוג</GradientTitle>
-        <p style={{ color: '#6b5560', fontSize: '1.02rem', margin: 0, lineHeight: 1.6 }}>
-          כתבות, טיפים ומדריכים שיעזרו לך בחודשים הראשונים - בגובה העיניים ובלי שיפוטיות.
+        <p style={{ color: '#5b4a52', fontSize: '1.15rem', fontWeight: 300, margin: '4px auto 0', maxWidth: 760, lineHeight: 1.6 }}>
+          הכתבות, טיפים ומדריכים שיעזרו לך בחודשים הראשונים - בגובה העיניים ובלי שיפוטיות.
         </p>
       </header>
 
@@ -65,42 +66,53 @@ export default async function BlogIndexPage() {
           <p style={{ fontSize: '0.9rem', marginTop: 6 }}>חזרי לכאן בקרוב.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(260px,1fr))', gap: 20 }}>
+        <div className="blog-grid">
           {posts.map((p) => (
             <Link
               key={p.slug}
               href={`/blog/${p.slug}`}
               style={{
                 display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit',
-                background: '#fff', borderRadius: 18, overflow: 'hidden',
-                border: '1px solid rgba(127,82,104,0.10)', boxShadow: '0 2px 16px rgba(127,82,104,0.07)',
+                background: '#fff', borderRadius: 22, padding: 14, textAlign: 'center',
+                boxShadow: '0 6px 22px rgba(127,82,104,0.08)',
               }}
             >
-              {p.cover_image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={p.cover_image_url} alt={p.title} style={{ width: '100%', height: 160, objectFit: 'cover', display: 'block' }} />
-              ) : (
-                <div style={{ height: 140, background: 'linear-gradient(135deg,#7F5268,#C4A0B4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>
-                  <span>{coverEmoji(p.category)}</span>
-                </div>
-              )}
-              <div style={{ padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div style={{ position: 'relative' }}>
+                {p.cover_image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={p.cover_image_url} alt={p.title} style={{ width: '100%', height: 190, objectFit: 'cover', display: 'block', borderRadius: 14 }} />
+                ) : (
+                  <div style={{ height: 190, borderRadius: 14, background: 'linear-gradient(135deg,#7F5268,#C4A0B4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>
+                    <span>{coverEmoji(p.category)}</span>
+                  </div>
+                )}
                 {p.category && (
-                  <span style={{ alignSelf: 'flex-start', fontSize: '0.7rem', fontWeight: 700, color: '#7F5268', background: 'rgba(127,82,104,0.10)', borderRadius: 8, padding: '3px 9px' }}>
+                  <span style={{ position: 'absolute', top: 12, left: 12, fontSize: '0.72rem', fontWeight: 500, color: '#7F5268', background: 'rgba(247,237,226,0.94)', borderRadius: 10, padding: '4px 11px' }}>
                     {p.category}
                   </span>
                 )}
-                <h2 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#3a1e2d', margin: 0, lineHeight: 1.4 }}>{p.title}</h2>
-                {p.excerpt && (
-                  <p style={{ fontSize: '0.9rem', color: '#6b5560', margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {p.excerpt}
-                  </p>
-                )}
+              </div>
+
+              <div style={{ padding: '16px 8px 0', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
                 {p.published_at && (
-                  <time style={{ fontSize: '0.78rem', color: '#9a8790' }}>
+                  <time style={{ fontSize: '0.82rem', fontWeight: 300, color: '#9a8790' }}>
                     {new Date(p.published_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </time>
                 )}
+                <h2 style={{ fontSize: '1.12rem', fontWeight: 500, color: '#3a2530', margin: 0, lineHeight: 1.4 }}>{p.title}</h2>
+                {p.excerpt && (
+                  <p style={{ fontSize: '0.92rem', fontWeight: 300, color: '#6b5560', margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    {p.excerpt}
+                  </p>
+                )}
+                <span style={{
+                  marginTop: 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                  background: '#7F5268', color: '#fff', borderRadius: 999, padding: '11px 18px',
+                  fontSize: '0.92rem', fontWeight: 500,
+                }}>
+                  <ArrowLeft style={{ width: 16, height: 16 }} />
+                  למאמר המלא
+                </span>
               </div>
             </Link>
           ))}
