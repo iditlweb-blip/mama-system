@@ -1,0 +1,21 @@
+{
+  "_comment": "Curated backlog for the weekly blog automation. Each run picks the first topic with used=false, writes the article, then sets used=true. Add more topics anytime. slug must be unique and URL-safe (English).",
+  "topics": [
+    { "slug": "baby-crying-decode", "title": "איך להבין למה התינוק בוכה", "category": "רגשי", "brief": "להבחין בין רעב, עייפות, גז וצורך בקרבה, עם כלים מעשיים להרגעה.", "used": false },
+    { "slug": "tummy-time-guide", "title": "זמן בטן: למה זה חשוב ואיך מתחילים", "category": "התפתחות", "brief": "היתרונות, מאיזה גיל להתחיל, וטיפים להפוך את זה לנעים ולא בכייני.", "used": false },
+    { "slug": "postpartum-body-recovery", "title": "מה קורה לגוף בשבועות הראשונים אחרי לידה", "category": "בריאות", "brief": "דימום, כאבים, רצפת אגן, ומתי חשוב לפנות לרופאה.", "used": false },
+    { "slug": "colic-soothing", "title": "קוליק ובכי הערב: מה באמת עוזר", "category": "רגשי", "brief": "מה זה קוליק, טכניקות הרגעה מוכחות, ומתי להיוועץ.", "used": false },
+    { "slug": "pumping-and-storage", "title": "שאיבת חלב ואחסון נכון", "category": "הנקה", "brief": "מתי כדאי לשאוב, איך לאחסן בבטחה, וכמה זמן זה נשמר.", "used": false },
+    { "slug": "introducing-bottle", "title": "איך מציגים בקבוק לתינוק שיונק", "category": "הנקה", "brief": "תזמון, טכניקה, ומה עושים כשהתינוק מסרב.", "used": false },
+    { "slug": "safe-sleep-basics", "title": "שינה בטוחה: הכללים שחשוב להכיר", "category": "שינה", "brief": "על הגב, מזרן קשיח, בלי כריות ובובות, וטמפרטורה נכונה.", "used": false },
+    { "slug": "newborn-skin-care", "title": "טיפוח עור התינוק: מה באמת צריך", "category": "הביתה", "brief": "אמבטיה, יובש, קרמים, ומה עדיף לא לעשות.", "used": false },
+    { "slug": "partner-support-postpartum", "title": "איך בן או בת הזוג יכולים לעזור אחרי לידה", "category": "זוגיות", "brief": "חלוקת עומס, תמיכה רגשית ותקשורת בתקופה עמוסה.", "used": false },
+    { "slug": "baby-blues-vs-ppd", "title": "בייבי בלוז מול דיכאון אחרי לידה: איך מבדילים", "category": "רגשי", "brief": "ההבדל, סימני אזהרה, ואיפה מקבלים עזרה בלי בושה.", "used": false },
+    { "slug": "feeding-cues", "title": "לזהות סימני רעב ושובע אצל תינוק", "category": "הנקה", "brief": "סימנים מוקדמים, האכלה לפי דרישה, ומתי להירגע.", "used": false },
+    { "slug": "first-outing", "title": "היציאה הראשונה מהבית עם תינוק", "category": "הביתה", "brief": "מה לארוז, איך לתזמן, ואיך להוריד את הלחץ.", "used": false },
+    { "slug": "mom-nutrition-breastfeeding", "title": "תזונה של אמא מניקה: מה באמת חשוב", "category": "תזונה", "brief": "קלוריות, נוזלים, מה מותר, ואילו מיתוסים אפשר לזרוק.", "used": false },
+    { "slug": "developmental-leaps", "title": "קפיצות התפתחות: למה פתאום הכל מתפרק", "category": "התפתחות", "brief": "מה זה, מתי זה קורה, ואיך עוברים את זה בשלום.", "used": false },
+    { "slug": "sleep-regression", "title": "נסיגת שינה: מה זה ואיך שורדים", "category": "שינה", "brief": "הגילאים הנפוצים, הסיבות, וטיפים מעשיים.", "used": false },
+    { "slug": "asking-for-help", "title": "לבקש עזרה בלי אשמה: מדריך מעשי", "category": "טיפול עצמי", "brief": "איך לבקש, ממי, ולמה דווקא זה סימן לחוזק.", "used": false }
+  ]
+}

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Weekly blog automation - transient run artifacts
+content/next-post.json
+content/.tmp-cover.*
