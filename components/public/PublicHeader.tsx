@@ -16,18 +16,19 @@ export default function PublicHeader({ active }: { active?: 'blog' | 'community'
     { href: '/community', label: 'קהילה', key: 'community' },
   ]
 
+  // Thin (300) mauve nav links, identical to the landing header (.navlink).
   const navLink = (l: { href: string; label: string; key?: 'blog' | 'community' }) => (
     <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-      style={{ fontSize: '1rem', fontWeight: 500, color: '#7F5268', opacity: active === l.key ? 1 : 0.82, textDecoration: 'none', whiteSpace: 'nowrap' }}>
+      style={{ fontSize: '1.02rem', fontWeight: 300, color: '#7F5268', opacity: active === l.key ? 1 : 0.85, textDecoration: 'none', whiteSpace: 'nowrap' }}>
       {l.label}
     </Link>
   )
 
-  // Same button as the landing header: mauve pill, cream text, the hand-drawn
-  // arrow on the LEFT of the text (direction: ltr places the icon first).
+  // Same button as the landing header (.btn--solid): mauve pill, cream text,
+  // thin weight, the hand-drawn arrow on the LEFT (direction:ltr = icon first).
   const cta = (extra?: React.CSSProperties) => (
     <Link href="/auth" onClick={() => setOpen(false)}
-      style={{ direction: 'ltr', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#7F5268', color: '#F7EDE2', border: '1px solid #7F5268', borderRadius: 999, padding: '10px 24px', fontSize: '0.95rem', fontWeight: 400, textDecoration: 'none', whiteSpace: 'nowrap', ...extra }}>
+      style={{ direction: 'ltr', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#7F5268', color: '#F7EDE2', border: '1px solid #7F5268', borderRadius: 999, padding: '10px 24px', fontSize: '0.98rem', fontWeight: 300, textDecoration: 'none', whiteSpace: 'nowrap', ...extra }}>
       <BrandArrow size={26} />
       <span>תתחילי לנסות</span>
     </Link>
@@ -58,7 +59,7 @@ export default function PublicHeader({ active }: { active?: 'blog' | 'community'
       <div className={`public-mobile-menu${open ? ' open' : ''}`}>
         {links.map(l => (
           <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-            style={{ fontSize: '1.05rem', fontWeight: 500, color: active === l.key ? '#7F5268' : '#4a3a42', textDecoration: 'none', padding: '10px 0', textAlign: 'center' }}>
+            style={{ fontSize: '1.08rem', fontWeight: 300, color: '#7F5268', opacity: active === l.key ? 1 : 0.85, textDecoration: 'none', padding: '10px 0', textAlign: 'center' }}>
             {l.label}
           </Link>
         ))}
