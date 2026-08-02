@@ -1,8 +1,8 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
-import { ArrowLeft } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import GradientTitle from '@/components/public/GradientTitle'
+import BrandArrow from '@/components/public/BrandArrow'
 
 export const metadata: Metadata = {
   title: 'בלוג לאימהות טריות',
@@ -106,12 +106,12 @@ export default async function BlogIndexPage() {
                   </p>
                 )}
                 <span style={{
-                  marginTop: 'auto', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  background: '#7F5268', color: '#fff', borderRadius: 999, padding: '11px 18px',
-                  fontSize: '0.92rem', fontWeight: 500,
+                  marginTop: 'auto', direction: 'ltr', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9,
+                  background: '#7F5268', color: '#F7EDE2', borderRadius: 999, padding: '11px 18px',
+                  fontSize: '0.92rem', fontWeight: 400,
                 }}>
-                  <ArrowLeft style={{ width: 16, height: 16 }} />
-                  למאמר המלא
+                  <BrandArrow size={22} />
+                  <span>למאמר המלא</span>
                 </span>
               </div>
             </Link>

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
+import BrandArrow from './BrandArrow'
 
 // Public marketing header: logo (right), centered nav, CTA (left) on desktop;
 // collapses to a hamburger dropdown on mobile. Matches the Figma header.
@@ -17,16 +18,18 @@ export default function PublicHeader({ active }: { active?: 'blog' | 'community'
 
   const navLink = (l: { href: string; label: string; key?: 'blog' | 'community' }) => (
     <Link key={l.href} href={l.href} onClick={() => setOpen(false)}
-      style={{ fontSize: '1rem', fontWeight: 500, color: active === l.key ? '#7F5268' : '#6b5560', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+      style={{ fontSize: '1rem', fontWeight: 500, color: '#7F5268', opacity: active === l.key ? 1 : 0.82, textDecoration: 'none', whiteSpace: 'nowrap' }}>
       {l.label}
     </Link>
   )
 
+  // Same button as the landing header: mauve pill, cream text, the hand-drawn
+  // arrow on the LEFT of the text (direction: ltr places the icon first).
   const cta = (extra?: React.CSSProperties) => (
     <Link href="/auth" onClick={() => setOpen(false)}
-      style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#7F5268', color: '#fff', borderRadius: 999, padding: '10px 22px', fontSize: '0.92rem', fontWeight: 600, textDecoration: 'none', whiteSpace: 'nowrap', ...extra }}>
-      <ArrowLeft style={{ width: 17, height: 17 }} />
-      תתחילי לנסות
+      style={{ direction: 'ltr', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#7F5268', color: '#F7EDE2', border: '1px solid #7F5268', borderRadius: 999, padding: '10px 24px', fontSize: '0.95rem', fontWeight: 400, textDecoration: 'none', whiteSpace: 'nowrap', ...extra }}>
+      <BrandArrow size={26} />
+      <span>תתחילי לנסות</span>
     </Link>
   )
 
