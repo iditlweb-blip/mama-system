@@ -40,7 +40,7 @@ export default function PublicHeader({ active }: { active?: 'blog' | 'community'
         {/* Logo - right edge (RTL) */}
         <Link href="/" aria-label="אמא בסדר" style={{ justifySelf: 'start', display: 'flex', alignItems: 'center', textDecoration: 'none' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/logo.svg" alt="אמא בסדר" height={52} style={{ height: 52, width: 'auto' }} />
+          <img src="/logo.svg" alt="אמא בסדר" height={48} style={{ height: 48, width: 'auto' }} />
         </Link>
 
         <nav className="public-nav-desktop">
