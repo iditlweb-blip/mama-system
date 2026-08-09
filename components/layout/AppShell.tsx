@@ -9,6 +9,7 @@ import BottomNav from '@/components/layout/BottomNav'
 import PageTimeTracker from '@/components/PageTimeTracker'
 import RemindersPopup from '@/components/RemindersPopup'
 import ParentPopup from '@/components/ParentPopup'
+import PushPermissionPrompt from '@/components/PushPermissionPrompt'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin'
 import { switchOptionsFor } from '@/lib/switchProfiles'
@@ -72,6 +73,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
         defaultParent={(profile?.default_parent as 'mom' | 'dad' | null) ?? null}
         showPopup={showParentPopup}
       />
+      <PushPermissionPrompt />
       <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )

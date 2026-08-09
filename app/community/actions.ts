@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { sendPushToAdmin } from '@/lib/push'
 
 // Reads the signed-in user + her display name. Posting requires a session;
 // RLS additionally enforces that user_id matches the caller, so these can't be
@@ -49,6 +50,15 @@ export async function postQuestion(data: {
 
   if (error || !row) return { ok: false, error: error?.message ?? 'שמירת השאלה נכשלה' }
   revalidatePath('/community')
+
+  // Fire-and-forget: never let a push failure affect the response to the poster.
+  sendPushToAdmin({
+    title: 'שאלה חדשה בקהילה',
+    body: data.title.trim(),
+    url: `/community/${row.id}`,
+    tag: 'community-question',
+  }).catch(() => {})
+
   return { ok: true, id: row.id }
 }
 
