@@ -49,13 +49,17 @@ export async function postQuestion(data: {
     .single()
 
   if (error || !row) return { ok: false, error: error?.message ?? 'שמירת השאלה נכשלה' }
+  // The website (/community) and the in-app mirror (/content/community) show
+  // the exact same data - both need revalidating so a post made from either
+  // surface shows up immediately on both.
   revalidatePath('/community')
+  revalidatePath('/content/community')
 
   // Fire-and-forget: never let a push failure affect the response to the poster.
   sendPushToAdmin({
     title: 'שאלה חדשה בקהילה',
     body: data.title.trim(),
-    url: `/community/${row.id}`,
+    url: `/content/community/${row.id}`,
     tag: 'community-question',
   }).catch(() => {})
 
@@ -83,5 +87,7 @@ export async function postAnswer(data: {
   if (error) return { ok: false, error: error.message }
   revalidatePath(`/community/${data.questionId}`)
   revalidatePath('/community')
+  revalidatePath(`/content/community/${data.questionId}`)
+  revalidatePath('/content/community')
   return { ok: true }
 }

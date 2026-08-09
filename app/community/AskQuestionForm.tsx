@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Plus, Loader2 } from 'lucide-react'
 import { postQuestion } from './actions'
 
-export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean }) {
+export default function AskQuestionForm({ isLoggedIn, basePath = '/community' }: { isLoggedIn: boolean; basePath?: string }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', category: '' })
@@ -25,7 +25,7 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
   // Not signed in: the pill routes to login (posting requires an account).
   if (!isLoggedIn) {
     return (
-      <Link href="/auth?next=/community" style={pill}>
+      <Link href={`/auth?next=${basePath}`} style={pill}>
         שאלי שאלה חדשה
         <Plus style={{ width: 19, height: 19 }} />
       </Link>
@@ -42,7 +42,7 @@ export default function AskQuestionForm({ isLoggedIn }: { isLoggedIn: boolean })
       setForm({ title: '', body: '', category: '' })
       setAnonymous(false)
       setOpen(false)
-      if (res.id) router.push(`/community/${res.id}`)
+      if (res.id) router.push(`${basePath}/${res.id}`)
       else router.refresh()
     })
   }

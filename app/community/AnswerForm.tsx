@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { Loader2, Send } from 'lucide-react'
 import { postAnswer } from './actions'
 
-export default function AnswerForm({ questionId, isLoggedIn }: { questionId: string; isLoggedIn: boolean }) {
+export default function AnswerForm({ questionId, isLoggedIn, basePath = '/community' }: { questionId: string; isLoggedIn: boolean; basePath?: string }) {
   const router = useRouter()
   const [body, setBody] = useState('')
   const [anonymous, setAnonymous] = useState(false)
@@ -17,7 +17,7 @@ export default function AnswerForm({ questionId, isLoggedIn }: { questionId: str
     return (
       <div style={{ background: '#fff', borderRadius: 14, border: '1px solid rgba(127,82,104,0.12)', padding: '16px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <span style={{ color: '#6b5560', fontSize: '0.92rem' }}>רוצה לענות? התחברי כדי להשתתף.</span>
-        <Link href={`/auth?next=/community/${questionId}`} style={{ background: '#7F5268', color: '#fff', borderRadius: 18, padding: '7px 18px', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}>
+        <Link href={`/auth?next=${basePath}/${questionId}`} style={{ background: '#7F5268', color: '#fff', borderRadius: 18, padding: '7px 18px', fontSize: '0.85rem', fontWeight: 700, textDecoration: 'none' }}>
           כניסה
         </Link>
       </div>

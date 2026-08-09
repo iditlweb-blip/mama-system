@@ -24,6 +24,7 @@ export default function robots(): MetadataRoute.Robots {
         '/business',
         '/contractions',
         '/products',
+        '/content',
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,

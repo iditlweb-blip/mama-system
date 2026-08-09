@@ -2,7 +2,21 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToUser } from '@/lib/push'
 import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
-import { ageInWeeks, napMaxMinutes } from '@/lib/sleepBands'
+
+// A day nap running longer than this is worth a "want to wake her?" nudge.
+const NAP_OVERRUN_MINUTES = 180
+
+// The hour (Israel time) the "you haven't started a nap timer today" nudge
+// checks for. The cron hits this route every few minutes, so this whole hour
+// is the window - the per-profile dedupe date is what keeps it to one send.
+const MIDDAY_HOUR = 13
+
+function israelHourNow(): number {
+  return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false }).format(new Date()))
+}
+function israelDateToday(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jerusalem' }).format(new Date())
+}
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -36,7 +50,7 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient()
   const nowIso = new Date().toISOString()
-  const results = { tasks: 0, exams: 0, sleepTimers: 0 }
+  const results = { tasks: 0, exams: 0, sleepTimers: 0, middayNudges: 0 }
 
   // ── 1. Task reminders (remind_at due) ────────────────────────────────────
   const { data: dueTasks } = await admin
@@ -109,7 +123,7 @@ export async function GET(req: Request) {
     }
   }
 
-  // ── 3. Sleep timer running long (day naps only - night sleep is meant to be long) ──
+  // ── 3. Sleep timer running past 3 hours (day naps only - night sleep is meant to be long) ──
   const { data: timers } = await admin
     .from('active_sleep_timers')
     .select('user_id, start_time')
@@ -118,26 +132,50 @@ export async function GET(req: Request) {
     .limit(500)
 
   if (timers && timers.length > 0) {
-    const userIds = timers.map(t => t.user_id)
-    const { data: profiles } = await admin.from('profiles').select('id, baby_birthdate').in('id', userIds)
-    const birthdateByUser = new Map((profiles ?? []).map(p => [p.id, p.baby_birthdate as string | null]))
-
     const overrun = timers.filter(timer => {
-      const weeks = ageInWeeks(birthdateByUser.get(timer.user_id))
-      if (weeks == null) return false
       const elapsedMin = (Date.now() - new Date(timer.start_time).getTime()) / 60000
-      return elapsedMin > napMaxMinutes(weeks)
+      return elapsedMin > NAP_OVERRUN_MINUTES
     })
 
     if (overrun.length > 0) {
       await Promise.all(overrun.map(timer => sendPushToUser(timer.user_id, {
-        title: 'התנומה נמשכת זמן רב',
-        body: 'ייתכן שזה זמן טוב להעיר, אם תרצי',
+        title: 'הטיימר פועל כבר יותר מ-3 שעות',
+        body: 'אולי הגיע הזמן לכבות אותו',
         url: '/tracker',
         tag: 'sleep-timer',
       })))
       await admin.from('active_sleep_timers').update({ push_sent: true }).in('user_id', overrun.map(t => t.user_id))
       results.sleepTimers = overrun.length
+    }
+  }
+
+  // ── 4. Midday nudge: baby-tracking mothers who haven't started a sleep timer
+  // today, once a day, only during the target hour (dedupe column keeps it to
+  // a single send even though the cron hits this route every few minutes).
+  if (israelHourNow() === MIDDAY_HOUR) {
+    const today = israelDateToday()
+    const { data: babyProfiles } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('tracking_type', 'baby')
+      .or(`midday_nap_reminder_date.is.null,midday_nap_reminder_date.neq.${today}`)
+      .limit(1000)
+
+    if (babyProfiles && babyProfiles.length > 0) {
+      const { data: activeTimers } = await admin.from('active_sleep_timers').select('user_id')
+      const activeUserIds = new Set((activeTimers ?? []).map(t => t.user_id))
+      const idle = babyProfiles.filter(p => !activeUserIds.has(p.id))
+
+      if (idle.length > 0) {
+        await Promise.all(idle.map(p => sendPushToUser(p.id, {
+          title: 'עדיין לא תיעדת שינה היום',
+          body: 'האפליקציה כאן כדי לעזור לך לעקוב - אפשר להתחיל טיימר שינה בכל רגע',
+          url: '/tracker',
+          tag: 'midday-nap-nudge',
+        })))
+        await admin.from('profiles').update({ midday_nap_reminder_date: today }).in('id', idle.map(p => p.id))
+        results.middayNudges = idle.length
+      }
     }
   }
 
