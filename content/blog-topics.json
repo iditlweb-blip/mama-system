@@ -1,7 +1,7 @@
 {
   "_comment": "Curated backlog for the weekly blog automation. Each run picks the first topic with used=false, writes the article, then sets used=true. Add more topics anytime. slug must be unique and URL-safe (English).",
   "topics": [
-    { "slug": "baby-crying-decode", "title": "איך להבין למה התינוק בוכה", "category": "רגשי", "brief": "להבחין בין רעב, עייפות, גז וצורך בקרבה, עם כלים מעשיים להרגעה.", "used": false },
+    { "slug": "baby-crying-decode", "title": "איך להבין למה התינוק בוכה", "category": "רגשי", "brief": "להבחין בין רעב, עייפות, גז וצורך בקרבה, עם כלים מעשיים להרגעה.", "used": true },
     { "slug": "tummy-time-guide", "title": "זמן בטן: למה זה חשוב ואיך מתחילים", "category": "התפתחות", "brief": "היתרונות, מאיזה גיל להתחיל, וטיפים להפוך את זה לנעים ולא בכייני.", "used": false },
     { "slug": "postpartum-body-recovery", "title": "מה קורה לגוף בשבועות הראשונים אחרי לידה", "category": "בריאות", "brief": "דימום, כאבים, רצפת אגן, ומתי חשוב לפנות לרופאה.", "used": false },
     { "slug": "colic-soothing", "title": "קוליק ובכי הערב: מה באמת עוזר", "category": "רגשי", "brief": "מה זה קוליק, טכניקות הרגעה מוכחות, ומתי להיוועץ.", "used": false },

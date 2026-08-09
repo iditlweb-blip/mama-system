@@ -1,7 +1,39 @@
 import BackButton from '@/components/layout/BackButton'
 import { createClient } from '@/lib/supabase/server'
-import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Sparkles } from 'lucide-react'
+import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Sparkles, Briefcase } from 'lucide-react'
 import ProductsGrid from './ProductsGrid'
+
+// Invites businesses / professionals to apply for a spot on this page, via the
+// Google Form the owner manages from the admin panel (app_settings.pro_form).
+// Shown both on the "coming soon" placeholder and on the live page, so the
+// application channel is open regardless of whether the page is toggled on.
+function ProSignupBanner({ formUrl }: { formUrl: string }) {
+  return (
+    <div style={{
+      background: 'linear-gradient(135deg, #7F5268 0%, #9b6a85 100%)',
+      borderRadius: 18, padding: 'clamp(20px,4vw,28px)', color: '#fff',
+      display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap', justifyContent: 'space-between',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: '1 1 260px' }}>
+        <div style={{ flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', width: 46, height: 46, borderRadius: 12, background: 'rgba(255,255,255,0.15)' }}>
+          <Briefcase size={22} color="#fff" strokeWidth={1.7} />
+        </div>
+        <div>
+          <p style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 3px' }}>את בעלת מוצר או אשת מקצוע לאימהות?</p>
+          <p style={{ fontSize: '0.85rem', opacity: 0.92, margin: 0, lineHeight: 1.6 }}>
+            נשמח להכיר ולשקול הוספה ללוח הממליצים שאלפי אמהות רואות באפליקציה.
+          </p>
+        </div>
+      </div>
+      <a href={formUrl} target="_blank" rel="noopener noreferrer" style={{
+        flex: 'none', background: '#fff', color: '#7F5268', borderRadius: 20,
+        padding: '10px 22px', fontSize: '0.88rem', fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap',
+      }}>
+        למילוי טופס הצטרפות
+      </a>
+    </div>
+  )
+}
 
 export default async function ProductsPage() {
   const supabase = await createClient()
@@ -9,12 +41,13 @@ export default async function ProductsPage() {
   // Feature toggle - admins turn the products page on from the admin panel.
   // Until then (or if the setting is missing) the page shows a "coming soon"
   // placeholder instead of the products/professionals content.
-  const { data: setting } = await supabase
-    .from('app_settings')
-    .select('value')
-    .eq('key', 'products_enabled')
-    .maybeSingle()
+  const [{ data: setting }, { data: proFormSetting }] = await Promise.all([
+    supabase.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
+    supabase.from('app_settings').select('value').eq('key', 'pro_form').maybeSingle(),
+  ])
   const productsEnabled = setting?.value === true
+  const proFormUrl = ((proFormSetting?.value as { formUrl?: string } | null)?.formUrl)
+    ?? 'https://docs.google.com/forms/d/1rtqOJaQsPV4mE3VrPyjHTNxXTQBfLb_XeDlPOgGKPfk/viewform'
 
   if (!productsEnabled) {
     return (
@@ -22,7 +55,7 @@ export default async function ProductsPage() {
         <div style={{ marginBottom: 20 }}>
           <BackButton href="/dashboard" />
         </div>
-        <div style={{ textAlign: 'center', padding: 'clamp(48px,10vw,96px) 20px' }}>
+        <div style={{ textAlign: 'center', padding: 'clamp(40px,8vw,72px) 20px 32px' }}>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
             <div style={{ width: 72, height: 72, borderRadius: 20, background: 'rgba(127,82,104,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <ShoppingBag size={34} color="#7F5268" strokeWidth={1.6} />
@@ -35,6 +68,7 @@ export default async function ProductsPage() {
             בהמשך נוסיף כאן מוצרים נבחרים ואנשי מקצוע מומלצים שילוו וייעזרו לך במסע האימהות. יש למה לחכות 💜
           </p>
         </div>
+        <ProSignupBanner formUrl={proFormUrl} />
       </div>
     )
   }
@@ -144,6 +178,10 @@ export default async function ProductsPage() {
           <p style={{ fontSize: '0.95rem' }}>התוכן יתווסף בקרוב על ידי הצוות שלנו</p>
         </div>
       )}
+
+      <div style={{ marginTop: 40 }}>
+        <ProSignupBanner formUrl={proFormUrl} />
+      </div>
     </div>
   )
 }
