@@ -3,9 +3,9 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "com.momsok.app",
+      "package_name": "com.moms_ok.app",
       "sha256_cert_fingerprints": [
-        "REPLACE_WITH_SHA256_FINGERPRINT_FROM_PWABUILDER"
+        "89:D4:81:E9:2F:D8:AE:4B:E4:5D:49:14:3E:98:FB:7A:0C:79:54:4D:B9:9A:C3:92:C0:22:C0:01:9F:5F:E7:A7"
       ]
     }
   }
