@@ -1,10 +1,17 @@
 'use client'
 
 import { useEffect } from 'react'
-import { resyncPushSubscription } from '@/lib/pushClient'
+import { subscribeToPush } from '@/lib/pushClient'
 
-// Silent, renders nothing. See resyncPushSubscription for why this exists.
+// Silent, renders nothing. If permission was already granted (e.g. from an
+// earlier attempt where the VAPID key wasn't deployed yet, so no browser
+// subscription was ever actually created), subscribeToPush() skips the
+// permission prompt entirely and just (re)creates + saves the subscription.
 export default function PushResync() {
-  useEffect(() => { resyncPushSubscription() }, [])
+  useEffect(() => {
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      subscribeToPush()
+    }
+  }, [])
   return null
 }
