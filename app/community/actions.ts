@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { sendPushToAdmin } from '@/lib/push'
+import { sendTelegram, escapeHtml } from '@/lib/telegram'
+import { SITE_URL } from '@/lib/site'
 
 // Reads the signed-in user + her display name. Posting requires a session;
 // RLS additionally enforces that user_id matches the caller, so these can't be
@@ -36,6 +38,10 @@ export async function postQuestion(data: {
   if (!ctx) return { ok: false, error: 'צריך להתחבר כדי לפרסם שאלה' }
   if (!data.title.trim()) return { ok: false, error: 'צריך לכתוב שאלה' }
 
+  // Questions need the owner's approval before they're visible to anyone -
+  // status starts at 'pending' (overriding the column's own 'published'
+  // default), and only the "Users read own questions" RLS policy (migration
+  // 031) lets the asker's own .select() below read the row back.
   const { data: row, error } = await ctx.supabase
     .from('community_questions')
     .insert({
@@ -43,25 +49,31 @@ export async function postQuestion(data: {
       title: data.title.trim(),
       body: data.body?.trim() || null,
       category: data.category?.trim() || null,
+      status: 'pending',
       ...authorFields(ctx, data.anonymous),
     })
     .select('id')
     .single()
 
   if (error || !row) return { ok: false, error: error?.message ?? 'שמירת השאלה נכשלה' }
-  // The website (/community) and the in-app mirror (/content/community) show
-  // the exact same data - both need revalidating so a post made from either
-  // surface shows up immediately on both.
-  revalidatePath('/community')
-  revalidatePath('/content/community')
+  revalidatePath('/admin')
 
-  // Fire-and-forget: never let a push failure affect the response to the poster.
+  // Fire-and-forget: never let a notification failure affect the response to
+  // the poster. Both go to the owner only - this is a moderation alert, not
+  // the "published" broadcast (that happens on approval, see approveQuestion).
+  const authorName = data.anonymous ? 'אנונימית' : ctx.name
   sendPushToAdmin({
-    title: 'שאלה חדשה בקהילה',
+    title: 'שאלה חדשה ממתינה לאישור',
     body: data.title.trim(),
-    url: `/content/community/${row.id}`,
-    tag: 'community-question',
+    url: '/admin?view=community',
+    tag: 'community-question-pending',
   }).catch(() => {})
+  sendTelegram(
+    `📩 <b>שאלה חדשה ממתינה לאישור בקהילה</b>\n\n<b>${escapeHtml(data.title.trim())}</b>` +
+    (data.body?.trim() ? `\n${escapeHtml(data.body.trim().slice(0, 200))}` : '') +
+    `\n\nמאת: ${escapeHtml(authorName)}` +
+    `\n\n<a href="${SITE_URL}/admin?view=community">לאישור בעמוד הניהול</a>`,
+  ).catch(() => {})
 
   return { ok: true, id: row.id }
 }

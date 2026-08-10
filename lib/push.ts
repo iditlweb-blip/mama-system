@@ -76,3 +76,11 @@ export async function sendPushToAdmin(payload: PushPayload): Promise<void> {
   if (!owner) return
   await sendPushToUser(owner.id, payload)
 }
+
+// Broadcasts to every subscribed device across all users - e.g. "a community
+// question just got approved". Use sparingly; this reaches everyone at once.
+export async function sendPushToAll(payload: PushPayload): Promise<void> {
+  const admin = createAdminClient()
+  const { data } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth_key')
+  await sendToSubscriptions((data ?? []) as SubRow[], payload)
+}

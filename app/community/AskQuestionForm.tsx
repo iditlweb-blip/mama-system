@@ -1,17 +1,16 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Loader2 } from 'lucide-react'
+import { Plus, Loader2, CheckCircle2 } from 'lucide-react'
 import { postQuestion } from './actions'
 
 export default function AskQuestionForm({ isLoggedIn, basePath = '/community' }: { isLoggedIn: boolean; basePath?: string }) {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ title: '', body: '', category: '' })
   const [anonymous, setAnonymous] = useState(false)
   const [error, setError] = useState('')
+  const [submitted, setSubmitted] = useState(false)
   const [isPending, startTransition] = useTransition()
 
   // Shared pill used for both the logged-out and collapsed states so the button
@@ -42,9 +41,19 @@ export default function AskQuestionForm({ isLoggedIn, basePath = '/community' }:
       setForm({ title: '', body: '', category: '' })
       setAnonymous(false)
       setOpen(false)
-      if (res.id) router.push(`${basePath}/${res.id}`)
-      else router.refresh()
+      setSubmitted(true)
     })
+  }
+
+  // Questions need approval before they're visible anywhere (including to the
+  // asker's own feed), so there's no page to navigate to yet - just confirm.
+  if (submitted) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', borderRadius: 16, border: '1px solid rgba(127,82,104,0.12)', padding: '16px 20px', maxWidth: 460 }}>
+        <CheckCircle2 style={{ width: 22, height: 22, color: '#4A7C59', flexShrink: 0 }} />
+        <span style={{ fontSize: '0.92rem', color: '#3a1e2d' }}>השאלה שלך נשלחה ותפורסם בקהילה לאחר אישור קצר.</span>
+      </div>
+    )
   }
 
   const inputSty: React.CSSProperties = {

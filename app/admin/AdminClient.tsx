@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import {
   Users, Activity, Baby, CheckSquare, Shield,
   Search, TrendingUp, UserCheck, Clock, Trash2,
@@ -92,6 +93,14 @@ type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments' | '
 
 export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
+  // A Telegram/push notification link (e.g. "?view=community") should land
+  // directly on the right tab instead of the default overview.
+  const searchParams = useSearchParams()
+  useEffect(() => {
+    const requested = searchParams.get('view') as AdminView | null
+    if (requested) setView(requested)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   const [users, setUsers]   = useState(initialUsers)
   const [pros, setPros]     = useState(initPros)
   const [products, setProducts] = useState(initProducts)

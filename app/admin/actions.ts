@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/admin'
+import { sendPushToAll, sendPushToUser } from '@/lib/push'
 
 async function verifyAdmin() {
   const supabase = await createClient()
@@ -492,6 +493,63 @@ export async function setQuestionStatus(id: string, status: 'published' | 'hidde
     revalidatePath('/admin')
     revalidatePath('/community')
     revalidatePath(`/community/${id}`)
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Publishes a pending question and broadcasts it to every subscribed device -
+// the "כל המשתמשות צריכות לקבל התראות" requirement. Broadcast only happens
+// here, on approval, never at raw submission time.
+export async function approveQuestion(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { data: row, error } = await admin
+      .from('community_questions')
+      .update({ status: 'published' })
+      .eq('id', id)
+      .select('title')
+      .single()
+    if (error || !row) return { ok: false, error: error?.message ?? 'העדכון נכשל' }
+    revalidatePath('/admin')
+    revalidatePath('/community')
+    revalidatePath(`/community/${id}`)
+    revalidatePath('/content/community')
+    revalidatePath(`/content/community/${id}`)
+
+    sendPushToAll({
+      title: 'שאלה חדשה בקהילה',
+      body: row.title,
+      url: `/content/community/${id}`,
+      tag: `community-question-${id}`,
+    }).catch(() => {})
+
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Permanently removes a pending question that won't be published, and lets
+// the asker know so it isn't just silently gone.
+export async function rejectQuestion(id: string): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { data: row } = await admin.from('community_questions').select('user_id, title').eq('id', id).maybeSingle()
+    const { error } = await admin.from('community_questions').delete().eq('id', id)
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+
+    if (row?.user_id) {
+      sendPushToUser(row.user_id, {
+        title: 'השאלה שלך בקהילה לא פורסמה',
+        body: row.title ?? '',
+        url: '/content/community',
+        tag: `community-question-rejected-${id}`,
+      }).catch(() => {})
+    }
+
     return { ok: true }
   } catch (e: unknown) {
     return { ok: false, error: (e as Error).message }
