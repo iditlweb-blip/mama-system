@@ -174,9 +174,24 @@ export async function GET(req: Request) {
     const babyProfiles = (babyProfilesRaw ?? []).filter(p => p.notify_sleep !== false)
 
     if (babyProfiles.length > 0) {
-      const { data: activeTimers } = await admin.from('active_sleep_timers').select('user_id')
-      const activeUserIds = new Set((activeTimers ?? []).map(t => t.user_id))
-      const idle = babyProfiles.filter(p => !activeUserIds.has(p.id))
+      // "Hasn't tracked sleep today" means neither a timer running right now
+      // NOR a completed sleep log from earlier today - not just "no active
+      // timer at this exact moment" (a mother who already logged and stopped
+      // a nap this morning should not get nagged at 13:00). Uses a 15h
+      // rolling lookback instead of calendar-day boundaries to sidestep
+      // Israel DST edge cases; generous on purpose - erring toward not
+      // nagging is the safer failure mode for a reminder like this.
+      const lookbackIso = new Date(Date.now() - 15 * 3600 * 1000).toISOString()
+      const babyProfileIds = babyProfiles.map(p => p.id)
+      const [{ data: activeTimers }, { data: recentSleepLogs }] = await Promise.all([
+        admin.from('active_sleep_timers').select('user_id').in('user_id', babyProfileIds),
+        admin.from('baby_logs').select('user_id').eq('type', 'sleep').gte('start_time', lookbackIso).in('user_id', babyProfileIds),
+      ])
+      const trackedUserIds = new Set([
+        ...(activeTimers ?? []).map(t => t.user_id),
+        ...(recentSleepLogs ?? []).map(l => l.user_id),
+      ])
+      const idle = babyProfiles.filter(p => !trackedUserIds.has(p.id))
 
       if (idle.length > 0) {
         await Promise.all(idle.map(p => sendPushToUser(p.id, {
