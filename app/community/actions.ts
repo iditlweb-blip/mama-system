@@ -58,22 +58,31 @@ export async function postQuestion(data: {
   if (error || !row) return { ok: false, error: error?.message ?? 'שמירת השאלה נכשלה' }
   revalidatePath('/admin')
 
-  // Fire-and-forget: never let a notification failure affect the response to
-  // the poster. Both go to the owner only - this is a moderation alert, not
-  // the "published" broadcast (that happens on approval, see approveQuestion).
+  // Awaited (not fire-and-forget): on Vercel, a serverless invocation can
+  // freeze right after this action's response is sent, killing an unawaited
+  // outbound request mid-flight - confirmed as the reason the signup Telegram
+  // alert was silently failing. try/catch keeps a notification hiccup from
+  // affecting the response to the poster. Both go to the owner only - this is
+  // a moderation alert, not the "published" broadcast (see approveQuestion).
   const authorName = data.anonymous ? 'אנונימית' : ctx.name
-  sendPushToAdmin({
-    title: 'שאלה חדשה ממתינה לאישור',
-    body: data.title.trim(),
-    url: '/admin?view=community',
-    tag: 'community-question-pending',
-  }).catch(() => {})
-  sendTelegram(
-    `📩 <b>שאלה חדשה ממתינה לאישור בקהילה</b>\n\n<b>${escapeHtml(data.title.trim())}</b>` +
-    (data.body?.trim() ? `\n${escapeHtml(data.body.trim().slice(0, 200))}` : '') +
-    `\n\nמאת: ${escapeHtml(authorName)}` +
-    `\n\n<a href="${SITE_URL}/admin?view=community">לאישור בעמוד הניהול</a>`,
-  ).catch(() => {})
+  try {
+    await Promise.allSettled([
+      sendPushToAdmin({
+        title: 'שאלה חדשה ממתינה לאישור',
+        body: data.title.trim(),
+        url: '/admin?view=community',
+        tag: 'community-question-pending',
+      }),
+      sendTelegram(
+        `📩 <b>שאלה חדשה ממתינה לאישור בקהילה</b>\n\n<b>${escapeHtml(data.title.trim())}</b>` +
+        (data.body?.trim() ? `\n${escapeHtml(data.body.trim().slice(0, 200))}` : '') +
+        `\n\nמאת: ${escapeHtml(authorName)}` +
+        `\n\n<a href="${SITE_URL}/admin?view=community">לאישור בעמוד הניהול</a>`,
+      ),
+    ])
+  } catch (err) {
+    console.error('[postQuestion] notify failed:', err)
+  }
 
   return { ok: true, id: row.id }
 }

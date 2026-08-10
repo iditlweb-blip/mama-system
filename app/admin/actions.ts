@@ -519,15 +519,20 @@ export async function approveQuestion(id: string): Promise<{ ok: boolean; error?
     revalidatePath(`/content/community/${id}`)
 
     // Only broadcast to users who still want this category (settings toggle).
-    admin.from('profiles').select('id').eq('notify_community', true).then(({ data: recipients }) => {
-      const ids = (recipients ?? []).map(p => p.id)
-      sendPushToUserIds(ids, {
+    // Awaited - a fire-and-forget call here risks the serverless invocation
+    // freezing right after the response is sent (confirmed elsewhere in this
+    // codebase to silently drop outbound notifications).
+    try {
+      const { data: recipients } = await admin.from('profiles').select('id').eq('notify_community', true)
+      await sendPushToUserIds((recipients ?? []).map(p => p.id), {
         title: 'שאלה חדשה בקהילה',
         body: row.title,
         url: `/content/community/${id}`,
         tag: `community-question-${id}`,
-      }).catch(() => {})
-    })
+      })
+    } catch (err) {
+      console.error('[approveQuestion] broadcast failed:', err)
+    }
 
     return { ok: true }
   } catch (e: unknown) {
@@ -546,12 +551,16 @@ export async function rejectQuestion(id: string): Promise<{ ok: boolean; error?:
     revalidatePath('/admin')
 
     if (row?.user_id) {
-      sendPushToUser(row.user_id, {
-        title: 'השאלה שלך בקהילה לא פורסמה',
-        body: row.title ?? '',
-        url: '/content/community',
-        tag: `community-question-rejected-${id}`,
-      }).catch(() => {})
+      try {
+        await sendPushToUser(row.user_id, {
+          title: 'השאלה שלך בקהילה לא פורסמה',
+          body: row.title ?? '',
+          url: '/content/community',
+          tag: `community-question-rejected-${id}`,
+        })
+      } catch (err) {
+        console.error('[rejectQuestion] push failed:', err)
+      }
     }
 
     return { ok: true }

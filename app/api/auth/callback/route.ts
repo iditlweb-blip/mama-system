@@ -16,16 +16,25 @@ export async function GET(request: Request) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
       // First arrival via OAuth or an email-confirmation link - alert the admin
-      // once (the helper dedupes, so re-logins never re-notify). Fire-and-forget
-      // so a Telegram hiccup can't block the redirect into the app.
+      // once (the helper dedupes, so re-logins never re-notify). Must be
+      // awaited: a fire-and-forget call here races the serverless function
+      // freezing right after the redirect response is sent, which can kill
+      // the in-flight Telegram request before it completes - the DB flag
+      // still gets set (so it silently never retries), but the message never
+      // arrives. Wrapped in try/catch so a Telegram hiccup still can't block
+      // the redirect itself.
       const user = data?.user
       if (user) {
-        notifyRegistrationOnce(
-          user.id,
-          (user.user_metadata?.full_name as string | undefined) ?? null,
-          user.email ?? null,
-          (user.app_metadata?.provider as string | undefined) ?? null,
-        ).catch(err => console.error('[notify] registration (callback):', err))
+        try {
+          await notifyRegistrationOnce(
+            user.id,
+            (user.user_metadata?.full_name as string | undefined) ?? null,
+            user.email ?? null,
+            (user.app_metadata?.provider as string | undefined) ?? null,
+          )
+        } catch (err) {
+          console.error('[notify] registration (callback):', err)
+        }
       }
       return NextResponse.redirect(`${origin}${next}`)
     }
