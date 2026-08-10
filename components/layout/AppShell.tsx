@@ -10,6 +10,7 @@ import PageTimeTracker from '@/components/PageTimeTracker'
 import RemindersPopup from '@/components/RemindersPopup'
 import ParentPopup from '@/components/ParentPopup'
 import PushPermissionPrompt from '@/components/PushPermissionPrompt'
+import PushResync from '@/components/PushResync'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin'
 import { switchOptionsFor } from '@/lib/switchProfiles'
@@ -74,6 +75,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
         showPopup={showParentPopup}
       />
       <PushPermissionPrompt />
+      <PushResync />
       <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )

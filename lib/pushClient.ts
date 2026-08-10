@@ -45,3 +45,25 @@ export async function subscribeToPush(): Promise<{ ok: boolean; permission: Noti
   })
   return { ok: res.ok, permission }
 }
+
+// Silently re-saves an EXISTING browser subscription server-side, without ever
+// prompting for permission or creating a new subscription. Meant to run on
+// every app load: PushPermissionPrompt only ever asks once per device (it
+// sets a localStorage flag right after the user answers), so if that first
+// save failed server-side for any reason - e.g. the DB migration hadn't run
+// yet - the subscription would otherwise be lost forever even though the
+// browser already granted permission. This self-heals that case for free.
+export async function resyncPushSubscription(): Promise<void> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return
+  try {
+    const registration = await navigator.serviceWorker.ready
+    const subscription = await registration.pushManager.getSubscription()
+    if (!subscription) return
+    const json = subscription.toJSON()
+    await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ endpoint: json.endpoint, keys: json.keys }),
+    })
+  } catch { /* best-effort - next app open will retry */ }
+}
