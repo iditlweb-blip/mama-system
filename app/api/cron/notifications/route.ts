@@ -63,24 +63,31 @@ export async function GET(req: Request) {
     .limit(500)
 
   if (dueTasks && dueTasks.length > 0) {
-    await Promise.all(dueTasks.map(t =>
+    const { data: taskProfiles } = await admin.from('profiles').select('id, notify_tasks').in('id', [...new Set(dueTasks.map(t => t.user_id))])
+    const optedOut = new Set((taskProfiles ?? []).filter(p => p.notify_tasks === false).map(p => p.id))
+    const toSend = dueTasks.filter(t => !optedOut.has(t.user_id))
+
+    await Promise.all(toSend.map(t =>
       sendPushToUser(t.user_id, { title: 'תזכורת ממשימות', body: t.title, url: '/tasks', tag: `task-${t.id}` })
     ))
+    // Mark ALL matched tasks handled (including opted-out ones) so they don't
+    // get re-evaluated on every cron run forever.
     await admin.from('tasks').update({ push_sent: true }).in('id', dueTasks.map(t => t.id))
-    results.tasks = dueTasks.length
+    results.tasks = toSend.length
   }
 
   // ── 2. Pregnancy test windows closing ────────────────────────────────────
   // Batched reads (one query each for tests + dedupe rows, instead of
   // per-profile round trips), then all sends fired in parallel.
-  const { data: pregnantProfiles } = await admin
+  const { data: pregnantProfilesRaw } = await admin
     .from('profiles')
-    .select('id, due_date')
+    .select('id, due_date, notify_exams')
     .eq('tracking_type', 'pregnancy')
     .not('due_date', 'is', null)
     .limit(1000)
+  const pregnantProfiles = (pregnantProfilesRaw ?? []).filter(p => p.notify_exams !== false)
 
-  if (pregnantProfiles && pregnantProfiles.length > 0) {
+  if (pregnantProfiles.length > 0) {
     const profileIds = pregnantProfiles.map(p => p.id)
 
     const [{ data: allTests }, { data: allNotified }] = await Promise.all([
@@ -132,7 +139,11 @@ export async function GET(req: Request) {
     .limit(500)
 
   if (timers && timers.length > 0) {
+    const { data: timerProfiles } = await admin.from('profiles').select('id, notify_sleep').in('id', [...new Set(timers.map(t => t.user_id))])
+    const sleepOptedOut = new Set((timerProfiles ?? []).filter(p => p.notify_sleep === false).map(p => p.id))
+
     const overrun = timers.filter(timer => {
+      if (sleepOptedOut.has(timer.user_id)) return false
       const elapsedMin = (Date.now() - new Date(timer.start_time).getTime()) / 60000
       return elapsedMin > NAP_OVERRUN_MINUTES
     })
@@ -154,14 +165,15 @@ export async function GET(req: Request) {
   // a single send even though the cron hits this route every few minutes).
   if (israelHourNow() === MIDDAY_HOUR) {
     const today = israelDateToday()
-    const { data: babyProfiles } = await admin
+    const { data: babyProfilesRaw } = await admin
       .from('profiles')
-      .select('id')
+      .select('id, notify_sleep')
       .eq('tracking_type', 'baby')
       .or(`midday_nap_reminder_date.is.null,midday_nap_reminder_date.neq.${today}`)
       .limit(1000)
+    const babyProfiles = (babyProfilesRaw ?? []).filter(p => p.notify_sleep !== false)
 
-    if (babyProfiles && babyProfiles.length > 0) {
+    if (babyProfiles.length > 0) {
       const { data: activeTimers } = await admin.from('active_sleep_timers').select('user_id')
       const activeUserIds = new Set((activeTimers ?? []).map(t => t.user_id))
       const idle = babyProfiles.filter(p => !activeUserIds.has(p.id))

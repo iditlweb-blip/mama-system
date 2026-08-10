@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/admin'
-import { sendPushToAll, sendPushToUser } from '@/lib/push'
+import { sendPushToUserIds, sendPushToUser } from '@/lib/push'
 
 async function verifyAdmin() {
   const supabase = await createClient()
@@ -518,12 +518,16 @@ export async function approveQuestion(id: string): Promise<{ ok: boolean; error?
     revalidatePath('/content/community')
     revalidatePath(`/content/community/${id}`)
 
-    sendPushToAll({
-      title: 'שאלה חדשה בקהילה',
-      body: row.title,
-      url: `/content/community/${id}`,
-      tag: `community-question-${id}`,
-    }).catch(() => {})
+    // Only broadcast to users who still want this category (settings toggle).
+    admin.from('profiles').select('id').eq('notify_community', true).then(({ data: recipients }) => {
+      const ids = (recipients ?? []).map(p => p.id)
+      sendPushToUserIds(ids, {
+        title: 'שאלה חדשה בקהילה',
+        body: row.title,
+        url: `/content/community/${id}`,
+        tag: `community-question-${id}`,
+      }).catch(() => {})
+    })
 
     return { ok: true }
   } catch (e: unknown) {

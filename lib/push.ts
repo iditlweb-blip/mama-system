@@ -77,10 +77,12 @@ export async function sendPushToAdmin(payload: PushPayload): Promise<void> {
   await sendPushToUser(owner.id, payload)
 }
 
-// Broadcasts to every subscribed device across all users - e.g. "a community
-// question just got approved". Use sparingly; this reaches everyone at once.
-export async function sendPushToAll(payload: PushPayload): Promise<void> {
+// Sends to a specific set of users in one batched query - e.g. "everyone who
+// has the community-question preference turned on". Callers are responsible
+// for filtering by preference first (see profiles.notify_* in migration 032).
+export async function sendPushToUserIds(userIds: string[], payload: PushPayload): Promise<void> {
+  if (userIds.length === 0) return
   const admin = createAdminClient()
-  const { data } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth_key')
+  const { data } = await admin.from('push_subscriptions').select('id, endpoint, p256dh, auth_key').in('user_id', userIds)
   await sendToSubscriptions((data ?? []) as SubRow[], payload)
 }

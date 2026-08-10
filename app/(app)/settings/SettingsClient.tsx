@@ -40,6 +40,10 @@ interface ProfileFull {
   show_parent_popup?: boolean | null
   show_sleep_timer?: boolean | null
   show_reminders?: boolean | null
+  notify_tasks?: boolean | null
+  notify_exams?: boolean | null
+  notify_sleep?: boolean | null
+  notify_community?: boolean | null
 }
 
 interface Props {
@@ -78,6 +82,10 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   const [showParentPopup, setShowParentPopup] = useState(profile?.show_parent_popup !== false)
   const [showSleepTimer,  setShowSleepTimer]  = useState(profile?.show_sleep_timer !== false)
   const [showReminders,   setShowReminders]   = useState(profile?.show_reminders !== false)
+  const [notifyTasks,     setNotifyTasks]     = useState(profile?.notify_tasks !== false)
+  const [notifyExams,     setNotifyExams]     = useState(profile?.notify_exams !== false)
+  const [notifySleep,     setNotifySleep]     = useState(profile?.notify_sleep !== false)
+  const [notifyCommunity, setNotifyCommunity] = useState(profile?.notify_community !== false)
 
   const [babyGender,    setBabyGender]    = useState<'boy' | 'girl' | ''>(
     (profile?.baby_gender as 'boy' | 'girl') || ''
@@ -129,6 +137,10 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       show_parent_popup:   showParentPopup,
       show_sleep_timer:    showSleepTimer,
       show_reminders:      showReminders,
+      notify_tasks:        notifyTasks,
+      notify_exams:        notifyExams,
+      notify_sleep:        notifySleep,
+      notify_community:    notifyCommunity,
     }
 
     // Keep this device in sync with a fixed-parent choice straight away.
@@ -305,6 +317,16 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
             checked={showParentPopup} onChange={setShowParentPopup} />
           <Toggle label="טיימר שינה צף" checked={showSleepTimer} onChange={setShowSleepTimer} />
           <Toggle label="תזכורות (משימות ובדיקות)" checked={showReminders} onChange={setShowReminders} />
+
+          <div className="pt-2 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
+            <label className="text-xs font-medium block" style={{ color: 'var(--text-muted)' }}>
+              התראות פוש לטלפון - אפשר לבחור מה יגיע ומה לא
+            </label>
+            <Toggle label="תזכורות משימות" checked={notifyTasks} onChange={setNotifyTasks} />
+            <Toggle label="בדיקות הריון שעומדות להסתיים" checked={notifyExams} onChange={setNotifyExams} />
+            <Toggle label="טיימר שינה (תנומה ארוכה / תזכורת יומית)" checked={notifySleep} onChange={setNotifySleep} />
+            <Toggle label="שאלות חדשות בקהילה" checked={notifyCommunity} onChange={setNotifyCommunity} />
+          </div>
 
           <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
             <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>
