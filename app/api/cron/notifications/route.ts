@@ -50,7 +50,7 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient()
   const nowIso = new Date().toISOString()
-  const results = { tasks: 0, exams: 0, sleepTimers: 0, middayNudges: 0 }
+  const results = { tasks: 0, exams: 0, sleepTimers: 0, middayNudges: 0, autoClosedTimers: 0 }
 
   // ── 1. Task reminders (remind_at due) ────────────────────────────────────
   const { data: dueTasks } = await admin
@@ -204,6 +204,43 @@ export async function GET(req: Request) {
         results.middayNudges = idle.length
       }
     }
+  }
+
+  // ── 5. Auto-close sleep timers stuck running past 24 hours ───────────────
+  // A forgotten timer left running for days (spotted in the admin overview
+  // as e.g. "ישנה כרגע" since July) would otherwise sit "active" forever.
+  // Closed exactly like a normal stop: a completed baby_logs sleep entry is
+  // written (capped at 24h, not the real open-ended gap) and the
+  // active_sleep_timers row is removed, so history stays sane instead of a
+  // bogus days-long "sleeping" state.
+  const dayAgoIso = new Date(Date.now() - 24 * 3600 * 1000).toISOString()
+  const { data: staleTimers } = await admin
+    .from('active_sleep_timers')
+    .select('user_id, start_time, is_night')
+    .lt('start_time', dayAgoIso)
+    .limit(500)
+
+  if (staleTimers && staleTimers.length > 0) {
+    await Promise.all(staleTimers.map(timer => {
+      const endTime = new Date(new Date(timer.start_time).getTime() + 24 * 3600 * 1000)
+      return admin.from('baby_logs').insert({
+        user_id: timer.user_id,
+        type: 'sleep',
+        start_time: timer.start_time,
+        end_time: endTime.toISOString(),
+        duration_min: 24 * 60,
+        is_night: timer.is_night,
+        notes: 'נסגר אוטומטית לאחר 24 שעות',
+      })
+    }))
+    await admin.from('active_sleep_timers').delete().in('user_id', staleTimers.map(t => t.user_id))
+    await Promise.all(staleTimers.map(timer => sendPushToUser(timer.user_id, {
+      title: 'טיימר השינה נסגר אוטומטית',
+      body: 'הטיימר רץ מעל 24 שעות ונסגר לבד. אפשר לתקן את הרישום בעמוד המעקב',
+      url: '/tracker',
+      tag: 'sleep-timer-autoclose',
+    })))
+    results.autoClosedTimers = staleTimers.length
   }
 
   return NextResponse.json({ ok: true, ...results })
