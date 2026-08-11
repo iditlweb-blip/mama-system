@@ -43,14 +43,23 @@ self.addEventListener('fetch', (event) => {
 /* ── Web Push ──────────────────────────────────────────────────────────────
  * Payload is JSON: { title, body, url, tag }. url is opened (or focused if
  * already open) on click.
+ *
+ * The notification's own title is always the app-branded line; the specific
+ * message (payload.title, e.g. "עדיין לא תיעדת שינה היום") moves into the body
+ * along with payload.body, so every push reads as "message from the app" +
+ * its content instead of a bare headline.
  */
+const APP_TITLE = 'הודעה מהאפליקציה "אמא בסדר"'
+
 self.addEventListener('push', (event) => {
-  let data = { title: 'אמא בסדר', body: '', url: '/dashboard' }
+  let data = { title: '', body: '', url: '/dashboard' }
   try { if (event.data) data = { ...data, ...event.data.json() } } catch { /* keep defaults */ }
 
+  const fullBody = [data.title, data.body].filter(Boolean).join('\n')
+
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
+    self.registration.showNotification(APP_TITLE, {
+      body: fullBody,
       icon: '/icons/icon-192.png',
       badge: '/icons/icon-192.png',
       tag: data.tag,
