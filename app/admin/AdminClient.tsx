@@ -11,6 +11,7 @@ import {
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
   LayoutDashboard, Wallet, MapPin, Phone, Ticket, ExternalLink,
   ClipboardList, FileSpreadsheet, Copy, FileText, MessagesSquare,
+  Moon,
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
@@ -36,6 +37,17 @@ interface UserRow {
   pwa_installed_at: string | null
   weeklySeconds: number
   topPage: string | null
+  trackingType: 'pregnancy' | 'baby' | null
+  profileLabel: string | null
+  babyName: string | null
+  babyGender: string | null
+  babyBirthdate: string | null
+  dueDate: string | null
+  hasGivenBirth: boolean
+  lastSleepAt: string | null
+  sleepLogCount: number
+  isAsleepNow: boolean
+  sleepStartedAt: string | null
 }
 
 interface Professional {
@@ -557,14 +569,15 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             </div>
           </div>
 
-          {/* Table header - 7 cols */}
-          <div className="hidden md:grid grid-cols-7 gap-3 px-3 pb-2 border-b text-xs font-semibold uppercase"
+          {/* Table header - 8 cols */}
+          <div className="hidden md:grid grid-cols-8 gap-3 px-3 pb-2 border-b text-xs font-semibold uppercase"
             style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
             <span>משתמשת</span>
             <span>מייל</span>
             <span>כניסה אחרונה</span>
             <span>במערכת</span>
             <span className="flex items-center gap-1"><BarChart2 className="w-3 h-3" /> שבועי</span>
+            <span className="flex items-center gap-1"><Moon className="w-3 h-3" /> שינה אחרונה</span>
             <span>סטטוס</span>
             <span>פעולות</span>
           </div>
@@ -575,7 +588,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>אין תוצאות</p>
             ) : filtered.map(u => (
               <div key={u.id}
-                className="grid grid-cols-1 md:grid-cols-7 gap-2 md:gap-3 px-3 py-3 items-center hover:opacity-80 transition-opacity cursor-pointer"
+                className="grid grid-cols-1 md:grid-cols-8 gap-2 md:gap-3 px-3 py-3 items-center hover:opacity-80 transition-opacity cursor-pointer"
                 onClick={() => openDetail(u)}>
 
                 {/* Name + avatar */}
@@ -584,9 +597,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                     style={{ background: stringToColor(u.email) }}>
                     {(u.name || u.email).charAt(0).toUpperCase()}
                   </div>
-                  <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
-                    {u.name || '-'}
-                  </span>
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-sm font-medium truncate" style={{ color: 'var(--text)' }}>
+                      {u.name || '-'}
+                    </span>
+                    {u.profileLabel && (
+                      <span className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{u.profileLabel}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Email + badges */}
@@ -625,6 +643,23 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmtPage(u.topPage)}</span>
                       )}
                     </div>
+                  ) : (
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
+                  )}
+                </div>
+
+                {/* Last sleep */}
+                <div>
+                  {u.isAsleepNow ? (
+                    <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#5C6BA0' }}>
+                      <Moon className="w-3 h-3" />
+                      ישנה כרגע ({fmt(u.sleepStartedAt)})
+                    </span>
+                  ) : u.lastSleepAt ? (
+                    <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                      <Moon className="w-3 h-3" />
+                      {fmt(u.lastSleepAt)}
+                    </span>
                   ) : (
                     <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
                   )}
@@ -1150,6 +1185,33 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               <DetailRow label={<span className="inline-flex items-center gap-1"><BarChart2 className="w-3.5 h-3.5" />עמוד מוביל</span>} value={fmtPage(selected.topPage)} />
             )}
           </div>
+
+          {/* Pregnancy / baby profile details */}
+          {selected.trackingType && (
+            <div className="space-y-2.5 mb-5 pt-3 border-t text-sm" style={{ borderColor: 'var(--border)' }}>
+              <p className="text-xs font-semibold uppercase mb-1" style={{ color: 'var(--text-muted)' }}>
+                {selected.trackingType === 'pregnancy' ? 'מעקב הריון' : 'מעקב תינוק'}
+              </p>
+              {selected.trackingType === 'pregnancy' ? (
+                <>
+                  <DetailRow label="שבוע הריון" value={selected.profileLabel?.replace('🤰 ', '') ?? '-'} highlight />
+                  <DetailRow label="תאריך לידה משוער" value={selected.dueDate ? new Date(selected.dueDate).toLocaleDateString('he-IL') : '-'} />
+                </>
+              ) : (
+                <>
+                  <DetailRow label="שם התינוק/ת" value={selected.babyName || '-'} />
+                  <DetailRow label="גיל" value={selected.profileLabel?.replace('👶 ', '') ?? '-'} highlight />
+                  <DetailRow label="תאריך לידה" value={selected.babyBirthdate ? new Date(selected.babyBirthdate).toLocaleDateString('he-IL') : '-'} />
+                </>
+              )}
+              <DetailRow label={<span className="inline-flex items-center gap-1"><Moon className="w-3.5 h-3.5" />שינה אחרונה</span>} value={
+                selected.isAsleepNow
+                  ? <span className="inline-flex items-center gap-1.5" style={{ color: '#5C6BA0' }}><Moon className="w-3.5 h-3.5" />ישנה כרגע (מ{fmt(selected.sleepStartedAt)})</span>
+                  : fmt(selected.lastSleepAt)
+              } />
+              <DetailRow label="סה״כ תיעודי שינה" value={selected.sleepLogCount} />
+            </div>
+          )}
 
           <div className="flex gap-2">
             <button
