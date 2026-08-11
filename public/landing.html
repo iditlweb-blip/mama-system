@@ -448,7 +448,7 @@ a{color:inherit;}
 .s-testi{background:var(--beige);padding-block:clamp(40px,5vw,75px);overflow:hidden;}
 .s-testi .sec-title{margin-bottom:clamp(30px,4vw,56px);}
 .testi-vp{overflow:visible;}
-.testi-track{display:flex;gap:clamp(18px,2.4vw,47px);transition:transform .45s cubic-bezier(.4,0,.2,1);will-change:transform;direction:ltr;}
+.testi-track{display:flex;align-items:flex-start;gap:clamp(18px,2.4vw,47px);transition:transform .45s cubic-bezier(.4,0,.2,1);will-change:transform;direction:ltr;}
 .testi-card{position:relative;flex:0 0 clamp(280px,30vw,471px);padding-bottom:60px;transition:opacity .3s;}
 .testi-inner{background:#fff;border-radius:30px;padding:clamp(24px,2vw,33px) clamp(14px,1.4vw,20px) clamp(50px,4vw,76px);display:flex;flex-direction:column;align-items:center;gap:clamp(18px,1.8vw,27px);min-height:223px;text-align:center;box-shadow:0 12px 30px rgba(127,82,104,.08);}
 .stars{display:flex;gap:6px;color:var(--gold);}.stars svg{width:clamp(22px,2vw,30px);height:clamp(22px,2vw,30px);}
@@ -468,8 +468,9 @@ a{color:inherit;}
 .cform{max-width:680px;margin:0 auto;background:transparent;border:none;border-radius:30px;padding:clamp(24px,3vw,44px);box-shadow:none;}
 .cform .row{display:flex;gap:clamp(12px,1.6vw,20px);}
 .cform .field{flex:1 1 0;margin-bottom:clamp(14px,1.6vw,20px);text-align:right;}
-.cform label{display:block;font-family:'Talent FS',system-ui,sans-serif;font-size:clamp(12px,0.95vw,14px);color:var(--mauve);margin-bottom:6px;letter-spacing:.03em;font-weight:300;}
+.cform label{display:block;font-family:'Talent FS',system-ui,sans-serif;font-size:clamp(13px,1.05vw,15px);color:var(--mauve);margin-bottom:6px;letter-spacing:.03em;font-weight:500;}
 .cform input,.cform textarea{width:100%;font-family:inherit;font-size:clamp(15px,1.2vw,17px);color:#3a2a32;background:#fff;border:1px solid #e6d3dd;border-radius:16px;padding:13px 16px;outline:none;transition:border-color .15s,box-shadow .15s;direction:rtl;}
+.cform input::placeholder,.cform textarea::placeholder{font-family:'Talent FS',system-ui,sans-serif;font-weight:300;font-size:clamp(13px,1vw,15px);}
 .cform input:focus,.cform textarea:focus{border-color:var(--mauve);box-shadow:0 0 0 3px rgba(127,82,104,.12);}
 .cform textarea{resize:vertical;min-height:120px;}
 .cform .submit-row{display:flex;justify-content:center;margin-top:6px;}.cform .submit-row .pill{width:100%;font-family:'Talent FS',system-ui,sans-serif;}
