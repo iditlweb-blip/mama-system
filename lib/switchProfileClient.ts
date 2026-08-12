@@ -11,6 +11,15 @@ export async function switchToProfile(key: string): Promise<boolean> {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ key }),
     })
+    // A stale/expired session cookie on this one request is the common case
+    // for 401 here (the account is still logged in - a normal page navigation
+    // would have silently refreshed it). A reload re-runs that refresh instead
+    // of dead-ending on a raw "unauthorized" alert.
+    if (res.status === 401) {
+      alert('החיבור פג, טוענת מחדש...')
+      window.location.reload()
+      return false
+    }
     const json = await res.json()
     if (!json.ok) { alert(json.error || 'החלפת הפרופיל נכשלה'); return false }
     return true
