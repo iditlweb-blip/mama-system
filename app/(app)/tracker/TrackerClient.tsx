@@ -7,7 +7,7 @@ import {
   Trash2, Play, Square, Syringe,
   Circle, ChevronRight,
   ClipboardList, Carrot, Baby, Droplet, Sparkles, Star,
-  Check, Clock3, Moon, Sunrise, Pencil,
+  Check, Clock3, Moon, Sunrise, Pencil, Activity, FileSpreadsheet,
 } from 'lucide-react'
 import { BabyLog, LogType } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -15,6 +15,8 @@ import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
 import { getActiveParent, setActiveParent, PARENT_EVT, PARENT_LABEL, PARENT_COLOR, type Parent } from '@/lib/activeParent'
 import dynamic from 'next/dynamic'
 import type { HealthEvent } from './HealthTab'
+import ExportModal from './ExportModal'
+import { buildLogDescription } from './logUtils'
 
 // Weaning guide and health/vaccine tabs carry sizeable static Hebrew data
 // (and their own icon sets) that most sessions never touch - lazy-load them
@@ -49,10 +51,14 @@ interface Props {
 
 // ─── Tracker type config ──────────────────────────────────────
 const typeConfig = {
-  feed:   { label: 'האכלה', icon: Milk,      color: '#7F5268', bg: 'rgba(127,82,104,0.1)',  border: 'rgba(127,82,104,0.25)' },
-  sleep:  { label: 'שינה',  icon: BedDouble, color: '#5C7A6A', bg: 'rgba(92,122,106,0.1)',  border: 'rgba(92,122,106,0.25)' },
-  diaper: { label: 'חיתול', icon: Droplets,  color: '#7A6A3C', bg: 'rgba(122,106,60,0.1)',  border: 'rgba(122,106,60,0.25)' },
+  feed:     { label: 'האכלה',  icon: Milk,      color: '#7F5268', bg: 'rgba(127,82,104,0.1)',  border: 'rgba(127,82,104,0.25)' },
+  sleep:    { label: 'שינה',   icon: BedDouble, color: '#5C7A6A', bg: 'rgba(92,122,106,0.1)',  border: 'rgba(92,122,106,0.25)' },
+  diaper:   { label: 'חיתול',  icon: Droplets,  color: '#7A6A3C', bg: 'rgba(122,106,60,0.1)',  border: 'rgba(122,106,60,0.25)' },
+  activity: { label: 'פעילות', icon: Activity,  color: '#5C6BA0', bg: 'rgba(92,107,160,0.1)',  border: 'rgba(92,107,160,0.25)' },
 }
+
+// Quick-select chips for an activity log's context - toggled into activity_tags.
+const ACTIVITY_TAGS = ['בחוץ', 'משטח פעילות', 'חברים', 'בריכה', 'משפחה'] as const
 
 // ─── Age-based sleep map (0-36 months) ────────────────────────
 // Values mirror a pediatric infant-sleep chart by age band. Within each band
@@ -313,6 +319,7 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
   const [activeTab, setActiveTab] = useState<'daily' | 'archive' | 'weaning' | 'health'>('daily')
   const [logs, setLogs] = useState(initialLogs)
   const [healthEvents, setHealthEvents] = useState<HealthEvent[]>(initialHealthEvents)
+  const [showExport, setShowExport] = useState(false)
   const supabase = createClient()
 
   // Baby age
@@ -326,8 +333,16 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
 
   return (
     <div className="space-y-5 max-w-2xl">
-      {/* Back button */}
-      <div className="flex justify-end">
+      {/* Back button + export */}
+      <div className="flex justify-between">
+        <button
+          onClick={() => setShowExport(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium"
+          style={{ color: '#4A7C59', background: 'rgba(74,124,89,0.1)', border: '1px solid rgba(74,124,89,0.25)' }}
+        >
+          <FileSpreadsheet className="w-3.5 h-3.5" />
+          ייצוא לאקסל
+        </button>
         <button
           onClick={() => router.back()}
           className="flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs"
@@ -337,6 +352,7 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
           חזרה
         </button>
       </div>
+      {showExport && <ExportModal userId={userId} babyName={babyName} onClose={() => setShowExport(false)} />}
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>
@@ -423,6 +439,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
   const [duration, setDuration] = useState('')
   const [wakeTime, setWakeTime] = useState('')
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
+  const [activityTags, setActivityTags] = useState<string[]>([])
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState(() => toLocalInput(new Date()))
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -508,6 +525,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       feed_right_min: null,
       amount_ml: null,
       diaper_type: null,
+      activity_tags: null,
       duration_min: null,
       end_time: null,
       logged_by: logBy || null,
@@ -529,6 +547,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       }
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
+    if (showForm === 'activity') payload.activity_tags = activityTags.length ? activityTags : null
     if (showForm === 'sleep') {
       // Prefer an explicit wake-up time - compute duration from the gap so
       // "נרדמה"/"התעוררה" stay consistent. Fall back to a manual duration.
@@ -560,6 +579,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setEditingId(null)
     setAmount(''); setDuration(''); setNotes(''); setWakeTime('')
     setFeedType('breast'); setFeedLeft(''); setFeedRight(''); setDiaperType('wet')
+    setActivityTags([])
     setLogBy(activeParent ?? '')
     setStartTime(toLocalInput(new Date()))
   }
@@ -576,6 +596,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setAmount(log.amount_ml != null ? String(log.amount_ml) : '')
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
     setDiaperType((log.diaper_type as 'wet' | 'dirty' | 'both') || 'wet')
+    setActivityTags(log.activity_tags || [])
     setNotes(log.notes || '')
   }
 
@@ -797,8 +818,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       {timer.active && timer.isNight && <NightExtras userId={userId} />}
 
       {/* Quick Add */}
-      <div className="grid grid-cols-3 gap-3">
-        {(['feed', 'sleep', 'diaper'] as LogType[]).map(type => {
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {(['feed', 'sleep', 'diaper', 'activity'] as LogType[]).map(type => {
           const { label, color, bg, border, icon: Icon } = typeConfig[type]
           return (
             <button key={type}
@@ -972,6 +993,26 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                         : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
                       }><Icon className="w-4 h-4" fill={dt === 'dirty' ? 'currentColor' : 'none'} />{lbl}</button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {showForm === 'activity' && (
+              <div>
+                <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>סוג הפעילות (אפשר לבחור כמה)</label>
+                <div className="flex flex-wrap gap-2">
+                  {ACTIVITY_TAGS.map(tag => {
+                    const active = activityTags.includes(tag)
+                    return (
+                      <button key={tag} type="button"
+                        onClick={() => setActivityTags(prev => active ? prev.filter(t => t !== tag) : [...prev, tag])}
+                        className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                        style={active
+                          ? { background: typeConfig.activity.color, color: 'white' }
+                          : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                        }>{tag}</button>
+                    )
+                  })}
                 </div>
               </div>
             )}
@@ -1227,44 +1268,6 @@ function NightExtras({ userId }: { userId: string }) {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────
-const FEED_SIDE_LABEL: Record<string, string> = { left: 'צד שמאל', right: 'צד ימין', both: 'שני הצדדים' }
-
-function buildLogDescription(log: BabyLog): string {
-  if (log.type === 'feed') {
-    const parts = []
-    if (log.feed_type) parts.push(log.feed_type === 'breast' ? 'שד' : 'בקבוק')
-    if (log.feed_type === 'breast') {
-      const l = log.feed_left_min ?? 0, r = log.feed_right_min ?? 0
-      if (l || r) {
-        const sides = []
-        if (l) sides.push(`שמאל ${l} דק’`)
-        if (r) sides.push(`ימין ${r} דק’`)
-        parts.push(sides.join(' + '))
-        parts.push(`סה"כ ${l + r} דק’`)
-      } else {
-        if (log.feed_side) parts.push(FEED_SIDE_LABEL[log.feed_side])
-        if (log.duration_min) parts.push(`${log.duration_min} דק’`)
-      }
-    } else {
-      if (log.amount_ml) parts.push(`${log.amount_ml} מ"ל`)
-      if (log.duration_min) parts.push(`${log.duration_min} דק’`)
-    }
-    return `האכלה${parts.length ? ' - ' + parts.join(', ') : ''}`
-  }
-  if (log.type === 'sleep') {
-    if (log.duration_min) {
-      const h = Math.floor(log.duration_min / 60)
-      const m = log.duration_min % 60
-      return `שינה - ${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}`
-    }
-    return 'שינה'
-  }
-  if (log.type === 'diaper') {
-    const labels = { wet: 'רטוב', dirty: 'מלוכלך', both: 'רטוב + מלוכלך' }
-    return `חיתול${log.diaper_type ? ' - ' + labels[log.diaper_type] : ''}`
-  }
-  return ''
-}
 
 function InfoTile({ icon: Icon, label, value }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>

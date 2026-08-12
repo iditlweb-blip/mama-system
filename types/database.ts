@@ -1,7 +1,7 @@
 export type TaskCategory = 'work' | 'home' | 'baby'
 export type TaskStatus = 'todo' | 'inprogress' | 'done'
 export type TaskPriority = 'high' | 'medium' | 'low'
-export type LogType = 'feed' | 'sleep' | 'diaper'
+export type LogType = 'feed' | 'sleep' | 'diaper' | 'activity'
 export type ChatMode = 'baby' | 'time' | 'business' | 'emotional' | 'pregnancy'
 export type BabyGender = 'boy' | 'girl'
 
@@ -81,6 +81,7 @@ export interface BabyLog {
   amount_ml: number | null
   duration_min: number | null
   diaper_type: 'wet' | 'dirty' | 'both' | null
+  activity_tags: string[] | null
   logged_by: 'mom' | 'dad' | null
   notes: string | null
   start_time: string
