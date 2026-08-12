@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Moon, Sun, Bell, X, Check } from 'lucide-react'
+import { Bell, X, Check } from 'lucide-react'
 import ProfileSwitcher, { type SwitchOption } from './ProfileSwitcher'
 
 interface AppNotification {
@@ -31,7 +31,6 @@ function saveNotifications(list: AppNotification[]) {
 }
 
 export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props) {
-  const [dark, setDark] = useState(false)
   const [date, setDate] = useState('')
   const [notifications, setNotifications] = useState<AppNotification[]>([])
   const [showDrop, setShowDrop] = useState(false)
@@ -42,8 +41,6 @@ export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props
   useEffect(() => {
     const d = new Date()
     setDate(d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long' }))
-    const saved = localStorage.getItem('darkMode')
-    if (saved === 'true') { setDark(true); document.documentElement.classList.add('dark') }
 
     // Migrate old single-item format → new array format
     const oldRaw = localStorage.getItem('pending_notification')
@@ -90,13 +87,6 @@ export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props
     saveNotifications(updated)
   }
 
-  function toggleDark() {
-    const next = !dark
-    setDark(next)
-    document.documentElement.classList.toggle('dark', next)
-    localStorage.setItem('darkMode', String(next))
-  }
-
   return (
     <header
       className="flex items-center justify-between py-3.5 border-b pr-16 pl-6 md:px-6"
@@ -122,18 +112,6 @@ export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props
             : '👩'
           }
         </div>
-
-        <button
-          onClick={toggleDark}
-          className="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:opacity-70"
-          style={{ background: 'var(--surface-2)', border: '1px solid var(--border)' }}
-          title={dark ? 'מצב יום' : 'מצב לילה'}
-        >
-          {dark
-            ? <Sun  className="w-3.5 h-3.5" style={{ color: 'var(--warning)' }} />
-            : <Moon className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
-          }
-        </button>
 
         {/* Only the tracking profiles live here (baby / pregnancy). The admin
             back-office moved into the sidebar menu to keep this row short on

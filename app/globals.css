@@ -62,19 +62,6 @@
   --font-body:    'TalentFS', 'Heebo', 'Segoe UI', sans-serif;
 }
 
-/* ─── Dark mode (optional, stays warm) ────────────────────── */
-.dark {
-  --bg:           #1A1210;
-  --surface:      #241916;
-  --surface-2:    #2E1F1B;
-  --text:         #F5EDE2;
-  --text-muted:   #C4A0B4;
-  --primary:      #C4A0B4;
-  --primary-light:#7F5268;
-  --border:       rgba(196, 160, 180, 0.18);
-  --border-solid: #3D2A25;
-}
-
 /* ─── Base ─────────────────────────────────────────────────── */
 * { box-sizing: border-box; }
 
@@ -157,10 +144,6 @@ body {
 .cat-work  { background: rgba(127, 82, 104, 0.12); color: #7F5268; }
 .cat-home  { background: rgba(74, 124, 89,  0.12); color: #4A7C59; }
 .cat-baby  { background: rgba(139, 90, 43,  0.12); color: #8B5A2B; }
-
-.dark .cat-work  { background: rgba(127,82,104,0.25); color: #C4A0B4; }
-.dark .cat-home  { background: rgba(74,124,89,0.25);  color: #86EFAC; }
-.dark .cat-baby  { background: rgba(139,90,43,0.25);  color: #F5C17A; }
 
 /* ─── Display font helper ──────────────────────────────────── */
 .font-display { font-family: var(--font-display) !important; }

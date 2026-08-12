@@ -166,19 +166,31 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
   }
 
   async function addStandardTest(name: string, week: number) {
-    const { data } = await supabase.from('pregnancy_tests')
+    const { data, error } = await supabase.from('pregnancy_tests')
       .insert({ user_id: userId, test_name: name, scheduled_week: week, completed: false })
       .select().single()
-    if (data) setTests(prev => [...prev, data as PregnancyTest])
+    if (error || !data) {
+      console.error('[addStandardTest] insert failed:', error)
+      alert('לא הצלחנו להוסיף את הבדיקה. נסי שוב בעוד רגע.')
+      return
+    }
+    setTests(prev => [...prev, data as PregnancyTest])
     showMsg('הבדיקה נוספה!')
   }
 
   async function addCustomTest() {
     if (!newNote.trim()) return
-    const { data } = await supabase.from('pregnancy_tests')
+    const { data, error } = await supabase.from('pregnancy_tests')
       .insert({ user_id: userId, test_name: newNote.trim(), completed: false })
       .select().single()
-    if (data) { setTests(prev => [...prev, data as PregnancyTest]); setNewNote(''); showMsg('נוסף!') }
+    if (error || !data) {
+      console.error('[addCustomTest] insert failed:', error)
+      alert('לא הצלחנו להוסיף את הבדיקה. נסי שוב בעוד רגע.')
+      return
+    }
+    setTests(prev => [...prev, data as PregnancyTest])
+    setNewNote('')
+    showMsg('נוסף!')
   }
 
   async function deleteTest(id: string) {

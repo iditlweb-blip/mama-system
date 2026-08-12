@@ -17,11 +17,10 @@ export default async function DashboardPage() {
     supabase.from('weekly_schedule').select('*').eq('user_id', userId!).eq('day_of_week', todayDow).order('start_time'),
   ])
 
-  const motivation = getDailyMotivation()
-
   // Pregnancy mode: fetch the woman's tests so the dashboard can show upcoming
   // tests + quick-add instead of the baby feed/sleep widgets.
   const isPregnancy = profile?.tracking_type === 'pregnancy'
+  const motivation = getDailyMotivation(profile?.tracking_type as 'pregnancy' | 'baby' | null)
   let pregnancyTests: PregnancyTest[] = []
   if (isPregnancy) {
     const { data } = await supabase

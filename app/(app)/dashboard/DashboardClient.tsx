@@ -128,11 +128,16 @@ export default function DashboardClient({
 
   async function quickAddTest(name: string, week: number) {
     setAddingTest(name)
-    const { data } = await supabase.from('pregnancy_tests')
+    const { data, error } = await supabase.from('pregnancy_tests')
       .insert({ user_id: userId, test_name: name, scheduled_week: week, completed: false })
       .select().single()
-    if (data) setPregTests(prev => [...prev, data as PregnancyTest])
     setAddingTest(null)
+    if (error || !data) {
+      console.error('[quickAddTest] insert failed:', error)
+      alert('לא הצלחנו להוסיף את הבדיקה. נסי שוב בעוד רגע.')
+      return
+    }
+    setPregTests(prev => [...prev, data as PregnancyTest])
     setSavedFlash(true)
     setTimeout(() => setSavedFlash(false), 2000)
   }
@@ -377,7 +382,7 @@ export default function DashboardClient({
       {/* ── Greeting card (compact) ─────────────────── */}
       <div className="card" style={{ background: 'rgba(127,82,104,0.06)', borderColor: 'rgba(127,82,104,0.14)', padding: '14px 16px' }}>
         <h1 className="text-base font-semibold mb-1.5" style={{ color: 'var(--text)' }}>
-          שלום 👋
+          {profile?.name ? `שלום ${profile.name}` : 'שלום'}
         </h1>
         <div className="flex items-start gap-2">
           <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: 'var(--primary)' }} />
