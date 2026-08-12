@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useSleepTimer } from '@/lib/useSleepTimer'
 import { BedDouble, Moon, Square, X } from 'lucide-react'
 
@@ -9,7 +10,15 @@ import { BedDouble, Moon, Square, X } from 'lucide-react'
 // a session is being tracked even after navigating away from the tracker.
 // The user can always dismiss it; it reappears automatically the next time
 // a new timer session starts.
+//
+// AppShell already hides this for accounts whose tracking_type is
+// 'pregnancy' - but the admin's own account previews the pregnancy page
+// while still tracking a baby (see the control-centre note in
+// AdminClient.tsx), so a path check is also needed: a baby's sleep timer
+// bar makes no sense while looking at the pregnancy tracker regardless of
+// which account happens to be signed in.
 export default function GlobalTimerBar({ userId }: { userId: string }) {
+  const pathname = usePathname()
   const timer = useSleepTimer(userId)
   const [dismissed, setDismissed] = useState(false)
 
@@ -17,6 +26,7 @@ export default function GlobalTimerBar({ userId }: { userId: string }) {
     setDismissed(false)
   }, [timer.startMs])
 
+  if (pathname?.startsWith('/pregnancy')) return null
   if (!timer.active || dismissed) return null
 
   async function handleStop() {
