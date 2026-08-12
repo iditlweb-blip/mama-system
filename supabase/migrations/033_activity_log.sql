@@ -7,19 +7,26 @@
 -- (בחוץ / משטח פעילות / חברים / בריכה / משפחה) shown in the tracker UI.
 -- ─────────────────────────────────────────────────────────────
 
--- Find and drop the existing type-check constraint by inspecting its actual
--- definition rather than assuming a name (it was auto-named by Postgres in
--- 001_initial.sql and never touched since).
+-- Find and drop the existing check constraint on the `type` column
+-- specifically - matched by which column it applies to (conkey), not by
+-- searching its definition text, since a text search for "type" also
+-- matches the feed_type / diaper_type check constraints on this same table.
 do $$
 declare
   con_name text;
+  type_attnum smallint;
 begin
+  select attnum into type_attnum
+  from pg_attribute
+  where attrelid = 'public.baby_logs'::regclass
+    and attname = 'type'
+    and not attisdropped;
+
   select conname into con_name
   from pg_constraint
   where conrelid = 'public.baby_logs'::regclass
     and contype = 'c'
-    and pg_get_constraintdef(oid) ilike '%type%=%any%'
-  limit 1;
+    and conkey = array[type_attnum];
 
   if con_name is not null then
     execute format('alter table public.baby_logs drop constraint %I', con_name);
