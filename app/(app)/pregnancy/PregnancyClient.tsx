@@ -12,7 +12,7 @@ import {
   FileText, Download, Share2, ZoomIn, Info, ChevronDown,
   type LucideIcon,
 } from 'lucide-react'
-import { STANDARD_TESTS, calcPregnancyWeek, formatGestational } from '@/lib/pregnancy'
+import { STANDARD_TESTS, ADDITIONAL_TESTS, COVERAGE_DISCLAIMER, calcPregnancyWeek, formatGestational } from '@/lib/pregnancy'
 
 // Standard pregnancy tests by week
 
@@ -371,11 +371,38 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                     <p style={{ margin: '10px 0 0', fontSize: '0.8rem', lineHeight: 1.65, color: '#6a5560' }}>
                       {st.explanation}
                     </p>
+                    <p style={{ margin: '8px 0 0', fontSize: '0.76rem', lineHeight: 1.6, color: '#7F5268', fontWeight: 600 }}>
+                      💳 {st.coverage}
+                    </p>
+                    <p style={{ margin: '3px 0 0', fontSize: '0.68rem', lineHeight: 1.5, color: '#a09298' }}>
+                      {COVERAGE_DISCLAIMER}
+                    </p>
                   </div>
                 )}
               </div>
             )
           })}
+
+          {/* Additional, non-standard tests - informational only, not part of
+              the reminder-driving schedule above (not everyone does these). */}
+          {ADDITIONAL_TESTS.length > 0 && (
+            <div style={{ marginTop: 6 }}>
+              <p style={{ margin: '4px 2px 8px', fontSize: '0.78rem', fontWeight: 600, color: '#7F5268' }}>
+                בדיקות נוספות (לא כולן עושות אותן)
+              </p>
+              {ADDITIONAL_TESTS.map(at => (
+                <div key={at.name} style={{
+                  background: '#fff', borderRadius: 12, border: '1px dashed rgba(127,82,104,0.25)',
+                  padding: '12px 14px', marginBottom: 8,
+                }}>
+                  <p style={{ margin: 0, fontSize: '0.87rem', fontWeight: 500, color: '#3a1e2d' }}>{at.name}</p>
+                  <p style={{ margin: '6px 0 0', fontSize: '0.8rem', lineHeight: 1.65, color: '#6a5560' }}>{at.explanation}</p>
+                  <p style={{ margin: '8px 0 0', fontSize: '0.76rem', lineHeight: 1.6, color: '#7F5268', fontWeight: 600 }}>💳 {at.coverage}</p>
+                  <p style={{ margin: '3px 0 0', fontSize: '0.68rem', lineHeight: 1.5, color: '#a09298' }}>{COVERAGE_DISCLAIMER}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
