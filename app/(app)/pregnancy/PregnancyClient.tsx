@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { STANDARD_TESTS, ADDITIONAL_TESTS, COVERAGE_DISCLAIMER, calcPregnancyWeek, formatGestational } from '@/lib/pregnancy'
+import { kupatCholimUrl, kupatCholimLabel } from '@/lib/kupotCholim'
 
 // Standard pregnancy tests by week
 
@@ -35,6 +36,7 @@ interface Profile {
   tracking_type?: string | null
   has_given_birth?: boolean | null
   profile_picture_url?: string | null
+  kupat_cholim?: string | null
 }
 
 interface Props {
@@ -62,23 +64,23 @@ function calcWeeks(dueDate: string | null): { weeks: number; label: string; almo
 // fruit where one exists, generic Sprout otherwise), scaled up week over week
 // so the icon itself visually communicates "growing bigger".
 const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: number; image?: string }> = {
-  6:  { name: 'גרגיר אפון',  icon: Sprout, iconSize: 14 },
-  8:  { name: 'פטל',         icon: Grape,  iconSize: 15 },
-  10: { name: 'תות',         icon: Cherry, iconSize: 16 },
-  12: { name: 'ליים',        icon: Citrus, iconSize: 17 },
-  14: { name: 'תפוח',        icon: Apple,  iconSize: 18 },
-  16: { name: 'אגס',         icon: Apple,  iconSize: 19 },
-  18: { name: 'מנגו',        icon: Citrus, iconSize: 20 },
-  20: { name: 'בננה',        icon: Banana, iconSize: 21 },
-  22: { name: 'פפאיה',       icon: Sprout, iconSize: 22 },
-  24: { name: 'תירס',        icon: Sprout, iconSize: 23 },
-  26: { name: 'בצל',         icon: Sprout, iconSize: 24 },
-  28: { name: 'ברוקולי',      icon: Sprout, iconSize: 25 },
-  30: { name: 'כרוב',        icon: Sprout, iconSize: 26 },
-  32: { name: 'קוקוס',       icon: Sprout, iconSize: 27 },
-  34: { name: 'כרובית',      icon: Sprout, iconSize: 28 },
-  36: { name: 'אבוקדו',      icon: Sprout, iconSize: 29 },
-  38: { name: 'אבטיח קטן',   icon: Citrus, iconSize: 30 },
+  6:  { name: 'גרגיר אפון',  icon: Sprout, iconSize: 26, image: '/fruit-sizes/pea.png' },
+  8:  { name: 'פטל',         icon: Grape,  iconSize: 28, image: '/fruit-sizes/raspberry.png' },
+  10: { name: 'תות',         icon: Cherry, iconSize: 30, image: '/fruit-sizes/strawberry.png' },
+  12: { name: 'ליים',        icon: Citrus, iconSize: 32, image: '/fruit-sizes/lime.png' },
+  14: { name: 'תפוח',        icon: Apple,  iconSize: 34, image: '/fruit-sizes/apple.png' },
+  16: { name: 'אגס',         icon: Apple,  iconSize: 36, image: '/fruit-sizes/pear.png' },
+  18: { name: 'מנגו',        icon: Citrus, iconSize: 38, image: '/fruit-sizes/mango.png' },
+  20: { name: 'בננה',        icon: Banana, iconSize: 40, image: '/fruit-sizes/banana.png' },
+  22: { name: 'פפאיה',       icon: Sprout, iconSize: 42, image: '/fruit-sizes/papaya.png' },
+  24: { name: 'תירס',        icon: Sprout, iconSize: 44, image: '/fruit-sizes/corn.png' },
+  26: { name: 'בצל',         icon: Sprout, iconSize: 46, image: '/fruit-sizes/onion.png' },
+  28: { name: 'ברוקולי',      icon: Sprout, iconSize: 48, image: '/fruit-sizes/broccoli.png' },
+  30: { name: 'כרוב',        icon: Sprout, iconSize: 50, image: '/fruit-sizes/cabbage.png' },
+  32: { name: 'קוקוס',       icon: Sprout, iconSize: 52, image: '/fruit-sizes/coconut.png' },
+  34: { name: 'כרובית',      icon: Sprout, iconSize: 54, image: '/fruit-sizes/cauliflower.png' },
+  36: { name: 'אבוקדו',      icon: Sprout, iconSize: 56, image: '/fruit-sizes/avocado.png' },
+  38: { name: 'אבטיח קטן',   icon: Citrus, iconSize: 58, image: '/fruit-sizes/watermelon.png' },
   40: { name: 'תינוק!!!',    icon: Baby,   iconSize: 32 },
 }
 function getBabySize(week: number): { name: string; icon: LucideIcon; iconSize: number; image?: string } | null {
@@ -377,6 +379,20 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
                     <p style={{ margin: '3px 0 0', fontSize: '0.68rem', lineHeight: 1.5, color: '#a09298' }}>
                       {COVERAGE_DISCLAIMER}
                     </p>
+                    {kupatCholimUrl(profile?.kupat_cholim) ? (
+                      <a href={kupatCholimUrl(profile?.kupat_cholim)!} target="_blank" rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 8,
+                          fontSize: '0.76rem', fontWeight: 600, color: '#fff', background: '#7F5268',
+                          borderRadius: 8, padding: '6px 12px', textDecoration: 'none',
+                        }}>
+                        בדיקת זכאות ותורים ב{kupatCholimLabel(profile?.kupat_cholim)} ←
+                      </a>
+                    ) : (
+                      <Link href="/settings" style={{ display: 'block', marginTop: 8, fontSize: '0.72rem', color: '#7F5268', textDecoration: 'underline' }}>
+                        הוסיפי את קופת החולים שלך בהגדרות כדי לראות קישור ישיר לזכאות ותורים
+                      </Link>
+                    )}
                   </div>
                 )}
               </div>

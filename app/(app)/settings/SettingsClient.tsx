@@ -8,6 +8,7 @@ import {
   UserRound, LogOut, MessageCircle, Bell
 } from 'lucide-react'
 import { setActiveParent } from '@/lib/activeParent'
+import { KUPOT_CHOLIM, type KupatCholim } from '@/lib/kupotCholim'
 
 function PregnancyIcon({ className }: { className?: string }) {
   return (
@@ -44,6 +45,7 @@ interface ProfileFull {
   notify_exams?: boolean | null
   notify_sleep?: boolean | null
   notify_community?: boolean | null
+  kupat_cholim?: KupatCholim | null
 }
 
 interface Props {
@@ -86,6 +88,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   const [notifyExams,     setNotifyExams]     = useState(profile?.notify_exams !== false)
   const [notifySleep,     setNotifySleep]     = useState(profile?.notify_sleep !== false)
   const [notifyCommunity, setNotifyCommunity] = useState(profile?.notify_community !== false)
+  const [kupatCholim, setKupatCholim] = useState<KupatCholim | ''>(profile?.kupat_cholim || '')
 
   const [babyGender,    setBabyGender]    = useState<'boy' | 'girl' | ''>(
     (profile?.baby_gender as 'boy' | 'girl') || ''
@@ -141,6 +144,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       notify_exams:        notifyExams,
       notify_sleep:        notifySleep,
       notify_community:    notifyCommunity,
+      kupat_cholim:        kupatCholim || null,
     }
 
     // Keep this device in sync with a fixed-parent choice straight away.
@@ -226,6 +230,23 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
           </div>
         </div>
         <Field label="שם מלא" value={name} onChange={setName} placeholder="השם שלך" />
+        <div className="mt-4">
+          <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-muted)' }}>קופת חולים</label>
+          <select
+            value={kupatCholim}
+            onChange={e => setKupatCholim(e.target.value as KupatCholim | '')}
+            className="w-full px-3 py-2.5 rounded-xl border text-sm outline-none"
+            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+          >
+            <option value="">לא נבחרה</option>
+            {KUPOT_CHOLIM.map(k => (
+              <option key={k.value} value={k.value}>{k.label}</option>
+            ))}
+          </select>
+          <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+            בעמוד מעקב ההריון נוסיף קישור ישיר לעמוד הבדיקות של הקופה שלך.
+          </p>
+        </div>
       </Section>
 
       {/* ── Tracking mode ─────────────────────────────────────────── */}

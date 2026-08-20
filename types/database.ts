@@ -44,6 +44,9 @@ export interface Profile {
   show_parent_popup: boolean | null
   show_sleep_timer: boolean | null
   show_reminders: boolean | null
+  // Health fund selection (migration 035) - links pregnancy test cards to
+  // the fund's own eligibility/coverage page.
+  kupat_cholim: 'clalit' | 'maccabi' | 'meuhedet' | 'leumit' | null
 }
 
 export interface Contraction {
