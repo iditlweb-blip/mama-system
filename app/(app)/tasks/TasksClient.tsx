@@ -159,7 +159,7 @@ export default function TasksClient({ tasks: initialTasks, userId, trackingType 
 
       {/* Add modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/40" onClick={() => setShowForm(false)}>
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 pb-[calc(64px+env(safe-area-inset-bottom)+1rem)] md:pb-4 bg-black/40" onClick={() => setShowForm(false)}>
           <div className="card w-full max-w-sm space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <h3 className="font-bold flex items-center gap-1.5" style={{ color: 'var(--text)' }}>משימה חדשה <Sparkles className="w-4 h-4" style={{ color: '#7F5268' }} /></h3>

@@ -1037,7 +1037,7 @@ export default function DashboardClient({
         const CfgIcon = cfg.icon
         return (
           <div
-            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4"
+            className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 pb-[calc(64px+env(safe-area-inset-bottom)+1rem)] md:pb-4"
             style={{ background: 'rgba(0,0,0,0.5)' }}
             onClick={e => e.target === e.currentTarget && resetForm()}
           >

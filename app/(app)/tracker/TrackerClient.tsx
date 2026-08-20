@@ -548,9 +548,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'activity') payload.activity_tags = activityTags.length ? activityTags : null
-    if (showForm === 'sleep') {
-      // Prefer an explicit wake-up time - compute duration from the gap so
-      // "נרדמה"/"התעוררה" stay consistent. Fall back to a manual duration.
+    if (showForm === 'sleep' || showForm === 'activity') {
+      // Prefer an explicit end time - compute duration from the gap so
+      // start/end stay consistent. Fall back to a manual duration (sleep only).
       if (wakeTime) {
         const start = new Date(startTime)
         const end = new Date(wakeTime)
@@ -838,7 +838,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
 
       {/* Log Form Modal */}
       {showForm && (
-        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50"
+        <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 pb-[calc(64px+env(safe-area-inset-bottom)+1rem)] md:pb-4 bg-black/50"
           onClick={e => e.target === e.currentTarget && resetForm()}>
           <div className="card w-full max-w-sm space-y-4">
             <div className="flex items-center justify-between">
@@ -942,13 +942,13 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
               </div>
             </div>
 
-            {showForm === 'sleep' && (
+            {(showForm === 'sleep' || showForm === 'activity') && (
               <div className="space-y-3">
                 <div>
                   <label className="text-xs font-medium flex items-center gap-1 mb-1.5" style={{ color: 'var(--text-muted)' }}>
-                    <Sunrise className="w-3 h-3" /> התעוררה בשעה (אופציונלי)
+                    <Sunrise className="w-3 h-3" /> {showForm === 'sleep' ? 'התעוררה בשעה (אופציונלי)' : 'שעת סיום (אופציונלי)'}
                   </label>
-                  {/* Same large-time / small-date shape as "נרדמה בשעה" above. */}
+                  {/* Same large-time / small-date shape as the start-time field above. */}
                   <div className="flex items-center gap-2">
                     <input type="time" value={wakeTime ? wakeTime.slice(11, 16) : ''}
                       onChange={e => {
@@ -968,9 +968,11 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                       className="px-2 py-1.5 rounded-lg border text-xs outline-none"
                       style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text-muted)' }} />
                   </div>
-                  <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>אם ממלאים - משך השינה יחושב אוטומטית</p>
+                  <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
+                    {showForm === 'sleep' ? 'אם ממלאים - משך השינה יחושב אוטומטית' : 'אם ממלאים - משך הפעילות יחושב אוטומטית'}
+                  </p>
                 </div>
-                {!wakeTime && (
+                {showForm === 'sleep' && !wakeTime && (
                   <div>
                     <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>משך שינה (דקות)</label>
                     <input type="number" value={duration} onChange={e => setDuration(e.target.value)} placeholder="90"

@@ -61,7 +61,7 @@ function calcWeeks(dueDate: string | null): { weeks: number; label: string; almo
 // Fruit-size-per-week - one consistent icon family (closest lucide match per
 // fruit where one exists, generic Sprout otherwise), scaled up week over week
 // so the icon itself visually communicates "growing bigger".
-const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: number }> = {
+const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: number; image?: string }> = {
   6:  { name: 'גרגיר אפון',  icon: Sprout, iconSize: 14 },
   8:  { name: 'פטל',         icon: Grape,  iconSize: 15 },
   10: { name: 'תות',         icon: Cherry, iconSize: 16 },
@@ -81,7 +81,7 @@ const BABY_SIZES: Record<number, { name: string; icon: LucideIcon; iconSize: num
   38: { name: 'אבטיח קטן',   icon: Citrus, iconSize: 30 },
   40: { name: 'תינוק!!!',    icon: Baby,   iconSize: 32 },
 }
-function getBabySize(week: number): { name: string; icon: LucideIcon; iconSize: number } | null {
+function getBabySize(week: number): { name: string; icon: LucideIcon; iconSize: number; image?: string } | null {
   const keys = Object.keys(BABY_SIZES).map(Number).sort((a, b) => a - b)
   for (const k of [...keys].reverse()) {
     if (week >= k) return BABY_SIZES[k]
@@ -221,28 +221,30 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
 
       {/* Hero */}
       <div style={{
-        background: 'linear-gradient(135deg,#7F5268 0%,#9b6a85 100%)',
-        borderRadius: 20, padding: 'clamp(20px,3vw,32px)', color: '#fff', marginBottom: 20,
+        background: 'var(--cream, #F7EDE2)', border: '1.5px solid rgba(127,82,104,0.35)',
+        borderRadius: 20, padding: 'clamp(20px,3vw,32px)', color: 'var(--text, #000)', marginBottom: 20,
       }}>
-        <h1 style={{ fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 700, margin: '0 0 6px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <h1 style={{ fontSize: 'clamp(1.3rem,2.5vw,1.8rem)', fontWeight: 700, margin: '0 0 6px', letterSpacing: '0.04em', display: 'flex', alignItems: 'center', gap: 8, color: '#7F5268' }}>
           <Baby size={22} /> מעקב הריון
         </h1>
-        <p style={{ opacity: 0.88, fontSize: '0.95rem', margin: '0 0 20px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
+        <p style={{ opacity: 0.85, fontSize: '0.95rem', margin: '0 0 20px', letterSpacing: '0.02em', display: 'flex', alignItems: 'center', gap: 6 }}>
           {label}{almostTime && <PartyPopper size={16} />}
         </p>
 
-        <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: 10, height: 10, marginBottom: 8 }}>
-          <div style={{ background: '#fff', borderRadius: 10, height: '100%', width: `${progress}%`, transition: 'width 1s ease' }} />
+        <div style={{ background: 'rgba(127,82,104,0.15)', borderRadius: 10, height: 10, marginBottom: 8 }}>
+          <div style={{ background: '#7F5268', borderRadius: 10, height: '100%', width: `${progress}%`, transition: 'width 1s ease' }} />
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.8 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', opacity: 0.75 }}>
           <span>שבוע 1</span><span>{progress}% מהדרך</span><span>שבוע 40</span>
         </div>
 
         {weeks > 0 && babySize && (
-          <div style={{ marginTop: 14, background: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: '10px 14px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ marginTop: 14, background: 'rgba(127,82,104,0.08)', borderRadius: 12, padding: '10px 14px', fontSize: '0.88rem', display: 'flex', alignItems: 'center', gap: 8 }}>
             <span>גודל התינוק/ת השבוע:</span>
-            <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-              <babySize.icon size={babySize.iconSize} />
+            <strong style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#7F5268' }}>
+              {babySize.image
+                ? <img src={babySize.image} alt={babySize.name} width={babySize.iconSize} height={babySize.iconSize} style={{ objectFit: 'contain' }} />
+                : <babySize.icon size={babySize.iconSize} />}
               {babySize.name}
             </strong>
           </div>

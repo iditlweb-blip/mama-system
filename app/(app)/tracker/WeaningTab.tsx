@@ -95,6 +95,15 @@ const READINESS_CHECKLIST = [
 export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
   babyWeeks: number | null; babyName: string | null; genderSuffix: string
 }) {
+  // genderSuffix ('ת' for a girl, '' for a boy) is a simple ת-suffix that only
+  // agrees correctly for verbs that actually feminize that way (e.g.
+  // נמצא/נמצאת below). "will be" and "ready" don't - תהיה isn't יהי+ת (the
+  // first letter itself changes), and the standalone feminine of מוכן is
+  // מוכנה (ה), not מוכנת - so those two need their own full-word forms.
+  const isGirl = genderSuffix === 'ת'
+  const willBe = isGirl ? 'תהיה' : 'יהיה'
+  const ready  = isGirl ? 'מוכנה' : 'מוכן'
+
   const [checkedItems, setCheckedItems] = useState<string[]>([])
   const [expandedStage, setExpandedStage] = useState<number | null>(null)
   const [expandedRecipe, setExpandedRecipe] = useState<string | null>(null)
@@ -122,7 +131,7 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
         <Sprout className="w-12 h-12 mx-auto mb-4" style={{ color: '#4A7C59' }} />
         <h2 className="text-lg font-bold mb-2" style={{ color: 'var(--text)' }}>עוד קצת זמן</h2>
         <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
-          {babyName || 'התינוק'} יהי{genderSuffix} מוכן{genderSuffix} לטעימות ראשונות בעוד כ-{weeksLeft} שבועות (בגיל 4 חודשים).
+          {babyName || 'התינוק'} {willBe} {ready} לטעימות ראשונות בעוד כ-{weeksLeft} שבועות (בגיל 4 חודשים).
         </p>
       </div>
     )
@@ -166,7 +175,7 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
           className="card w-full flex items-center justify-between gap-2"
           style={{ background: 'rgba(74,124,89,0.08)', border: '1px solid rgba(74,124,89,0.2)' }}>
           <span className="text-sm font-semibold flex items-center gap-1.5" style={{ color: '#4A7C59' }}>
-            <CheckCircle2 className="w-4 h-4" /> רשימת המוכנות הושלמה - {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות!
+            <CheckCircle2 className="w-4 h-4" /> רשימת המוכנות הושלמה - {babyName || 'התינוק'} {ready} לטעימות!
           </span>
           <ChevronDown className="w-4 h-4 flex-shrink-0" style={{ color: '#4A7C59' }} />
         </button>
@@ -204,7 +213,7 @@ export default function WeaningTab({ babyWeeks, babyName, genderSuffix }: {
             <div className="mt-4 rounded-xl p-3 text-center"
               style={{ background: 'rgba(74,124,89,0.1)', border: '1px solid rgba(74,124,89,0.2)' }}>
               <p className="text-sm font-semibold flex items-center justify-center gap-1.5" style={{ color: '#4A7C59' }}>
-                <PartyPopper className="w-4 h-4" /> {babyName || 'התינוק'} מוכן{genderSuffix} לטעימות! קדימה!
+                <PartyPopper className="w-4 h-4" /> {babyName || 'התינוק'} {ready} לטעימות! קדימה!
               </p>
             </div>
           )}

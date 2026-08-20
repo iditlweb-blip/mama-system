@@ -149,12 +149,21 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
     const { error: saveErr } = await supabase.from('profiles').upsert(payload)
     if (saveErr) {
       setError('שגיאה בשמירה: ' + saveErr.message)
+      setSaving(false)
+    } else if (trackingType !== ((profile?.tracking_type as 'pregnancy' | 'baby') || 'baby')) {
+      // Switching between pregnancy/baby mode touches nearly every part of the
+      // app (Sidebar, BottomNav, dashboard, and everything already visited and
+      // cached client-side by the router before the switch) - router.refresh()
+      // only re-fetches the current route, so other pages could still show the
+      // stale mode until their own cache expires. A hard navigation guarantees
+      // every page re-renders with the new tracking_type immediately.
+      window.location.href = '/dashboard'
     } else {
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
       router.refresh()
+      setSaving(false)
     }
-    setSaving(false)
   }
 
   // ── Logout

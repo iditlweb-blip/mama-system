@@ -29,6 +29,10 @@ function heTime(iso: string): string {
 function whoLabel(v: string | null): string {
   return v === 'mom' ? 'אמא' : v === 'dad' ? 'אבא' : ''
 }
+// "16:00-18:24" when there's an end time, otherwise just the start time.
+function timeRange(l: BabyLog): string {
+  return l.end_time ? `${heTime(l.start_time)}-${heTime(l.end_time)}` : heTime(l.start_time)
+}
 
 export default function ExportModal({ userId, babyName, onClose }: {
   userId: string; babyName: string | null; onClose: () => void
@@ -63,7 +67,7 @@ export default function ExportModal({ userId, babyName, onClose }: {
       // ── Combined chronological sheet ──────────────────────────────────
       const allRows = logs.map(l => ({
         'תאריך': heDate(l.start_time),
-        'שעה': heTime(l.start_time),
+        'שעה': timeRange(l),
         'סוג': typeLabel(l.type),
         'פרטים': buildLogDescription(l),
         'מי תיעד/ה': whoLabel(l.logged_by),
@@ -76,8 +80,7 @@ export default function ExportModal({ userId, babyName, onClose }: {
       if (sleepLogs.length > 0) {
         const rows = sleepLogs.map(l => ({
           'תאריך': heDate(l.start_time),
-          'נרדמה בשעה': heTime(l.start_time),
-          'התעוררה בשעה': l.end_time ? heTime(l.end_time) : '',
+          'שעות שינה': timeRange(l),
           'משך': l.duration_min != null ? `${Math.floor(l.duration_min / 60)}:${String(l.duration_min % 60).padStart(2, '0')}` : '',
           'לילה / יום': l.is_night ? 'לילה' : 'יום',
           'מי תיעד/ה': whoLabel(l.logged_by),
@@ -124,7 +127,7 @@ export default function ExportModal({ userId, babyName, onClose }: {
       if (activityLogs.length > 0) {
         const rows = activityLogs.map(l => ({
           'תאריך': heDate(l.start_time),
-          'שעה': heTime(l.start_time),
+          'שעות': timeRange(l),
           'תגיות': (l.activity_tags ?? []).join(', '),
           'מי תיעד/ה': whoLabel(l.logged_by),
           'הערות': l.notes || '',
@@ -145,7 +148,7 @@ export default function ExportModal({ userId, babyName, onClose }: {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 bg-black/50"
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 pb-[calc(64px+env(safe-area-inset-bottom)+1rem)] md:pb-4 bg-black/50"
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="card w-full max-w-sm space-y-4">
         <div className="flex items-center justify-between">
