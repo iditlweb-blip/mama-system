@@ -1041,7 +1041,7 @@ export default function DashboardClient({
             style={{ background: 'rgba(0,0,0,0.5)' }}
             onClick={e => e.target === e.currentTarget && resetForm()}
           >
-            <div className="card w-full max-w-sm space-y-4">
+            <div className="card w-full max-w-sm space-y-4 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <CfgIcon className="w-6 h-6" style={{ color: cfg.color }} />

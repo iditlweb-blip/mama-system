@@ -858,7 +858,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-4 pb-[calc(64px+env(safe-area-inset-bottom)+1rem)] md:pb-4 bg-black/50"
           onClick={e => e.target === e.currentTarget && resetForm()}>
-          <div className="card w-full max-w-sm space-y-4">
+          <div className="card w-full max-w-sm space-y-4 max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {(() => { const ModalIcon = typeConfig[showForm].icon; return <ModalIcon className="w-6 h-6" style={{ color: typeConfig[showForm].color }} /> })()}
