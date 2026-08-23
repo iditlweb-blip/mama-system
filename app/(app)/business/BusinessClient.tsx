@@ -159,11 +159,11 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
       <div className="flex gap-1 p-1 rounded-xl overflow-x-auto" style={{ background: 'var(--surface)' }}>
         {([
           { id: 'tasks', label: 'משימות', icon: CheckSquare },
-          { id: 'schedule', label: 'לוז שבועי', icon: Calendar },
           ...(isPregnancy ? [
-            { id: 'leave', label: 'חופשת לידה', icon: CalendarDays },
             { id: 'equipment', label: 'ציוד לחדר לידה', icon: Package },
+            { id: 'leave', label: 'חופשת לידה', icon: CalendarDays },
           ] as const : []),
+          { id: 'schedule', label: 'לוז שבועי', icon: Calendar },
         ] as const).map(({ id, label, icon: Icon }) => (
           <button
             key={id}
