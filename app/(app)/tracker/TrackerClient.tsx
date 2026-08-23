@@ -17,6 +17,7 @@ import dynamic from 'next/dynamic'
 import type { HealthEvent } from './HealthTab'
 import ExportModal from './ExportModal'
 import { buildLogDescription } from './logUtils'
+import MusicPlayer from './MusicPlayer'
 
 // Weaning guide and health/vaccine tabs carry sizeable static Hebrew data
 // (and their own icon sets) that most sessions never touch - lazy-load them
@@ -831,6 +832,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
           nested nursing/bottle timer) and a diaper without stopping the sleep
           timer - night wakings for feeds/changes are part of the same sleep. */}
       {timer.active && timer.isNight && <NightExtras userId={userId} />}
+
+      <MusicPlayer />
 
       {/* Quick Add */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
