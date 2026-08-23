@@ -85,6 +85,9 @@ export interface BabyLog {
   duration_min: number | null
   diaper_type: 'wet' | 'dirty' | 'both' | null
   activity_tags: string[] | null
+  sleep_quality: 'light' | 'short' | 'good' | null
+  sleep_position: 'stomach' | 'back' | null
+  fell_asleep_by: 'nursing' | 'alone' | 'stroller' | 'arms' | 'carrier' | 'other' | null
   logged_by: 'mom' | 'dad' | null
   notes: string | null
   start_time: string

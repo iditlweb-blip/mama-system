@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { X, FileSpreadsheet, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { BabyLog } from '@/types/database'
-import { buildLogDescription } from './logUtils'
+import { buildLogDescription, SLEEP_QUALITY_LABEL, SLEEP_POSITION_LABEL, FELL_ASLEEP_BY_LABEL } from './logUtils'
 
 // SheetJS (xlsx) is used write-only here - the workbook is built entirely
 // from data already fetched from our own DB, never from a user-supplied
@@ -83,6 +83,9 @@ export default function ExportModal({ userId, babyName, onClose }: {
           'שעות שינה': timeRange(l),
           'משך': l.duration_min != null ? `${Math.floor(l.duration_min / 60)}:${String(l.duration_min % 60).padStart(2, '0')}` : '',
           'לילה / יום': l.is_night ? 'לילה' : 'יום',
+          'איכות שינה': l.sleep_quality ? SLEEP_QUALITY_LABEL[l.sleep_quality] : '',
+          'תנוחה': l.sleep_position ? SLEEP_POSITION_LABEL[l.sleep_position] : '',
+          'איך נרדם/ה': l.fell_asleep_by ? FELL_ASLEEP_BY_LABEL[l.fell_asleep_by] : '',
           'מי תיעד/ה': whoLabel(l.logged_by),
           'הערות': l.notes || '',
         }))

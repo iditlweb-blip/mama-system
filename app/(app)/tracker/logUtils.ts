@@ -4,6 +4,9 @@ import type { BabyLog } from '@/types/database'
 // - kept out of TrackerClient.tsx itself to avoid a circular import between
 // the two (ExportModal is imported by TrackerClient for the export button).
 const FEED_SIDE_LABEL: Record<string, string> = { left: 'צד שמאל', right: 'צד ימין', both: 'שני הצדדים' }
+export const SLEEP_QUALITY_LABEL: Record<string, string> = { light: 'קלה', short: 'קצרה', good: 'טובה' }
+export const SLEEP_POSITION_LABEL: Record<string, string> = { stomach: 'על הבטן', back: 'על הגב' }
+export const FELL_ASLEEP_BY_LABEL: Record<string, string> = { nursing: 'הנקה', alone: 'לבד', stroller: 'עגלה', arms: 'על הידיים', carrier: 'מנשא', other: 'אחר' }
 
 export function buildLogDescription(log: BabyLog): string {
   if (log.type === 'feed') {
@@ -28,12 +31,16 @@ export function buildLogDescription(log: BabyLog): string {
     return `האכלה${parts.length ? ' - ' + parts.join(', ') : ''}`
   }
   if (log.type === 'sleep') {
+    const parts = []
     if (log.duration_min) {
       const h = Math.floor(log.duration_min / 60)
       const m = log.duration_min % 60
-      return `שינה - ${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}`
+      parts.push(`${h > 0 ? h + 'ש’ ' : ''}${m > 0 ? m + 'ד’' : ''}`.trim())
     }
-    return 'שינה'
+    if (log.sleep_quality) parts.push(SLEEP_QUALITY_LABEL[log.sleep_quality])
+    if (log.sleep_position) parts.push(SLEEP_POSITION_LABEL[log.sleep_position])
+    if (log.fell_asleep_by) parts.push(`נרדם/ה - ${FELL_ASLEEP_BY_LABEL[log.fell_asleep_by]}`)
+    return `שינה${parts.length ? ' - ' + parts.join(', ') : ''}`
   }
   if (log.type === 'diaper') {
     const labels = { wet: 'רטוב', dirty: 'מלוכלך', both: 'רטוב + מלוכלך' }

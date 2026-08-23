@@ -440,6 +440,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
   const [wakeTime, setWakeTime] = useState('')
   const [diaperType, setDiaperType] = useState<'wet' | 'dirty' | 'both'>('wet')
   const [activityTags, setActivityTags] = useState<string[]>([])
+  const [sleepQuality, setSleepQuality] = useState<'light' | 'short' | 'good' | ''>('')
+  const [sleepPosition, setSleepPosition] = useState<'stomach' | 'back' | ''>('')
+  const [fellAsleepBy, setFellAsleepBy] = useState<'nursing' | 'alone' | 'stroller' | 'arms' | 'carrier' | 'other' | ''>('')
   const [notes, setNotes] = useState('')
   const [startTime, setStartTime] = useState(() => toLocalInput(new Date()))
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -526,6 +529,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
       amount_ml: null,
       diaper_type: null,
       activity_tags: null,
+      sleep_quality: null,
+      sleep_position: null,
+      fell_asleep_by: null,
       duration_min: null,
       end_time: null,
       logged_by: logBy || null,
@@ -548,6 +554,11 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     }
     if (showForm === 'diaper') payload.diaper_type = diaperType
     if (showForm === 'activity') payload.activity_tags = activityTags.length ? activityTags : null
+    if (showForm === 'sleep') {
+      payload.sleep_quality = sleepQuality || null
+      payload.sleep_position = sleepPosition || null
+      payload.fell_asleep_by = fellAsleepBy || null
+    }
     if (showForm === 'sleep' || showForm === 'activity') {
       // Prefer an explicit end time - compute duration from the gap so
       // start/end stay consistent. Fall back to a manual duration (sleep only).
@@ -580,6 +591,7 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setAmount(''); setDuration(''); setNotes(''); setWakeTime('')
     setFeedType('breast'); setFeedLeft(''); setFeedRight(''); setDiaperType('wet')
     setActivityTags([])
+    setSleepQuality(''); setSleepPosition(''); setFellAsleepBy('')
     setLogBy(activeParent ?? '')
     setStartTime(toLocalInput(new Date()))
   }
@@ -597,6 +609,9 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
     setDuration(log.duration_min != null ? String(log.duration_min) : '')
     setDiaperType((log.diaper_type as 'wet' | 'dirty' | 'both') || 'wet')
     setActivityTags(log.activity_tags || [])
+    setSleepQuality(log.sleep_quality || '')
+    setSleepPosition(log.sleep_position || '')
+    setFellAsleepBy(log.fell_asleep_by || '')
     setNotes(log.notes || '')
   }
 
@@ -980,6 +995,49 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                       style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }} />
                   </div>
                 )}
+                {showForm === 'sleep' && (
+                  <>
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>איך הייתה השינה? (אופציונלי)</label>
+                      <div className="grid grid-cols-3 gap-2">
+                        {([['light', 'קלה'], ['short', 'קצרה'], ['good', 'טובה']] as const).map(([val, lbl]) => (
+                          <button key={val} type="button" onClick={() => setSleepQuality(sleepQuality === val ? '' : val)}
+                            className="py-2 rounded-xl text-xs font-medium transition-all"
+                            style={sleepQuality === val
+                              ? { background: '#5C7A6A', color: 'white' }
+                              : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                            }>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>תנוחת שינה (אופציונלי)</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([['stomach', 'על הבטן'], ['back', 'על הגב']] as const).map(([val, lbl]) => (
+                          <button key={val} type="button" onClick={() => setSleepPosition(sleepPosition === val ? '' : val)}
+                            className="py-2 rounded-xl text-xs font-medium transition-all"
+                            style={sleepPosition === val
+                              ? { background: '#5C7A6A', color: 'white' }
+                              : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                            }>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>איך נרדם/ה? (אופציונלי)</label>
+                      <div className="flex flex-wrap gap-2">
+                        {([['nursing', 'הנקה'], ['alone', 'לבד'], ['stroller', 'עגלה'], ['arms', 'על הידיים'], ['carrier', 'מנשא'], ['other', 'אחר']] as const).map(([val, lbl]) => (
+                          <button key={val} type="button" onClick={() => setFellAsleepBy(fellAsleepBy === val ? '' : val)}
+                            className="px-3 py-1.5 rounded-full text-sm font-medium transition-all"
+                            style={fellAsleepBy === val
+                              ? { background: '#5C7A6A', color: 'white' }
+                              : { background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }
+                            }>{lbl}</button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
@@ -1069,7 +1127,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                   }
                 }
                 return (
-                  <div key={log.id} className="flex items-start gap-3 group rounded-xl px-1.5 py-0.5"
+                  <div key={log.id} onClick={() => editLog(log)}
+                    className="flex items-start gap-3 group rounded-xl px-1.5 py-0.5 cursor-pointer hover:opacity-80 transition-opacity"
                     style={(log.logged_by === 'mom' || log.logged_by === 'dad')
                       ? { background: PARENT_COLOR[log.logged_by].bg }
                       : undefined}>
@@ -1098,12 +1157,12 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
                           </p>
                           {log.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{log.notes}</p>}
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
                           <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{time}</span>
-                          <button onClick={() => editLog(log)} className="md:opacity-0 md:group-hover:opacity-100 transition-opacity" title="עריכה">
+                          <button onClick={() => editLog(log)} title="עריכה">
                             <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
                           </button>
-                          <button onClick={() => deleteLog(log.id)} className="md:opacity-0 md:group-hover:opacity-100 transition-opacity" title="מחיקה">
+                          <button onClick={() => deleteLog(log.id)} title="מחיקה">
                             <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
                           </button>
                         </div>
