@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { ArrowRight, MessageCircle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import CommunityAvatar from '@/components/public/CommunityAvatar'
+import Breadcrumbs from '@/components/public/Breadcrumbs'
 import AnswerForm from '@/app/community/AnswerForm'
 
 export interface CommunityQuestionData {
@@ -63,8 +64,20 @@ export default async function CommunityQuestion({ id, basePath }: { id: string; 
   if (!thread) notFound()
   const { question, answers } = thread
 
+  const homeCrumb = basePath.startsWith('/content')
+    ? { label: 'דשבורד', href: '/dashboard' }
+    : { label: 'עמוד בית', href: '/' }
+
   return (
-    <div style={{ maxWidth: 720, margin: '0 auto' }}>
+    <div style={{ maxWidth: 860, margin: '0 auto' }}>
+      <Breadcrumbs
+        items={[
+          homeCrumb,
+          { label: 'קהילה', href: basePath },
+          { label: question.title },
+        ]}
+      />
+
       <Link href={basePath} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: '#7F5268', fontSize: '0.9rem', textDecoration: 'none', marginBottom: 18 }}>
         <ArrowRight className="w-4 h-4" />
         חזרה לקהילה
