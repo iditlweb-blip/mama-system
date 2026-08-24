@@ -31,8 +31,11 @@ function ensureConfigured(): boolean {
 export interface PushPayload {
   title: string
   body: string
-  url?: string   // opened on notification click, defaults to '/dashboard'
-  tag?: string   // replaces a previous notification with the same tag instead of stacking
+  url?: string      // opened on notification click, defaults to '/dashboard'
+  tag?: string      // replaces a previous notification with the same tag instead of stacking
+  ongoing?: boolean // live status (e.g. the running sleep timer): keeps its own
+                    // title, shows silently and stays put instead of alerting
+  clear?: boolean   // dismiss whatever is showing under `tag` - shows nothing
 }
 
 interface SubRow { id: string; endpoint: string; p256dh: string; auth_key: string }
@@ -42,7 +45,14 @@ interface SubRow { id: string; endpoint: string; p256dh: string; auth_key: strin
 async function sendToSubscriptions(subs: SubRow[], payload: PushPayload): Promise<void> {
   if (!ensureConfigured() || subs.length === 0) return
   const admin = createAdminClient()
-  const body = JSON.stringify({ title: payload.title, body: payload.body, url: payload.url ?? '/dashboard', tag: payload.tag })
+  const body = JSON.stringify({
+    title: payload.title,
+    body: payload.body,
+    url: payload.url ?? '/dashboard',
+    tag: payload.tag,
+    ongoing: payload.ongoing,
+    clear: payload.clear,
+  })
 
   await Promise.all(subs.map(async (sub) => {
     try {

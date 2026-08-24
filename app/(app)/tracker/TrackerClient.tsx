@@ -18,6 +18,7 @@ import type { HealthEvent } from './HealthTab'
 import ExportModal from './ExportModal'
 import { buildLogDescription } from './logUtils'
 import MusicPlayer from './MusicPlayer'
+import SleepRings from './SleepRings'
 
 // Weaning guide and health/vaccine tabs carry sizeable static Hebrew data
 // (and their own icon sets) that most sessions never touch - lazy-load them
@@ -79,67 +80,69 @@ interface SleepRow {
   napLenLabel: string     // average nap length as shown
   dayLabel: string        // total daytime sleep
   nightLabel: string      // total nighttime sleep
+  totalLow: number        // recommended total sleep per 24h - low end (hours)
+  totalHigh: number       // recommended total sleep per 24h - high end (hours)
   bedtime: string         // recommended bedtime range
   note: string
 }
 
 const SLEEP_MAP: SleepRow[] = [
   {
-    maxWeeks: 6, label: '0-6 שבועות', wwMin: 30, wwMax: 60,
+    maxWeeks: 6, label: '0-6 שבועות', totalLow: 14, totalHigh: 17, wwMin: 30, wwMax: 60,
     napsForCalc: 5, napsLabel: '4-6', napLenMin: 60, napLenLabel: '20 דק’ - 3 ש’',
     dayLabel: '4-8 ש’', nightLabel: '8-10 ש’', bedtime: '21:00-00:00',
     note: 'בשלב הזה היממה מתחלקת בעיקר בין שינה, אכילה, החתלה וקרבה. עדיין אין הפרדה של ממש בין יום ללילה.',
   },
   {
-    maxWeeks: 13, label: '6 שבועות - 3 חודשים', wwMin: 40, wwMax: 90,
+    maxWeeks: 13, label: '6 שבועות - 3 חודשים', totalLow: 14, totalHigh: 16, wwMin: 40, wwMax: 90,
     napsForCalc: 4, napsLabel: '4-5', napLenMin: 75, napLenLabel: '½ ש’ - 2 ש’',
     dayLabel: '4-5 ש’', nightLabel: '9-11 ש’', bedtime: '20:00-22:00',
     note: 'לאט לאט נבנית ההבחנה בין יום ללילה. שכיבה על הבטן בזמן ערות וחשיפה לאור טבעי מסייעות לייצב את השגרה היומית.',
   },
   {
-    maxWeeks: 22, label: '3-5 חודשים', wwMin: 60, wwMax: 150,
+    maxWeeks: 22, label: '3-5 חודשים', totalLow: 13, totalHigh: 16, wwMin: 60, wwMax: 150,
     napsForCalc: 4, napsLabel: '3-4', napLenMin: 60, napLenLabel: '½ ש’ - 2 ש’',
     dayLabel: '3-4½ ש’', nightLabel: '10-12 ש’', bedtime: '18:30-20:00',
     note: 'בסביבות גיל 4 חודשים חלה תמורה בשינה - מחזורי השינה נעשים בשלים יותר, ולעיתים הרגלים שעבדו קודם כבר פחות מתאימים.',
   },
   {
-    maxWeeks: 26, label: '5-6 חודשים', wwMin: 105, wwMax: 165,
+    maxWeeks: 26, label: '5-6 חודשים', totalLow: 13, totalHigh: 16, wwMin: 105, wwMax: 165,
     napsForCalc: 3, napsLabel: '3-4', napLenMin: 60, napLenLabel: '½ ש’ - 2 ש’',
     dayLabel: '3-4 ש’', nightLabel: '10-12 ש’', bedtime: '18:30-20:00',
     note: 'מעבר מדורג מארבע תנומות לשלוש. לא פעם דווקא התנומה של אחר הצהריים הולכת ומתקצרת עד שנעלמת.',
   },
   {
-    maxWeeks: 35, label: '6-8 חודשים', wwMin: 135, wwMax: 210,
+    maxWeeks: 35, label: '6-8 חודשים', totalLow: 13, totalHigh: 15, wwMin: 135, wwMax: 210,
     napsForCalc: 3, napsLabel: '2-3', napLenMin: 90, napLenLabel: '1-2 ש’',
     dayLabel: '3-3½ ש’', nightLabel: '10-12 ש’', bedtime: '18:30-20:00',
     note: 'תקופת מעבר משלוש תנומות לשתיים. קפיצות מוטוריות ותרגול יכולות שרכשו זה עתה עשויים לשבש את השינה באופן זמני.',
   },
   {
-    maxWeeks: 43, label: '8-10 חודשים', wwMin: 180, wwMax: 240,
+    maxWeeks: 43, label: '8-10 חודשים', totalLow: 12, totalHigh: 15, wwMin: 180, wwMax: 240,
     napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1-2 ש’',
     dayLabel: '2-3 ש’', nightLabel: '10-12 ש’', bedtime: '18:30-19:30',
     note: 'בדרך כלל כבר קיימות שתי תנומות יציבות. חרדת פרידה וזינוקים התפתחותיים עלולים להקשות על ההירדמות.',
   },
   {
-    maxWeeks: 52, label: '10-12 חודשים', wwMin: 210, wwMax: 270,
+    maxWeeks: 52, label: '10-12 חודשים', totalLow: 12, totalHigh: 15, wwMin: 210, wwMax: 270,
     napsForCalc: 2, napsLabel: '2', napLenMin: 90, napLenLabel: '1-2 ש’',
     dayLabel: '2-3 ש’', nightLabel: '10-12 ש’', bedtime: '18:30-19:30',
     note: 'יש תינוקות שמתחילים לסרב לתנומה השנייה, אך התנגדות כזו לא בהכרח מעידה שהם מוכנים לוותר עליה.',
   },
   {
-    maxWeeks: 78, label: '12-18 חודשים', wwMin: 210, wwMax: 300,
+    maxWeeks: 78, label: '12-18 חודשים', totalLow: 11, totalHigh: 14, wwMin: 210, wwMax: 300,
     napsForCalc: 2, napsLabel: '1-2', napLenMin: 105, napLenLabel: '1-2½ ש’',
     dayLabel: '1-2½ ש’', nightLabel: '10-12 ש’', bedtime: '18:30-19:30',
     note: 'מגיל 14 חודשים לרוב מתחיל מעבר איטי לתנומה יחידה. בימים עם תנומה אחת בלבד כדאי לפעמים להשכיב מעט מוקדם יותר.',
   },
   {
-    maxWeeks: 104, label: '18-24 חודשים', wwMin: 270, wwMax: 390,
+    maxWeeks: 104, label: '18-24 חודשים', totalLow: 11, totalHigh: 14, wwMin: 270, wwMax: 390,
     napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1-2 ש’',
     dayLabel: '1-2 ש’', nightLabel: '10-12 ש’', bedtime: '19:00-20:00',
     note: 'בשלב זה בדרך כלל נותרה תנומת צהריים אחת קבועה. עדיין חשוב לשים לב לסימני עייפות יתר לקראת שעות הערב.',
   },
   {
-    maxWeeks: 9999, label: '24-36 חודשים', wwMin: 300, wwMax: 420,
+    maxWeeks: 9999, label: '24-36 חודשים', totalLow: 11, totalHigh: 14, wwMin: 300, wwMax: 420,
     napsForCalc: 1, napsLabel: '1', napLenMin: 90, napLenLabel: '1-2 ש’',
     dayLabel: '1-2 ש’', nightLabel: '10-12 ש’', bedtime: '19:00-20:00',
     note: 'לקראת גיל 3 חלק מהילדים מתחילים לזנוח את שנת הצהריים. ביום ללא תנומה ייתכן שתידרש השכבה מוקדמת יותר בלילה.',
@@ -654,6 +657,20 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
         <StatCard icon={Droplets} color="#4A7C59" label="חיתולים" value={diaperLogs.length}
           sub={`${diaperLogs.filter(l => l.diaper_type === 'dirty' || l.diaper_type === 'both').length} מלוכלך`} />
       </div>
+
+      {/* At-a-glance sleep rings: the last 24h against the recommended range for
+          the age, and this week's average against the week before. Sits right
+          under the raw counts so the numbers above get context. A running
+          timer's elapsed time counts toward today - it is sleep happening now,
+          it just hasn't been written to a log row yet. */}
+      {sleepPlan && (
+        <SleepRings
+          userId={userId}
+          todayMin={totalSleepMin + (timer.active ? Math.floor(timer.elapsed / 60) : 0)}
+          totalLow={sleepPlan.band.totalLow}
+          totalHigh={sleepPlan.band.totalHigh}
+        />
+      )}
 
       {/* Sleep windows & naps by age */}
       {sleepPlan && (

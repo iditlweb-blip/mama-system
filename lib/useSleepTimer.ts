@@ -33,6 +33,24 @@ function readNight(): boolean {
   return window.localStorage.getItem(NIGHT_KEY) === '1'
 }
 
+// Tag of the live "timer is running" notification the cron job pins in the
+// tray (see app/api/cron/notifications + public/sw.js). When the mother stops
+// the timer from inside the app we close it right away instead of leaving a
+// stale "still sleeping" line up until the next cron run clears it.
+const ONGOING_TIMER_TAG = 'sleep-timer-ongoing'
+
+async function dismissOngoingNotification(): Promise<void> {
+  try {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return
+    const reg = await navigator.serviceWorker.getRegistration()
+    if (!reg) return
+    const showing = await reg.getNotifications({ tag: ONGOING_TIMER_TAG })
+    showing.forEach(n => n.close())
+  } catch {
+    // Best-effort only - the cron job clears it on the next run regardless.
+  }
+}
+
 export function formatTimer(secs: number): string {
   const h = Math.floor(secs / 3600)
   const m = Math.floor((secs % 3600) / 60)
@@ -133,6 +151,7 @@ export function useSleepTimer(userId: string) {
   // Discard the running timer without recording a log.
   const cancel = useCallback(() => {
     writeLocal(null, false)
+    dismissOngoingNotification()
     supabase.from('active_sleep_timers').delete().eq('user_id', userId).then(() => {})
   }, [supabase, userId, writeLocal])
 
@@ -190,6 +209,7 @@ export function useSleepTimer(userId: string) {
 
     // Log persisted - now it's safe to clear the running timer everywhere.
     writeLocal(null, false)
+    dismissOngoingNotification()
     await supabase.from('active_sleep_timers').delete().eq('user_id', userId)
     setStopping(false)
 

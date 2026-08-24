@@ -11,6 +11,18 @@ const NAP_OVERRUN_MINUTES = 180
 // is the window - the per-profile dedupe date is what keeps it to one send.
 const MIDDAY_HOUR = 13
 
+// Fixed tag for the live sleep-timer notification: every refresh replaces the
+// previous one in the tray instead of stacking a new line every few minutes.
+const ONGOING_TIMER_TAG = 'sleep-timer-ongoing'
+
+// "2:15 שעות" / "45 דקות" - the elapsed time as the mother would say it.
+function fmtElapsed(min: number): string {
+  if (min < 60) return `${min} דקות`
+  const h = Math.floor(min / 60)
+  const m = min % 60
+  return `${h}:${String(m).padStart(2, '0')} שעות`
+}
+
 function israelHourNow(): number {
   return Number(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Jerusalem', hour: '2-digit', hour12: false }).format(new Date()))
 }
@@ -50,7 +62,7 @@ export async function GET(req: Request) {
 
   const admin = createAdminClient()
   const nowIso = new Date().toISOString()
-  const results = { tasks: 0, exams: 0, sleepTimers: 0, middayNudges: 0, autoClosedTimers: 0 }
+  const results = { tasks: 0, exams: 0, sleepTimers: 0, middayNudges: 0, autoClosedTimers: 0, ongoingTimers: 0, clearedOngoing: 0 }
 
   // ── 1. Task reminders (remind_at due) ────────────────────────────────────
   const { data: dueTasks } = await admin
@@ -241,6 +253,65 @@ export async function GET(req: Request) {
       tag: 'sleep-timer-autoclose',
     })))
     results.autoClosedTimers = staleTimers.length
+  }
+
+  // ── 6. Ongoing "the sleep timer is running" notification ──────────────
+  // A live status pinned in the notification tray while a timer runs, so the
+  // mother can see how long the baby has been asleep without opening the app -
+  // including when it is fully closed. It is NOT second-by-second: every cron
+  // run re-sends it under the fixed `sleep-timer-ongoing` tag, so each push
+  // replaces the previous one in place (silent + requireInteraction, see sw.js)
+  // and the elapsed time steps forward every few minutes.
+  //
+  // `profiles.sleep_ongoing_notified` remembers that one is showing, so a timer
+  // stopped from WhatsApp - or from a device that never came back online -
+  // still gets its notification dismissed on the next run instead of leaving a
+  // stale "still sleeping" line in the tray forever.
+  const { data: runningTimers } = await admin
+    .from('active_sleep_timers')
+    .select('user_id, start_time, is_night')
+    .limit(500)
+  const running = runningTimers ?? []
+  const runningIds = running.map(t => t.user_id)
+
+  const [{ data: runningProfiles }, { data: staleOngoing }] = await Promise.all([
+    runningIds.length > 0
+      ? admin.from('profiles').select('id, notify_sleep').in('id', runningIds)
+      : Promise.resolve({ data: [] as { id: string; notify_sleep: boolean | null }[] }),
+    admin.from('profiles').select('id').eq('sleep_ongoing_notified', true).limit(500),
+  ])
+
+  const ongoingOptedOut = new Set((runningProfiles ?? []).filter(p => p.notify_sleep === false).map(p => p.id))
+  const toRefresh = running.filter(t => !ongoingOptedOut.has(t.user_id))
+
+  if (toRefresh.length > 0) {
+    await Promise.all(toRefresh.map(timer => {
+      const elapsedMin = Math.max(0, Math.floor((Date.now() - new Date(timer.start_time).getTime()) / 60000))
+      const startLabel = new Intl.DateTimeFormat('he-IL', {
+        timeZone: 'Asia/Jerusalem', hour: '2-digit', minute: '2-digit', hour12: false,
+      }).format(new Date(timer.start_time))
+      return sendPushToUser(timer.user_id, {
+        title: `😴 טיימר שינה פועל · ${fmtElapsed(elapsedMin)}`,
+        body: `${timer.is_night ? 'שנת לילה' : 'תנומה'} מאז ${startLabel} · לחיצה תפתח את המעקב`,
+        url: '/tracker',
+        tag: ONGOING_TIMER_TAG,
+        ongoing: true,
+      })
+    }))
+    await admin.from('profiles').update({ sleep_ongoing_notified: true }).in('id', toRefresh.map(t => t.user_id))
+    results.ongoingTimers = toRefresh.length
+  }
+
+  // Anyone still flagged as "notification showing" whose timer is gone (stopped,
+  // auto-closed above, or notifications turned off) gets it dismissed.
+  const refreshedIds = new Set(toRefresh.map(t => t.user_id))
+  const toClear = (staleOngoing ?? []).map(p => p.id).filter(id => !refreshedIds.has(id))
+  if (toClear.length > 0) {
+    await Promise.all(toClear.map(id => sendPushToUser(id, {
+      title: '', body: '', tag: ONGOING_TIMER_TAG, clear: true,
+    })))
+    await admin.from('profiles').update({ sleep_ongoing_notified: false }).in('id', toClear)
+    results.clearedOngoing = toClear.length
   }
 
   return NextResponse.json({ ok: true, ...results })
