@@ -33,10 +33,9 @@ export async function getBlogPost(slug: string): Promise<BlogPostData | null> {
 // and the in-app mirror (/content/blog/[slug]). `basePath`/`communityBasePath`
 // keep every link pointing at whichever surface the reader is currently on.
 //
-// Layout: the page furniture (breadcrumbs, the back/category row, the cover
-// image, related posts) spans the site's content grid, while the prose itself
-// stays at a readable measure inside it. Running the body text the full width
-// of the grid would give ~140 characters a line, which nobody can read.
+// Layout: everything runs the full width of the shell's content grid - the
+// same width the blog feed's cards span - rather than sitting in a narrow
+// centred column.
 export default async function BlogPost({ slug, basePath, communityBasePath }: {
   slug: string
   basePath: string
@@ -52,7 +51,7 @@ export default async function BlogPost({ slug, basePath, communityBasePath }: {
     : { label: 'עמוד בית', href: '/' }
 
   return (
-    <article style={{ maxWidth: 1120, margin: '0 auto' }}>
+    <article>
       <Breadcrumbs
         items={[
           homeCrumb,
@@ -69,18 +68,18 @@ export default async function BlogPost({ slug, basePath, communityBasePath }: {
         </Link>
 
         {post.category && (
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: '#7F5268', background: 'rgba(127,82,104,0.10)', borderRadius: 8, padding: '4px 10px', whiteSpace: 'nowrap' }}>
+          <span style={{ fontSize: '0.78rem', fontWeight: 300, color: '#7F5268', background: 'rgba(127,82,104,0.10)', borderRadius: 50, padding: '6px 20px', whiteSpace: 'nowrap' }}>
             {post.category}
           </span>
         )}
       </div>
 
-      <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(1.9rem,4.5vw,2.8rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 10px', lineHeight: 1.25, letterSpacing: '-0.01em' }}>
+      <h1 style={{ fontFamily: 'var(--font-body)', fontSize: 'clamp(1.9rem,4.5vw,2.8rem)', fontWeight: 700, color: '#7F5268', margin: '0 0 10px', lineHeight: 1.25, letterSpacing: '-0.01em', textAlign: 'center' }}>
         {post.title}
       </h1>
 
       {post.published_at && (
-        <time style={{ display: 'block', fontSize: '0.85rem', color: '#9a8790', marginBottom: 22 }}>
+        <time style={{ display: 'block', fontSize: '0.85rem', fontWeight: 300, color: '#9a8790', marginBottom: 26, textAlign: 'center' }}>
           {new Date(post.published_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
         </time>
       )}
@@ -96,7 +95,7 @@ export default async function BlogPost({ slug, basePath, communityBasePath }: {
         />
       )}
 
-      <div style={{ maxWidth: 860, marginInline: 'auto' }}>
+      <div>
         <Markdown>{post.body}</Markdown>
 
         <div style={{ marginTop: 40, paddingTop: 22, borderTop: '1px solid rgba(127,82,104,0.15)', textAlign: 'center' }}>

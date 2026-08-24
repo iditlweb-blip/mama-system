@@ -1,28 +1,6 @@
-import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import GradientTitle from '@/components/public/GradientTitle'
-import BrandArrow from '@/components/public/BrandArrow'
-
-// A topical emoji per category, used on the branded placeholder when a post has
-// no cover image yet.
-function coverEmoji(category: string | null): string {
-  const c = (category ?? '').trim()
-  if (c.includes('שינה')) return '🌙'
-  if (c.includes('הנקה')) return '🤱'
-  if (c.includes('הבית') || c.includes('בית')) return '🏠'
-  if (c.includes('עצמי') || c.includes('טיפול')) return '🌸'
-  if (c.includes('התפתחות')) return '👶'
-  return '💜'
-}
-
-interface PostCard {
-  slug: string
-  title: string
-  excerpt: string | null
-  cover_image_url: string | null
-  category: string | null
-  published_at: string | null
-}
+import PostCard, { type PostCardData } from '@/components/content/PostCard'
 
 // The blog's content, shared between the public website (/blog) and the
 // in-app mirror (/content/blog) - same data, same rendering, just wrapped by a
@@ -37,7 +15,7 @@ export default async function BlogFeed({ basePath }: { basePath: string }) {
     .eq('status', 'published')
     .order('published_at', { ascending: false })
 
-  const posts = (data ?? []) as PostCard[]
+  const posts = (data ?? []) as PostCardData[]
 
   return (
     <div>
@@ -56,53 +34,7 @@ export default async function BlogFeed({ basePath }: { basePath: string }) {
       ) : (
         <div className="blog-grid">
           {posts.map((p) => (
-            <Link
-              key={p.slug}
-              href={`${basePath}/${p.slug}`}
-              style={{
-                display: 'flex', flexDirection: 'column', textDecoration: 'none', color: 'inherit',
-                background: '#fff', borderRadius: 22, padding: 14, textAlign: 'center',
-                boxShadow: '0 6px 22px rgba(127,82,104,0.08)',
-              }}
-            >
-              <div style={{ position: 'relative' }}>
-                {p.cover_image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={p.cover_image_url} alt={p.title} style={{ width: '100%', height: 190, objectFit: 'cover', display: 'block', borderRadius: 14 }} />
-                ) : (
-                  <div style={{ height: 190, borderRadius: 14, background: 'linear-gradient(135deg,#7F5268,#C4A0B4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2.6rem' }}>
-                    <span>{coverEmoji(p.category)}</span>
-                  </div>
-                )}
-                {p.category && (
-                  <span style={{ position: 'absolute', top: 12, left: 12, fontSize: '0.72rem', fontWeight: 500, color: '#7F5268', background: 'rgba(247,237,226,0.94)', borderRadius: 10, padding: '4px 11px' }}>
-                    {p.category}
-                  </span>
-                )}
-              </div>
-
-              <div style={{ padding: '16px 8px 0', display: 'flex', flexDirection: 'column', gap: 8, flex: 1 }}>
-                {p.published_at && (
-                  <time style={{ fontSize: '0.82rem', fontWeight: 300, color: '#9a8790' }}>
-                    {new Date(p.published_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })}
-                  </time>
-                )}
-                <h2 style={{ fontSize: '1.12rem', fontWeight: 500, color: '#3a2530', margin: 0, lineHeight: 1.4 }}>{p.title}</h2>
-                {p.excerpt && (
-                  <p style={{ fontSize: '0.92rem', fontWeight: 300, color: '#6b5560', margin: 0, lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {p.excerpt}
-                  </p>
-                )}
-                <span style={{
-                  marginTop: 'auto', direction: 'ltr', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-                  background: '#7F5268', color: '#F7EDE2', borderRadius: 999, padding: '11px 18px',
-                  fontSize: '0.92rem', fontWeight: 400,
-                }}>
-                  <BrandArrow size={22} />
-                  <span>למאמר המלא</span>
-                </span>
-              </div>
-            </Link>
+            <PostCard key={p.slug} post={p} basePath={basePath} />
           ))}
         </div>
       )}

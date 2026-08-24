@@ -5,7 +5,9 @@ import remarkGfm from 'remark-gfm'
 // Runs in a server component - no 'use client' needed.
 export default function Markdown({ children }: { children: string }) {
   return (
-    <div style={{ color: '#3a1e2d', fontSize: '1.02rem', lineHeight: 1.85 }}>
+    // Body copy is light; the h2/h3 overrides below put the headings back to
+    // medium so they still stand out against it.
+    <div style={{ color: '#3a1e2d', fontSize: '1.02rem', fontWeight: 300, lineHeight: 1.85 }}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
