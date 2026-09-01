@@ -1,6 +1,24 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
 <head>
+<script>
+/* The installed app - the Play Store TWA, or the PWA added to a home screen -
+   must open on the sign-in screen, never on this marketing page. Both are
+   served from the same origin, so the app's launch URL can land here; detect
+   the app context and hand off immediately. /auth is the right target for both
+   states: the middleware forwards an already-signed-in mother on to
+   /dashboard, so she never sees a login form she doesn't need.
+   Runs before anything renders, so there is no flash of the landing page. */
+(function () {
+  try {
+    var inApp =
+      (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true ||
+      (document.referrer || '').indexOf('android-app://') === 0;
+    if (inApp) window.location.replace('/auth');
+  } catch (e) { /* ordinary browser - stay on the landing page */ }
+})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>אמא בסדר - מערכת ותוכן לאימהות טריות</title>
