@@ -19,13 +19,19 @@ import { usePathname } from 'next/navigation'
 
 const BAR_COLOR = '#7F5268'
 const ICON_COLOR = '#F2E6DC'
-const ICON_SIZE_ACTIVE = 44
+const ICON_SIZE_ACTIVE = 50
 const BAR_HEIGHT = 49
-// How far the dome rises above the bar, and how wide it is where it meets it.
-const DOME_RISE = 17.9297
-const DOME_WIDTH = 70.56
+// The bar floats clear of the screen edge, above the home indicator.
+const BAR_LIFT = 10
+// The dome grew with the icons, scaled uniformly from the design's curve so it
+// keeps its shape. Sized so the 50px active glyph clears it by roughly the same
+// margin the design gives its 44px one - the artwork's own padding inside its
+// viewBox adds a few more pixels on top of the raw gap - while staying narrow
+// enough that the outermost tab's dome still fits on a phone screen.
+const DOME_RISE = 20
+const DOME_WIDTH = 78.7
 // Every icon is bottom-aligned this far above the bar's lower edge, so the
-// 44px active one grows upward into the dome instead of shifting the row.
+// active one grows upward into the dome instead of shifting the row.
 const ICON_BASELINE = 12
 
 type IconProps = { size: number }
@@ -86,15 +92,15 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
   // right and "בית" lands dead centre - matching the design's left-to-right
   // run of chat, community, home, tracker, products.
   //
-  // `size` is the resting size from the design; the chat glyph is drawn a
-  // little larger inside its own viewBox, so it sits at 18 to look the same
-  // weight as the 22px ones beside it.
+  // `size` is the resting size. The chat glyph is drawn a little larger inside
+  // its own viewBox, so it sits slightly under the others to look the same
+  // weight beside them.
   const items = [
-    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 22 },
-    { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 22 },
-    { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 22 },
-    { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 22 },
-    { href: '/chat', label: "צ'אט AI", Icon: ChatIcon, size: 18 },
+    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 30 },
+    { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 30 },
+    { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 30 },
+    { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 30 },
+    { href: '/chat', label: "צ'אט AI", Icon: ChatIcon, size: 25 },
   ]
 
   const activeIndex = items.findIndex(
@@ -113,13 +119,17 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
         className="bottom-nav"
         style={{
           position: 'fixed',
-          bottom: 0,
           left: 0,
           right: 0,
           zIndex: 100,
           background: BAR_COLOR,
-          borderRadius: '10px 10px 0 0',
-          paddingBottom: 'env(safe-area-inset-bottom)',
+          borderRadius: 10,
+          // Lifted clear of the screen edge; the safe-area inset keeps it above
+          // the home indicator on phones that have one.
+          bottom: `calc(${BAR_LIFT}px + env(safe-area-inset-bottom))`,
+          // The active icon deliberately grows past the bar's top edge into the
+          // dome, so nothing here may clip it.
+          overflow: 'visible',
         }}
       >
         {/* The dome. Sits flush on the bar's top edge in the same fill, so the
@@ -131,11 +141,19 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
             aria-hidden="true"
             width={DOME_WIDTH}
             height={DOME_RISE}
-            viewBox={`0 0 ${DOME_WIDTH} ${DOME_RISE}`}
+            // The path is the design's exact curve at its original size; the
+            // viewBox scales it to the larger dome without redrawing it.
+            viewBox="0 0 70.56 17.9297"
+            preserveAspectRatio="none"
             style={{
               position: 'absolute',
               bottom: '100%',
-              left: `${domeLeft}%`,
+              // `left` positions the dome's centre (it is pulled back by half
+              // its width below). Clamped so the outermost tabs' domes stay
+              // inside the bar instead of running off the screen edge - they
+              // drift a pixel or two from the icon centre, which is far less
+              // noticeable than a dome sliced in half.
+              left: `clamp(${DOME_WIDTH / 2}px, ${domeLeft}%, calc(100% - ${DOME_WIDTH / 2}px))`,
               transform: 'translateX(-50%)',
               display: 'block',
             }}
@@ -147,7 +165,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           </svg>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', height: BAR_HEIGHT, paddingBottom: ICON_BASELINE }}>
+        <div style={{ display: 'flex', alignItems: 'flex-end', height: BAR_HEIGHT, paddingBottom: ICON_BASELINE, overflow: 'visible' }}>
           {items.map(({ href, label, Icon, size }, i) => {
             const isActive = i === activeIndex
             return (
@@ -176,7 +194,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           .bottom-nav { display: none !important; }
           .bottom-nav-spacer { display: none !important; }
         }
-        .bottom-nav-spacer { height: calc(${BAR_HEIGHT}px + env(safe-area-inset-bottom)); }
+        .bottom-nav-spacer { height: calc(${BAR_HEIGHT + BAR_LIFT}px + env(safe-area-inset-bottom)); }
         /* Animate the icon growing and the dome sliding, so switching tab reads
            as one shape moving rather than two things snapping. */
         .bottom-nav svg { transition: width 0.22s ease, height 0.22s ease; }
