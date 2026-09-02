@@ -648,6 +648,89 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
         </div>
       </div>
 
+      {/* Timeline */}
+      <div className="card">
+        <h2 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
+          <Clock className="w-4 h-4" style={{ color: 'var(--primary)' }} />
+          ציר זמן היום
+        </h2>
+        {logs.length === 0 ? (
+          <div className="text-center py-10">
+            <Star className="w-10 h-10 mx-auto mb-3" style={{ color: '#7F5268' }} />
+            <p className="font-semibold" style={{ color: 'var(--text)' }}>עדיין אין רישומים להיום</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>התחילי לעקוב כדי לראות כאן את היום</p>
+          </div>
+        ) : (
+          <div className="relative">
+            <div className="absolute right-[19px] top-2 bottom-2 w-0.5 rounded-full" style={{ background: 'var(--border)' }} />
+            <div className="space-y-3">
+              {logs.map(log => {
+                const { icon: Icon, color, bg } = typeConfig[log.type]
+                const startLabel = new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                // For sleep logs, show a from-to range when we know when the
+                // sleep ended (explicit end_time, or start + duration_min).
+                let time = startLabel
+                if (log.type === 'sleep') {
+                  const endDate = log.end_time
+                    ? new Date(log.end_time)
+                    : log.duration_min
+                      ? new Date(new Date(log.start_time).getTime() + log.duration_min * 60000)
+                      : null
+                  if (endDate) {
+                    const endLabel = endDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+                    time = `${startLabel}-${endLabel}`
+                  }
+                }
+                return (
+                  <div key={log.id} onClick={() => editLog(log)}
+                    className="flex items-start gap-3 group rounded-xl px-1.5 py-0.5 cursor-pointer hover:opacity-80 transition-opacity"
+                    style={(log.logged_by === 'mom' || log.logged_by === 'dad')
+                      ? { background: PARENT_COLOR[log.logged_by].bg }
+                      : undefined}>
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 z-10"
+                      style={{ background: bg, border: `2px solid ${color}40` }}>
+                      <Icon className="w-4 h-4" style={{ color }} />
+                    </div>
+                    <div className="flex-1 min-w-0 py-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--text)' }}>
+                            <Icon className="w-3.5 h-3.5" style={{ color }} />
+                            {buildLogDescription(log)}
+                            {log.type === 'sleep' && log.is_night && (
+                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{ background: 'rgba(60,60,110,0.12)', color: '#3C3C6E' }}>
+                                <Moon className="w-2.5 h-2.5" /> לילה
+                              </span>
+                            )}
+                            {(log.logged_by === 'mom' || log.logged_by === 'dad') && (
+                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                                style={{ background: PARENT_COLOR[log.logged_by].bg, color: PARENT_COLOR[log.logged_by].text }}>
+                                {PARENT_LABEL[log.logged_by]}
+                              </span>
+                            )}
+                          </p>
+                          {log.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{log.notes}</p>}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                          <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{time}</span>
+                          <button onClick={() => editLog(log)} title="עריכה">
+                            <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
+                          </button>
+                          <button onClick={() => deleteLog(log.id)} title="מחיקה">
+                            <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <StatCard icon={Milk} color="#7F5268" label="האכלות" value={feedLogs.length}
@@ -658,8 +741,8 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
           sub={`${diaperLogs.filter(l => l.diaper_type === 'dirty' || l.diaper_type === 'both').length} מלוכלך`} />
       </div>
 
-      {/* At-a-glance sleep rings: the last 24h against the recommended range for
-          the age, and this week's average against the week before. Sits right
+      {/* At-a-glance sleep rings: the last 24h against the recommended range
+          for the age, and how well the nights themselves are going. Sits right
           under the raw counts so the numbers above get context. A running
           timer's elapsed time counts toward today - it is sleep happening now,
           it just hasn't been written to a log row yet. */}
@@ -670,127 +753,6 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
           totalLow={sleepPlan.band.totalLow}
           totalHigh={sleepPlan.band.totalHigh}
         />
-      )}
-
-      {/* Sleep windows & naps by age */}
-      {sleepPlan && (
-        <div className="card" style={{ background: 'rgba(92,122,106,0.07)', border: '1px solid rgba(92,122,106,0.25)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <Moon className="w-4 h-4" style={{ color: '#5C7A6A' }} />
-              חלונות שינה וערות
-            </h2>
-            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
-              style={{ background: 'rgba(92,122,106,0.15)', color: '#5C7A6A' }}>
-              {sleepPlan.band.label}
-            </span>
-          </div>
-
-          {/* Full sleep map for the age band (mirrors the pediatric chart) */}
-          <div className="grid grid-cols-2 gap-2 mb-3">
-            <InfoTile icon={Sunrise} label="חלון ערות מומלץ"
-              value={sleepPlan.band.wwMin === sleepPlan.band.wwMax
-                ? fmtWW(sleepPlan.band.wwMin)
-                : `${fmtWW(sleepPlan.band.wwMin)}-${fmtWW(sleepPlan.band.wwMax)}`} />
-            <InfoTile icon={BedDouble} label="תנומות ביום" value={`${sleepPlan.band.napsLabel} תנומות`} />
-            <InfoTile icon={Clock3} label="אורך תנומה ממוצע" value={sleepPlan.band.napLenLabel} />
-            <InfoTile icon={Sunrise} label="שינה ביום" value={sleepPlan.band.dayLabel} />
-            <InfoTile icon={Moon} label="שינה בלילה" value={sleepPlan.band.nightLabel} />
-            <InfoTile icon={Moon} label="שעת השכבה מומלצת" value={sleepPlan.band.bedtime} />
-          </div>
-
-          {/* Age-band note + a clear "this is guidance, not a rule" framing */}
-          <div className="rounded-xl px-3 py-2.5 mb-3 text-xs leading-relaxed"
-            style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.15)', color: 'var(--text-muted)' }}>
-            <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: '#7F5268' }}>
-              <Sparkles className="w-3.5 h-3.5" /> מידע והמלצות לגיל הזה
-            </p>
-            <p className="mb-1.5">{sleepPlan.band.note}</p>
-            <p>המספרים כאן הם המלצה כללית לפי טבלת שינה לגיל - לא כלל מחייב. כל תינוק שונה, והכי חשוב לעקוב אחרי סימני העייפות {isGirl ? 'שלה' : 'שלו'} ולהשכיב בהתאם.</p>
-          </div>
-
-          {/* Live insights based on what was marked today */}
-          <div className="space-y-2">
-            {/* Remaining naps until night */}
-            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
-              <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
-              <p className="text-sm" style={{ color: 'var(--text)' }}>
-                {sleepPlan.napsRemaining > 0
-                  ? <>נותרו עוד <b>{sleepPlan.napsRemaining}</b> שנ”צים עד הלילה <span style={{ color: 'var(--text-muted)' }}>({sleepPlan.napsTaken} כבר סומנו)</span></>
-                  : <>כל השנ”צים להיום הושלמו - נשארה רק שנת הלילה 🌙</>
-                }
-              </p>
-            </div>
-
-            {/* Time until next nap - hidden once all naps for the day are done
-                (and no timer running), since the bedtime row already covers
-                when the night sleep should start. */}
-            {(timer.active || sleepPlan.napsRemaining > 0) && (
-              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
-                <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
-                <p className="text-sm" style={{ color: 'var(--text)' }}>
-                  {timer.active && timer.isNight
-                    ? <>{`מתעדת שינת לילה 🌙 - הטיימר רץ`}</>
-                    : sleepPlan.sleeping
-                      ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 - הטיימר רץ`}</>
-                      : !sleepPlan.hasWakeData
-                        ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ”צ הבא</span>
-                        : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
-                          ? <>השנ”צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
-                          : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ”צ 💤</span>
-                  }
-                </p>
-              </div>
-            )}
-
-            {/* Predicted bedtime + fewer-naps recommendation - one combined,
-                calm block. When the chained calculation lands after the age's
-                latest recommended bedtime we don't show a separate scary
-                warning; we explain the number and the suggestion together, and
-                offer a checkbox to actually drop a nap (recalculates live). */}
-            {!(timer.active && timer.isNight) && (() => {
-              const meaningfulDrop = sleepPlan.recommendFewerNaps
-                && sleepPlan.recommendedNapsRemaining !== null
-                && sleepPlan.recommendedNapsRemaining !== sleepPlan.napsRemaining
-              const showLate = !!sleepPlan.bedtime && meaningfulDrop && sleepPlan.napsRemaining > 0
-              const showCheckbox = showLate || dropOneNap
-              const baby = babyName || 'התינוק'
-              return (
-                <div className="rounded-xl px-3 py-2.5" style={showLate
-                  ? { background: 'rgba(196,120,45,0.10)', border: '1px solid rgba(196,120,45,0.25)' }
-                  : { background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
-                  <div className="flex items-start gap-2.5">
-                    <Moon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: showLate ? '#C4782D' : '#5C7A6A' }} />
-                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>
-                      {sleepPlan.bedtime
-                        ? showLate
-                          ? <>לפי חישוב השנ”צים עד כה, על פי חלונות הערות הלילה של {baby} צפוי להתחיל בערך ב-<b>{fmtTime(sleepPlan.bedtime)}</b>. בגיל הזה מומלץ להשכיב לא יאוחר מ-<b>{sleepPlan.latestBedtimeLabel}</b> - לכן כדאי לשקול להוריד שנ”צ אחד.</>
-                          : <>הלילה של {baby} צפוי להתחיל בערך ב-<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b> 🌙{dropOneNap ? <span style={{ color: 'var(--text-muted)' }}> (מחושב לפי תנומה אחת פחות)</span> : ''}</>
-                        : !sleepPlan.hasWakeData
-                          ? <span style={{ color: 'var(--text-muted)' }}>{`סמני שינה כדי לחזות מתי יתחיל הלילה של ${baby}`}</span>
-                          : <>{`הלילה של ${baby} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
-                      }
-                    </p>
-                  </div>
-                  {showCheckbox && (
-                    <label className="flex items-center gap-2 mt-2.5 pt-2.5 cursor-pointer"
-                      style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
-                      <input type="checkbox" checked={dropOneNap}
-                        onChange={e => toggleDropNap(e.target.checked)}
-                        className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: '#5C7A6A' }} />
-                      <span className="text-xs" style={{ color: 'var(--text)' }}>
-                        {dropOneNap
-                          ? <>החישוב מעודכן לתנומה אחת פחות ✓ <span style={{ color: 'var(--text-muted)' }}>(אפשר לבטל כדי לחזור)</span></>
-                          : <>{`${baby} כבר מוכן${isGirl ? 'ה' : ''} לתנומה אחת פחות - עדכני את החישוב`}</>
-                        }
-                      </span>
-                    </label>
-                  )}
-                </div>
-              )
-            })()}
-          </div>
-        </div>
       )}
 
       {/* Sleep Timer */}
@@ -1113,88 +1075,126 @@ function DailyTab({ logs, setLogs, userId, genderSuffix, babyWeeks, babyName, na
         </div>
       )}
 
-      {/* Timeline */}
-      <div className="card">
-        <h2 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-          <Clock className="w-4 h-4" style={{ color: 'var(--primary)' }} />
-          ציר זמן היום
-        </h2>
-        {logs.length === 0 ? (
-          <div className="text-center py-10">
-            <Star className="w-10 h-10 mx-auto mb-3" style={{ color: '#7F5268' }} />
-            <p className="font-semibold" style={{ color: 'var(--text)' }}>עדיין אין רישומים להיום</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>התחילי לעקוב כדי לראות כאן את היום</p>
+      {/* Sleep windows & naps by age */}
+      {sleepPlan && (
+        <div className="card" style={{ background: 'rgba(92,122,106,0.07)', border: '1px solid rgba(92,122,106,0.25)' }}>
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-semibold flex items-center gap-2" style={{ color: 'var(--text)' }}>
+              <Moon className="w-4 h-4" style={{ color: '#5C7A6A' }} />
+              חלונות שינה וערות
+            </h2>
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+              style={{ background: 'rgba(92,122,106,0.15)', color: '#5C7A6A' }}>
+              {sleepPlan.band.label}
+            </span>
           </div>
-        ) : (
-          <div className="relative">
-            <div className="absolute right-[19px] top-2 bottom-2 w-0.5 rounded-full" style={{ background: 'var(--border)' }} />
-            <div className="space-y-3">
-              {logs.map(log => {
-                const { icon: Icon, color, bg } = typeConfig[log.type]
-                const startLabel = new Date(log.start_time).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                // For sleep logs, show a from-to range when we know when the
-                // sleep ended (explicit end_time, or start + duration_min).
-                let time = startLabel
-                if (log.type === 'sleep') {
-                  const endDate = log.end_time
-                    ? new Date(log.end_time)
-                    : log.duration_min
-                      ? new Date(new Date(log.start_time).getTime() + log.duration_min * 60000)
-                      : null
-                  if (endDate) {
-                    const endLabel = endDate.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
-                    time = `${startLabel}-${endLabel}`
-                  }
+
+          {/* Full sleep map for the age band (mirrors the pediatric chart) */}
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            <InfoTile icon={Sunrise} label="חלון ערות מומלץ"
+              value={sleepPlan.band.wwMin === sleepPlan.band.wwMax
+                ? fmtWW(sleepPlan.band.wwMin)
+                : `${fmtWW(sleepPlan.band.wwMin)}-${fmtWW(sleepPlan.band.wwMax)}`} />
+            <InfoTile icon={BedDouble} label="תנומות ביום" value={`${sleepPlan.band.napsLabel} תנומות`} />
+            <InfoTile icon={Clock3} label="אורך תנומה ממוצע" value={sleepPlan.band.napLenLabel} />
+            <InfoTile icon={Sunrise} label="שינה ביום" value={sleepPlan.band.dayLabel} />
+            <InfoTile icon={Moon} label="שינה בלילה" value={sleepPlan.band.nightLabel} />
+            <InfoTile icon={Moon} label="שעת השכבה מומלצת" value={sleepPlan.band.bedtime} />
+          </div>
+
+          {/* Age-band note + a clear "this is guidance, not a rule" framing */}
+          <div className="rounded-xl px-3 py-2.5 mb-3 text-xs leading-relaxed"
+            style={{ background: 'rgba(127,82,104,0.06)', border: '1px solid rgba(127,82,104,0.15)', color: 'var(--text-muted)' }}>
+            <p className="font-semibold mb-1 flex items-center gap-1.5" style={{ color: '#7F5268' }}>
+              <Sparkles className="w-3.5 h-3.5" /> מידע והמלצות לגיל הזה
+            </p>
+            <p className="mb-1.5">{sleepPlan.band.note}</p>
+            <p>המספרים כאן הם המלצה כללית לפי טבלת שינה לגיל - לא כלל מחייב. כל תינוק שונה, והכי חשוב לעקוב אחרי סימני העייפות {isGirl ? 'שלה' : 'שלו'} ולהשכיב בהתאם.</p>
+          </div>
+
+          {/* Live insights based on what was marked today */}
+          <div className="space-y-2">
+            {/* Remaining naps until night */}
+            <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+              <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: '#5C7A6A' }} />
+              <p className="text-sm" style={{ color: 'var(--text)' }}>
+                {sleepPlan.napsRemaining > 0
+                  ? <>נותרו עוד <b>{sleepPlan.napsRemaining}</b> שנ”צים עד הלילה <span style={{ color: 'var(--text-muted)' }}>({sleepPlan.napsTaken} כבר סומנו)</span></>
+                  : <>כל השנ”צים להיום הושלמו - נשארה רק שנת הלילה 🌙</>
                 }
-                return (
-                  <div key={log.id} onClick={() => editLog(log)}
-                    className="flex items-start gap-3 group rounded-xl px-1.5 py-0.5 cursor-pointer hover:opacity-80 transition-opacity"
-                    style={(log.logged_by === 'mom' || log.logged_by === 'dad')
-                      ? { background: PARENT_COLOR[log.logged_by].bg }
-                      : undefined}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 z-10"
-                      style={{ background: bg, border: `2px solid ${color}40` }}>
-                      <Icon className="w-4 h-4" style={{ color }} />
-                    </div>
-                    <div className="flex-1 min-w-0 py-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-medium flex items-center gap-1" style={{ color: 'var(--text)' }}>
-                            <Icon className="w-3.5 h-3.5" style={{ color }} />
-                            {buildLogDescription(log)}
-                            {log.type === 'sleep' && log.is_night && (
-                              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{ background: 'rgba(60,60,110,0.12)', color: '#3C3C6E' }}>
-                                <Moon className="w-2.5 h-2.5" /> לילה
-                              </span>
-                            )}
-                            {(log.logged_by === 'mom' || log.logged_by === 'dad') && (
-                              <span className="inline-flex items-center text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
-                                style={{ background: PARENT_COLOR[log.logged_by].bg, color: PARENT_COLOR[log.logged_by].text }}>
-                                {PARENT_LABEL[log.logged_by]}
-                              </span>
-                            )}
-                          </p>
-                          {log.notes && <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>{log.notes}</p>}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                          <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{time}</span>
-                          <button onClick={() => editLog(log)} title="עריכה">
-                            <Pencil className="w-3.5 h-3.5" style={{ color: 'var(--primary)' }} />
-                          </button>
-                          <button onClick={() => deleteLog(log.id)} title="מחיקה">
-                            <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+              </p>
             </div>
+
+            {/* Time until next nap - hidden once all naps for the day are done
+                (and no timer running), since the bedtime row already covers
+                when the night sleep should start. */}
+            {(timer.active || sleepPlan.napsRemaining > 0) && (
+              <div className="flex items-center gap-2.5 rounded-xl px-3 py-2.5" style={{ background: 'var(--surface)' }}>
+                <Clock3 className="w-4 h-4 flex-shrink-0" style={{ color: '#7F5268' }} />
+                <p className="text-sm" style={{ color: 'var(--text)' }}>
+                  {timer.active && timer.isNight
+                    ? <>{`מתעדת שינת לילה 🌙 - הטיימר רץ`}</>
+                    : sleepPlan.sleeping
+                      ? <>{`${isGirl ? 'ישנה' : 'ישן'} עכשיו 😴 - הטיימר רץ`}</>
+                      : !sleepPlan.hasWakeData
+                        ? <span style={{ color: 'var(--text-muted)' }}>סמני שינה כדי לחשב מתי השנ”צ הבא</span>
+                        : sleepPlan.minutesToNextNap !== null && sleepPlan.minutesToNextNap > 0
+                          ? <>השנ”צ הבא בעוד <b>{fmtDur(sleepPlan.minutesToNextNap)}</b> {sleepPlan.nextNapAt && <span style={{ color: 'var(--text-muted)' }}>(בערך ב-{fmtTime(sleepPlan.nextNapAt)})</span>}</>
+                          : <span style={{ color: '#5C7A6A', fontWeight: 600 }}>הגיע הזמן לשנ”צ 💤</span>
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* Predicted bedtime + fewer-naps recommendation - one combined,
+                calm block. When the chained calculation lands after the age's
+                latest recommended bedtime we don't show a separate scary
+                warning; we explain the number and the suggestion together, and
+                offer a checkbox to actually drop a nap (recalculates live). */}
+            {!(timer.active && timer.isNight) && (() => {
+              const meaningfulDrop = sleepPlan.recommendFewerNaps
+                && sleepPlan.recommendedNapsRemaining !== null
+                && sleepPlan.recommendedNapsRemaining !== sleepPlan.napsRemaining
+              const showLate = !!sleepPlan.bedtime && meaningfulDrop && sleepPlan.napsRemaining > 0
+              const showCheckbox = showLate || dropOneNap
+              const baby = babyName || 'התינוק'
+              return (
+                <div className="rounded-xl px-3 py-2.5" style={showLate
+                  ? { background: 'rgba(196,120,45,0.10)', border: '1px solid rgba(196,120,45,0.25)' }
+                  : { background: 'rgba(92,122,106,0.12)', border: '1px solid rgba(92,122,106,0.2)' }}>
+                  <div className="flex items-start gap-2.5">
+                    <Moon className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: showLate ? '#C4782D' : '#5C7A6A' }} />
+                    <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>
+                      {sleepPlan.bedtime
+                        ? showLate
+                          ? <>לפי חישוב השנ”צים עד כה, על פי חלונות הערות הלילה של {baby} צפוי להתחיל בערך ב-<b>{fmtTime(sleepPlan.bedtime)}</b>. בגיל הזה מומלץ להשכיב לא יאוחר מ-<b>{sleepPlan.latestBedtimeLabel}</b> - לכן כדאי לשקול להוריד שנ”צ אחד.</>
+                          : <>הלילה של {baby} צפוי להתחיל בערך ב-<b style={{ color: '#5C7A6A' }}>{fmtTime(sleepPlan.bedtime)}</b> 🌙{dropOneNap ? <span style={{ color: 'var(--text-muted)' }}> (מחושב לפי תנומה אחת פחות)</span> : ''}</>
+                        : !sleepPlan.hasWakeData
+                          ? <span style={{ color: 'var(--text-muted)' }}>{`סמני שינה כדי לחזות מתי יתחיל הלילה של ${baby}`}</span>
+                          : <>{`הלילה של ${baby} מתקרב 🌙 כדאי להתחיל שגרת שינה`}</>
+                      }
+                    </p>
+                  </div>
+                  {showCheckbox && (
+                    <label className="flex items-center gap-2 mt-2.5 pt-2.5 cursor-pointer"
+                      style={{ borderTop: '1px solid rgba(0,0,0,0.07)' }}>
+                      <input type="checkbox" checked={dropOneNap}
+                        onChange={e => toggleDropNap(e.target.checked)}
+                        className="w-4 h-4 rounded flex-shrink-0" style={{ accentColor: '#5C7A6A' }} />
+                      <span className="text-xs" style={{ color: 'var(--text)' }}>
+                        {dropOneNap
+                          ? <>החישוב מעודכן לתנומה אחת פחות ✓ <span style={{ color: 'var(--text-muted)' }}>(אפשר לבטל כדי לחזור)</span></>
+                          : <>{`${baby} כבר מוכן${isGirl ? 'ה' : ''} לתנומה אחת פחות - עדכני את החישוב`}</>
+                        }
+                      </span>
+                    </label>
+                  )}
+                </div>
+              )
+            })()}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </>
   )
 }
