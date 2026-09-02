@@ -21,6 +21,7 @@ import {
 } from './actions'
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
+import AdminMailingList from './AdminMailingList'
 import AdminPayments, { type AdminPayment } from './AdminPayments'
 import AdminBlog, { type BlogPost } from './AdminBlog'
 import AdminCommunity, { type CommunityQuestion } from './AdminCommunity'
@@ -523,7 +524,10 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
           <AdminTasks initialTasks={adminTasks} onToast={showToast} />
         )}
         {view === 'marketing' && (
-          <AdminMarketing initialContent={adminContent} initialNotes={adminNotes} onToast={showToast} />
+          <div className="space-y-4">
+            <AdminMailingList onToast={showToast} />
+            <AdminMarketing initialContent={adminContent} initialNotes={adminNotes} onToast={showToast} />
+          </div>
         )}
         {view === 'payments' && (
           <AdminPayments initialPayments={adminPayments} onToast={showToast} />

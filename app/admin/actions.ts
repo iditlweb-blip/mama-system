@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isAdminEmail } from '@/lib/admin'
 import { sendPushToUserIds, sendPushToUser } from '@/lib/push'
+import { sendBulkEmail } from '@/lib/email'
 
 async function verifyAdmin() {
   const supabase = await createClient()
@@ -595,4 +596,98 @@ export async function deleteAnswer(id: string, questionId?: string): Promise<{ o
   } catch (e: unknown) {
     return { ok: false, error: (e as Error).message }
   }
+}
+
+// ─── Mailing list ──────────────────────────────────────────────────────────────
+// Only mothers who ticked the box at sign-up are ever in here: the column
+// defaults to false and is written from her own choice, never inferred.
+
+export interface Subscriber {
+  id: string
+  name: string | null
+  email: string
+  joinedAt: string | null
+}
+
+export async function listSubscribers(): Promise<{ ok: boolean; subscribers?: Subscriber[]; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { data, error } = await admin
+      .from('profiles')
+      .select('id, name, marketing_opt_in_at')
+      .eq('marketing_opt_in', true)
+      .limit(5000)
+    if (error) return { ok: false, error: error.message }
+
+    // Addresses live on the auth user, not the profile, so they are matched up
+    // here rather than duplicated into a second place that can drift.
+    const { data: users, error: usersErr } = await admin.auth.admin.listUsers({ perPage: 5000 })
+    if (usersErr) return { ok: false, error: usersErr.message }
+    const emailById = new Map(users.users.map(u => [u.id, u.email ?? '']))
+
+    const subscribers = (data ?? [])
+      .map(p => ({
+        id: p.id as string,
+        name: (p.name as string | null) ?? null,
+        email: emailById.get(p.id as string) ?? '',
+        joinedAt: (p.marketing_opt_in_at as string | null) ?? null,
+      }))
+      .filter(s => s.email)
+      .sort((a, b) => (b.joinedAt ?? '').localeCompare(a.joinedAt ?? ''))
+
+    return { ok: true, subscribers }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+export async function sendToMailingList(
+  subject: string,
+  body: string,
+): Promise<{ ok: boolean; sent?: number; failed?: number; error?: string }> {
+  try {
+    if (!subject.trim()) return { ok: false, error: 'צריך נושא למייל' }
+    if (!body.trim()) return { ok: false, error: 'צריך תוכן למייל' }
+
+    await verifyAdmin()
+    const listed = await listSubscribers()
+    if (!listed.ok || !listed.subscribers) return { ok: false, error: listed.error ?? 'לא הצלחנו לטעון את רשימת התפוצה' }
+
+    const result = await sendBulkEmail(
+      listed.subscribers.map(s => s.email),
+      subject.trim(),
+      renderEmailHtml(subject.trim(), body),
+    )
+    if (!result.configured || (result.sent === 0 && result.reason)) {
+      return { ok: false, error: result.reason ?? 'שליחת המיילים נכשלה' }
+    }
+    return { ok: true, sent: result.sent, failed: result.failed }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
+// Wraps the admin's plain text in the brand's colours. Line breaks become
+// paragraphs, and the text is escaped first so a stray "<" in her copy can't
+// break the markup.
+function renderEmailHtml(subject: string, body: string): string {
+  const esc = (t: string) => t
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  const paragraphs = body
+    .split(/\n{2,}/)
+    .map(p => `<p style="margin:0 0 16px;line-height:1.75;color:#3a1e2d;font-size:15px;">${esc(p).replace(/\n/g, '<br>')}</p>`)
+    .join('')
+
+  return `<!doctype html><html lang="he" dir="rtl"><body style="margin:0;padding:0;background:#F7EDE2;">
+  <div style="max-width:600px;margin:0 auto;padding:28px 20px;font-family:Arial,Helvetica,sans-serif;">
+    <div style="background:#ffffff;border-radius:18px;padding:28px;">
+      <h1 style="margin:0 0 18px;color:#7F5268;font-size:21px;font-weight:bold;">${esc(subject)}</h1>
+      ${paragraphs}
+    </div>
+    <p style="margin:18px 0 0;text-align:center;color:#9a8790;font-size:12px;line-height:1.6;">
+      קיבלת את המייל הזה כי אישרת לקבל עדכונים מ״אמא בסדר״.<br>
+      לא רוצה יותר? השיבי למייל הזה ונסיר אותך מהרשימה.
+    </p>
+  </div>
+</body></html>`
 }

@@ -90,6 +90,14 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   const [notifyCommunity, setNotifyCommunity] = useState(profile?.notify_community !== false)
   const [kupatCholim, setKupatCholim] = useState<KupatCholim | ''>(profile?.kupat_cholim || '')
 
+  // Switching from baby tracking back to pregnancy is destructive - it clears
+  // the baby's details and every logged feed, sleep and nappy. `askSwitch`
+  // holds the confirmation step; `wipeBabyOnSave` remembers that she confirmed,
+  // so the deletion happens only when she actually saves, after filling in the
+  // pregnancy details. Backing out before saving leaves everything untouched.
+  const [askSwitch,       setAskSwitch]       = useState(false)
+  const [wipeBabyOnSave,  setWipeBabyOnSave]  = useState(false)
+
   const [babyGender,    setBabyGender]    = useState<'boy' | 'girl' | ''>(
     (profile?.baby_gender as 'boy' | 'girl') || ''
   )
@@ -132,9 +140,11 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       tracking_type:       trackingType,
       due_date:            trackingType === 'pregnancy' ? (dueDate || null) : null,
       hospital_address:    trackingType === 'pregnancy' ? (hospitalAddress || null) : null,
-      baby_name:           babyName       || null,
-      baby_birthdate:      babyBirthdate  || null,
-      baby_gender:         babyGender     || null,
+      // Going back to pregnancy clears the baby out rather than leaving stale
+      // details behind a mode that no longer shows them.
+      baby_name:           wipeBabyOnSave ? null : (babyName      || null),
+      baby_birthdate:      wipeBabyOnSave ? null : (babyBirthdate || null),
+      baby_gender:         wipeBabyOnSave ? null : (babyGender    || null),
       profile_picture_url: profilePicUrl  || null,
       default_parent:      defaultParent  || null,
       show_parent_popup:   showParentPopup,
@@ -149,6 +159,23 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
 
     // Keep this device in sync with a fixed-parent choice straight away.
     setActiveParent(defaultParent || null)
+
+    // She confirmed the warning and has now saved: drop the tracking history
+    // and any timer still running, so nothing from the baby survives into
+    // pregnancy mode. Done before the profile write, so a failure here leaves
+    // her still in baby mode with her data rather than half-switched.
+    if (wipeBabyOnSave) {
+      const [{ error: logsErr }, { error: timerErr }] = await Promise.all([
+        supabase.from('baby_logs').delete().eq('user_id', userId),
+        supabase.from('active_sleep_timers').delete().eq('user_id', userId),
+      ])
+      if (logsErr || timerErr) {
+        setError('לא הצלחנו למחוק את נתוני התינוק. שום דבר לא שונה - נסי שוב.')
+        setSaving(false)
+        return
+      }
+      payload.nap_dropped_band = null
+    }
 
     const { error: saveErr } = await supabase.from('profiles').upsert(payload)
     if (saveErr) {
@@ -171,6 +198,10 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   }
 
   // ── Logout
+  // Drives which controls are worth showing: the parent-logging and sleep
+  // options only mean something once there is a baby to log.
+  const isBabyMode = trackingType === 'baby'
+
   const [loggingOut, setLoggingOut] = useState(false)
   async function handleLogout() {
     setLoggingOut(true)
@@ -261,7 +292,13 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
             { val: 'pregnancy', label: 'מעקב הריון', Icon: PregnancyIcon },
             { val: 'baby',      label: 'מעקב תינוק', Icon: Baby },
           ] as const).map(({ val, label, Icon }) => (
-            <button key={val} onClick={() => setTrackingType(val)}
+            <button key={val} onClick={() => {
+              // Only the baby → pregnancy direction destroys anything, and only
+              // when she is actually tracking a baby today.
+              const savedType = (profile?.tracking_type as 'pregnancy' | 'baby') || 'baby'
+              if (val === 'pregnancy' && savedType === 'baby') setAskSwitch(true)
+              else { setTrackingType(val); setWipeBabyOnSave(false) }
+            }}
               className="flex-1 py-2.5 text-sm font-semibold transition-colors flex items-center justify-center gap-1.5"
               style={trackingType === val
                 ? { background: '#7F5268', color: '#fff' }
@@ -324,6 +361,57 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
         )}
       </Section>
 
+      {/* Asked before the switch, not after: once she saves, the baby's logs
+          are gone for good. */}
+      {askSwitch && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-5"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setAskSwitch(false)}>
+          <div className="card w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-6 h-6 shrink-0" style={{ color: '#C0392B' }} />
+              <div>
+                <h3 className="font-semibold mb-1" style={{ color: 'var(--text)' }}>
+                  את בטוחה שאת בהריון ולא ילדת?
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  המעבר למעקב הריון ימחק את <b>כל המידע על התינוק</b> - השם, תאריך הלידה,
+                  וכל התיעוד של האכלות, שינה וחיתולים. אי אפשר לשחזר את זה.
+                </p>
+                <p className="text-sm leading-relaxed mt-2" style={{ color: 'var(--text-muted)' }}>
+                  אם כבר ילדת ורק רצית לעדכן פרטים, סגרי את החלון הזה - הכל יישאר כמו שהוא.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setTrackingType('pregnancy'); setWipeBabyOnSave(true); setAskSwitch(false) }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white"
+                style={{ background: '#C0392B' }}>
+                כן, אני בהריון
+              </button>
+              <button
+                onClick={() => setAskSwitch(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Standing reminder between confirming and saving - the switch has not
+          happened yet, and closing the page now changes nothing. */}
+      {wipeBabyOnSave && trackingType === 'pregnancy' && (
+        <div className="card" style={{ background: 'rgba(192,57,43,0.06)', border: '1px solid rgba(192,57,43,0.3)' }}>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--text)' }}>
+            <b>מלאי את פרטי ההריון למעלה ולחצי שמירה.</b> רק אז המעבר יתבצע והמידע על התינוק יימחק.
+            אם התחרטת, אפשר פשוט לבחור שוב ״מעקב תינוק״.
+          </p>
+        </div>
+      )}
+
       {/* ── WhatsApp app group (admin-controlled visibility) ──────── */}
       {whatsappGroup.visible && whatsappGroup.url && (
         <Section icon={MessageCircle} title="קבוצת הוואטסאפ של האפליקציה" color="#25D366">
@@ -343,9 +431,15 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
       {/* ── Popups & features ────────────────────────────────────── */}
       <Section icon={Bell} title="פופ-אפים והתראות" color="#5C6BA0">
         <div className="space-y-3">
-          <Toggle label="חלונית ״מי מתעד/ת עכשיו?״ בכניסה לאפליקציה"
-            checked={showParentPopup} onChange={setShowParentPopup} />
-          <Toggle label="טיימר שינה צף" checked={showSleepTimer} onChange={setShowSleepTimer} />
+          {/* Everything about logging a baby is meaningless during pregnancy,
+              and the exam reminder is meaningless once the baby is here. */}
+          {isBabyMode && (
+            <Toggle label="חלונית ״מי מתעד/ת עכשיו?״ בכניסה לאפליקציה"
+              checked={showParentPopup} onChange={setShowParentPopup} />
+          )}
+          {isBabyMode && (
+            <Toggle label="טיימר שינה צף" checked={showSleepTimer} onChange={setShowSleepTimer} />
+          )}
           <Toggle label="תזכורות (משימות ובדיקות)" checked={showReminders} onChange={setShowReminders} />
 
           <div className="pt-2 space-y-3" style={{ borderTop: '1px solid var(--border)' }}>
@@ -353,11 +447,16 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
               התראות פוש לטלפון - אפשר לבחור מה יגיע ומה לא
             </label>
             <Toggle label="תזכורות משימות" checked={notifyTasks} onChange={setNotifyTasks} />
-            <Toggle label="בדיקות הריון שעומדות להסתיים" checked={notifyExams} onChange={setNotifyExams} />
-            <Toggle label="טיימר שינה (תנומה ארוכה / תזכורת יומית)" checked={notifySleep} onChange={setNotifySleep} />
+            {!isBabyMode && (
+              <Toggle label="בדיקות הריון שעומדות להסתיים" checked={notifyExams} onChange={setNotifyExams} />
+            )}
+            {isBabyMode && (
+              <Toggle label="טיימר שינה (תנומה ארוכה / תזכורת יומית)" checked={notifySleep} onChange={setNotifySleep} />
+            )}
             <Toggle label="שאלות חדשות בקהילה" checked={notifyCommunity} onChange={setNotifyCommunity} />
           </div>
 
+          {isBabyMode && (
           <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
             <label className="text-xs font-medium block mb-1.5" style={{ color: 'var(--text-muted)' }}>
               הורה מתעד קבוע (כשנבחר, לא נשאל בכניסה)
@@ -374,6 +473,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
               ))}
             </div>
           </div>
+          )}
         </div>
       </Section>
 

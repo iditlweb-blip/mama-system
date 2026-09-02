@@ -35,7 +35,17 @@ export async function POST(req: Request) {
 
   try {
     if (event === 'register') {
-      await notifyRegistrationOnce(user.id, name, user.email ?? null, (user.app_metadata?.provider as string | undefined) ?? null)
+      // The checkbox travels on the auth user's metadata; this is the first
+      // point on the server where it can be written to the profile row the
+      // mailing list actually reads.
+      const optedIn = user.user_metadata?.marketing_opt_in === true
+      if (optedIn) {
+        await createAdminClient()
+          .from('profiles')
+          .update({ marketing_opt_in: true, marketing_opt_in_at: new Date().toISOString() })
+          .eq('id', user.id)
+      }
+      await notifyRegistrationOnce(user.id, name, user.email ?? null, (user.app_metadata?.provider as string | undefined) ?? null, optedIn)
     } else if (event === 'pwa') {
       await notifyPwaInstallOnce(user.id, name)
     } else {

@@ -23,6 +23,7 @@ export async function notifyRegistrationOnce(
   name: string | null,
   email: string | null,
   provider: string | null = null,
+  marketingOptIn = false,
 ): Promise<void> {
   const admin = createAdminClient()
   // Atomically claim the notification: only the first caller gets a row back.
@@ -37,8 +38,11 @@ export async function notifyRegistrationOnce(
   const displayName = escapeHtml(name?.trim() || 'ללא שם')
   const displayEmail = escapeHtml(email || 'ללא מייל')
   const displayVia = escapeHtml(providerLabel(provider))
+  const listLine = marketingOptIn
+    ? '\n\n📬 <b>אישרה קבלת עדכונים במייל</b> - נוספה לרשימת התפוצה'
+    : ''
   await sendTelegram(
-    `🎉 <b>נרשמה משתמשת חדשה</b>\n\nשם: <b>${displayName}</b>\nמייל: ${displayEmail}\nנרשמה דרך: <b>${displayVia}</b>`,
+    `🎉 <b>נרשמה משתמשת חדשה</b>\n\nשם: <b>${displayName}</b>\nמייל: ${displayEmail}\nנרשמה דרך: <b>${displayVia}</b>${listLine}`,
   )
 }
 

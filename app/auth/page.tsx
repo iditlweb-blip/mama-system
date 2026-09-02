@@ -38,6 +38,9 @@ export default function AuthPage() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  // Opt-in only, and unticked by default - consent has to be given, not
+  // withdrawn.
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError]     = useState('')
   const [info, setInfo]       = useState('')   // blue / neutral messages
   const [success, setSuccess] = useState('')   // green messages
@@ -64,7 +67,9 @@ export default function AuthPage() {
     if (mode === 'signup') {
       const { data, error: err } = await supabase.auth.signUp({
         email, password,
-        options: { data: { full_name: name } },
+        // Carried on the auth user so the choice survives the email-confirmation
+        // round trip; /api/notify copies it onto the profile once she lands.
+        options: { data: { full_name: name, marketing_opt_in: marketingOptIn } },
       })
       if (err) {
         setError(translateError(err.message))
@@ -253,6 +258,26 @@ export default function AuthPage() {
                   }
                 </button>
               </div>
+            )}
+
+            {/* Optional at sign-up, and unticked by default - she opts in, she
+                is never opted in for her. */}
+            {mode === 'signup' && (
+              <label className="flex items-start gap-2.5 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={marketingOptIn}
+                  onChange={e => setMarketingOptIn(e.target.checked)}
+                  className="mt-0.5 w-4 h-4 shrink-0 cursor-pointer"
+                  style={{ accentColor: '#7F5268' }}
+                />
+                <span className="text-xs leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  אשמח לקבל עדכונים על האפליקציה ועל הקהילה במייל.
+                  <span className="block mt-0.5" style={{ opacity: 0.75 }}>
+                    לא חובה, ואפשר להסיר את עצמך בכל רגע.
+                  </span>
+                </span>
+              </label>
             )}
 
             {/* Messages */}
