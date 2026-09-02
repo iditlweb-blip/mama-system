@@ -7,6 +7,12 @@
  *   EMAIL_FROM      - e.g. 'אמא בסדר <hi@moms-ok.com>', on a domain verified
  *                     with Resend, or delivery will be rejected
  *
+ * And one optional one:
+ *   EMAIL_REPLY_TO  - a mailbox that is actually read. The footer invites
+ *                     people to reply to unsubscribe, and the From: address
+ *                     sits on the sending domain, which usually has no inbox -
+ *                     without this, those replies go nowhere.
+ *
  * With either missing, sends are skipped and the caller is told so it can say
  * as much out loud - the same pattern the push and Telegram helpers use, so the
  * app keeps working before email is configured.
@@ -25,22 +31,33 @@ export interface BulkResult {
   reason?: string
 }
 
-function config(): { key: string; from: string } | null {
+function config(): { key: string; from: string; replyTo?: string } | null {
   const key = process.env.RESEND_API_KEY
   const from = process.env.EMAIL_FROM
   if (!key || !from) {
     console.warn('[email] RESEND_API_KEY / EMAIL_FROM not set - skipping send')
     return null
   }
-  return { key, from }
+  return { key, from, replyTo: process.env.EMAIL_REPLY_TO || undefined }
 }
 
-async function sendOne(key: string, from: string, to: string, subject: string, html: string): Promise<boolean> {
+async function sendOne(
+  cfg: { key: string; from: string; replyTo?: string },
+  to: string,
+  subject: string,
+  html: string,
+): Promise<boolean> {
   try {
     const res = await fetch(ENDPOINT, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from, to: [to], subject, html }),
+      headers: { Authorization: `Bearer ${cfg.key}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: cfg.from,
+        to: [to],
+        subject,
+        html,
+        ...(cfg.replyTo ? { reply_to: cfg.replyTo } : {}),
+      }),
     })
     if (!res.ok) {
       console.error('[email] send failed:', to, res.status, await res.text().catch(() => ''))
@@ -74,7 +91,7 @@ export async function sendBulkEmail(
   let failed = 0
   for (let i = 0; i < clean.length; i += CONCURRENCY) {
     const batch = clean.slice(i, i + CONCURRENCY)
-    const results = await Promise.all(batch.map(to => sendOne(cfg.key, cfg.from, to, subject, html)))
+    const results = await Promise.all(batch.map(to => sendOne(cfg, to, subject, html)))
     for (const ok of results) ok ? sent++ : failed++
   }
   return { configured: true, sent, failed }
