@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@supabase/ssr'
 import { PartyPopper, UserRound, Check } from 'lucide-react'
+import Confetti from '@/components/Confetti'
 
 interface Props {
   onClose: () => void
@@ -50,7 +51,12 @@ export default function GaveBirthModal({ onClose }: Props) {
   }
 
   return (
-    <div
+    <>
+      {/* Fires the moment the modal opens - this is the one moment in the app
+          that deserves it. It draws over the modal but ignores clicks, so the
+          form is usable while the pieces are still falling. */}
+      <Confetti />
+      <div
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
         background: 'rgba(0,0,0,0.5)',
@@ -201,6 +207,7 @@ export default function GaveBirthModal({ onClose }: Props) {
           </div>
         </form>
       </div>
-    </div>
+      </div>
+    </>
   )
 }
