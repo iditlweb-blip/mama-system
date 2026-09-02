@@ -667,6 +667,34 @@ export async function sendToMailingList(
   }
 }
 
+/**
+ * Sends the drafted message to the admin's own address and nobody else.
+ * Configuration problems (a missing key, an unverified sending domain) only
+ * ever show up on a real send, so this makes the first one harmless - and it
+ * doubles as a preview of how the email actually lands in an inbox.
+ */
+export async function sendTestEmail(
+  subject: string,
+  body: string,
+): Promise<{ ok: boolean; to?: string; error?: string }> {
+  try {
+    if (!subject.trim()) return { ok: false, error: 'צריך נושא למייל' }
+    if (!body.trim()) return { ok: false, error: 'צריך תוכן למייל' }
+
+    await verifyAdmin()
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    const to = user?.email
+    if (!to) return { ok: false, error: 'לא מצאנו את כתובת המייל שלך' }
+
+    const result = await sendBulkEmail([to], `[בדיקה] ${subject.trim()}`, renderEmailHtml(subject.trim(), body))
+    if (result.sent === 0) return { ok: false, error: result.reason ?? 'השליחה נכשלה - בדקי את הלוגים ב-Resend' }
+    return { ok: true, to }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // Wraps the admin's plain text in the brand's colours. Line breaks become
 // paragraphs, and the text is escaped first so a stray "<" in her copy can't
 // break the markup.

@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState, useTransition } from 'react'
-import { Mail, Loader2, Send, Users, RefreshCw } from 'lucide-react'
-import { listSubscribers, sendToMailingList, type Subscriber } from './actions'
+import { Mail, Loader2, Send, Users, RefreshCw, FlaskConical } from 'lucide-react'
+import { listSubscribers, sendToMailingList, sendTestEmail, type Subscriber } from './actions'
 
 /**
  * The mailing list: everyone who ticked "send me updates" at sign-up, and a
@@ -29,6 +29,13 @@ export default function AdminMailingList({ onToast }: { onToast: (msg: string) =
     })
   }
   useEffect(load, [])
+
+  function sendTest() {
+    startTransition(async () => {
+      const res = await sendTestEmail(subject, body)
+      onToast(res.ok ? `נשלח אלייך ל-${res.to} - בדקי בתיבה` : (res.error ?? 'הבדיקה נכשלה'))
+    })
+  }
 
   function send() {
     startTransition(async () => {
@@ -79,14 +86,26 @@ export default function AdminMailingList({ onToast }: { onToast: (msg: string) =
         />
 
         {!confirming ? (
-          <button
-            onClick={() => setConfirming(true)}
-            disabled={!subject.trim() || !body.trim() || count === 0}
-            className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
-            style={{ background: '#7F5268' }}>
-            <Send className="w-4 h-4" />
-            שליחה לכל הרשימה
-          </button>
+          <div className="space-y-2">
+            {/* Always available, and the only way to check the setup before
+                anyone real receives anything. */}
+            <button
+              onClick={sendTest}
+              disabled={pending || !subject.trim() || !body.trim()}
+              className="w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background: 'var(--bg)', color: '#7F5268', border: '1px solid var(--border)' }}>
+              {pending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FlaskConical className="w-4 h-4" />}
+              שליחת בדיקה אלייך בלבד
+            </button>
+            <button
+              onClick={() => setConfirming(true)}
+              disabled={!subject.trim() || !body.trim() || count === 0}
+              className="w-full py-3 rounded-xl font-semibold text-white flex items-center justify-center gap-2 disabled:opacity-50"
+              style={{ background: '#7F5268' }}>
+              <Send className="w-4 h-4" />
+              שליחה לכל הרשימה
+            </button>
+          </div>
         ) : (
           // Sending to the whole list can't be taken back, so it takes a second
           // deliberate click rather than one.
