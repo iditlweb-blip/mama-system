@@ -39,19 +39,15 @@ const DOME_RISE = 20
 const DOME_WIDTH = 78.7
 // Every icon is bottom-aligned this far above the bar's lower edge, so the
 // active one grows upward into the dome instead of shifting the row.
-const ICON_BASELINE = 12
+const ICON_BASELINE = 2
 
 type IconProps = { size: number }
 
 function ProductsIcon({ size }: IconProps) {
-  // The exported artwork drew this one at strokeWidth 1.5 while every sibling
-  // icon (tracker, community) is 2 - a real thinner/lighter line that reads as
-  // fragmented at small sizes, particularly around the little heart sitting
-  // off the bag's corner. Bumped to match so it reads as one complete glyph.
   return (
     <svg width={size} height={size} viewBox="0 0 25 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13.0208 23.8335H10.4167C6.97917 23.8335 5.26042 23.8335 4.19271 22.7231C3.125 21.6127 3.125 19.8252 3.125 16.2502V11.9168C3.125 9.87366 3.125 8.85316 3.73542 8.21833C4.34583 7.5835 5.32708 7.5835 7.29167 7.5835H15.625C17.5896 7.5835 18.5708 7.5835 19.1812 8.21833C19.7917 8.85316 19.7917 9.87366 19.7917 11.9168V14.0835" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M15.6253 10.2917C15.6253 6.10358 13.7607 2.16675 11.4587 2.16675C9.15658 2.16675 7.29199 6.10358 7.29199 10.2917M18.2295 23.8334C18.2295 23.8334 14.5837 21.5389 14.5837 19.3192C14.5837 18.2228 15.3514 17.3334 16.4066 17.3334C16.9535 17.3334 17.5003 17.5252 18.2295 18.2889C18.9587 17.5241 19.5055 17.3334 20.0524 17.3334C21.1076 17.3334 21.8753 18.2217 21.8753 19.3192C21.8753 21.54 18.2295 23.8334 18.2295 23.8334Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.0208 23.8335H10.4167C6.97917 23.8335 5.26042 23.8335 4.19271 22.7231C3.125 21.6127 3.125 19.8252 3.125 16.2502V11.9168C3.125 9.87366 3.125 8.85316 3.73542 8.21833C4.34583 7.5835 5.32708 7.5835 7.29167 7.5835H15.625C17.5896 7.5835 18.5708 7.5835 19.1812 8.21833C19.7917 8.85316 19.7917 9.87366 19.7917 11.9168V14.0835" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15.6253 10.2917C15.6253 6.10358 13.7607 2.16675 11.4587 2.16675C9.15658 2.16675 7.29199 6.10358 7.29199 10.2917M18.2295 23.8334C18.2295 23.8334 14.5837 21.5389 14.5837 19.3192C14.5837 18.2228 15.3514 17.3334 16.4066 17.3334C16.9535 17.3334 17.5003 17.5252 18.2295 18.2889C18.9587 17.5241 19.5055 17.3334 20.0524 17.3334C21.1076 17.3334 21.8753 18.2217 21.8753 19.3192C21.8753 21.54 18.2295 23.8334 18.2295 23.8334Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -107,9 +103,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
   // its own viewBox, so it sits slightly under the others to look the same
   // weight beside them.
   const items = [
-    // Marked out specifically as reading small/cut-off next to its siblings -
-    // 15px bigger than the other resting icons.
-    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 45 },
+    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 30 },
     { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 30 },
     { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 30 },
     { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 30 },
@@ -170,6 +164,12 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
               left: `clamp(${DOME_WIDTH / 2}px, ${domeLeft}%, calc(100% - ${DOME_WIDTH / 2}px))`,
               transform: 'translateX(-50%)',
               display: 'block',
+              // Explicit and below the icon row (see the row's own zIndex) -
+              // without this, a positioned element with no z-index still
+              // paints above ordinary in-flow content regardless of DOM order,
+              // which is what was covering the active icon as it grew up into
+              // this shape.
+              zIndex: 0,
             }}
           >
             <path
@@ -179,7 +179,12 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           </svg>
         )}
 
-        <div style={{ display: 'flex', alignItems: 'flex-end', height: BAR_HEIGHT, paddingBottom: ICON_BASELINE, overflow: 'visible' }}>
+        {/* The icon row must outrank the dome above it: without an explicit
+            position + z-index here, this being an ordinary static element
+            would paint BELOW the dome's positioned layer no matter which one
+            comes later in the DOM - which is exactly what was slicing the
+            active icon off as it grew up into the dome's shape. */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'flex-end', height: BAR_HEIGHT, paddingBottom: ICON_BASELINE, overflow: 'visible' }}>
           {items.map(({ href, label, Icon, size }, i) => {
             const isActive = i === activeIndex
             return (
