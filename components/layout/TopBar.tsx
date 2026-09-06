@@ -90,7 +90,15 @@ export default function TopBar({ babyName, profilePicUrl, switchOptions }: Props
   return (
     <header
       className="flex items-center justify-between py-3.5 border-b pr-16 pl-6 md:px-6"
-      style={{ background: '#fff', borderColor: 'var(--border)' }}
+      style={{
+        background: '#fff',
+        borderColor: 'var(--border)',
+        // Since the page now opts into viewport-fit=cover (so the bottom nav's
+        // safe-area padding actually means something), the top of the page
+        // extends under the status bar/notch too - without this the header's
+        // own content renders behind it instead of below it.
+        paddingTop: 'calc(0.875rem + env(safe-area-inset-top))',
+      }}
     >
       {/* Greeting */}
       <div>

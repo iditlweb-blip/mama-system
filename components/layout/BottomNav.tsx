@@ -23,9 +23,13 @@ const ICON_SIZE_ACTIVE = 50
 // The icon row's own height; the bar is taller than this, because it also
 // pads out below the icons to cover the whole bottom strip of the screen.
 const BAR_HEIGHT = 49
-// Clearance under the icons, on top of the device's own safe-area inset. Keeps
-// the glyphs off the bar's edge and clear of the system gesture bar.
-const BAR_PAD_BOTTOM = 18
+// Small manual clearance under the icons, ON TOP OF the device's own
+// safe-area inset (now that viewport-fit=cover makes that inset real - see
+// app/layout.tsx - it already provides the real ~34px a notched phone needs
+// to clear its home-indicator gesture bar). This constant only needs to cover
+// the gap on devices with NO inset at all; stacking a large number here on
+// top of a real inset is what made the bar look oversized.
+const BAR_PAD_BOTTOM = 8
 // The dome grew with the icons, scaled uniformly from the design's curve so it
 // keeps its shape. Sized so the 50px active glyph clears it by roughly the same
 // margin the design gives its 44px one - the artwork's own padding inside its
@@ -40,10 +44,14 @@ const ICON_BASELINE = 12
 type IconProps = { size: number }
 
 function ProductsIcon({ size }: IconProps) {
+  // The exported artwork drew this one at strokeWidth 1.5 while every sibling
+  // icon (tracker, community) is 2 - a real thinner/lighter line that reads as
+  // fragmented at small sizes, particularly around the little heart sitting
+  // off the bag's corner. Bumped to match so it reads as one complete glyph.
   return (
     <svg width={size} height={size} viewBox="0 0 25 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M13.0208 23.8335H10.4167C6.97917 23.8335 5.26042 23.8335 4.19271 22.7231C3.125 21.6127 3.125 19.8252 3.125 16.2502V11.9168C3.125 9.87366 3.125 8.85316 3.73542 8.21833C4.34583 7.5835 5.32708 7.5835 7.29167 7.5835H15.625C17.5896 7.5835 18.5708 7.5835 19.1812 8.21833C19.7917 8.85316 19.7917 9.87366 19.7917 11.9168V14.0835" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M15.6253 10.2917C15.6253 6.10358 13.7607 2.16675 11.4587 2.16675C9.15658 2.16675 7.29199 6.10358 7.29199 10.2917M18.2295 23.8334C18.2295 23.8334 14.5837 21.5389 14.5837 19.3192C14.5837 18.2228 15.3514 17.3334 16.4066 17.3334C16.9535 17.3334 17.5003 17.5252 18.2295 18.2889C18.9587 17.5241 19.5055 17.3334 20.0524 17.3334C21.1076 17.3334 21.8753 18.2217 21.8753 19.3192C21.8753 21.54 18.2295 23.8334 18.2295 23.8334Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M13.0208 23.8335H10.4167C6.97917 23.8335 5.26042 23.8335 4.19271 22.7231C3.125 21.6127 3.125 19.8252 3.125 16.2502V11.9168C3.125 9.87366 3.125 8.85316 3.73542 8.21833C4.34583 7.5835 5.32708 7.5835 7.29167 7.5835H15.625C17.5896 7.5835 18.5708 7.5835 19.1812 8.21833C19.7917 8.85316 19.7917 9.87366 19.7917 11.9168V14.0835" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M15.6253 10.2917C15.6253 6.10358 13.7607 2.16675 11.4587 2.16675C9.15658 2.16675 7.29199 6.10358 7.29199 10.2917M18.2295 23.8334C18.2295 23.8334 14.5837 21.5389 14.5837 19.3192C14.5837 18.2228 15.3514 17.3334 16.4066 17.3334C16.9535 17.3334 17.5003 17.5252 18.2295 18.2889C18.9587 17.5241 19.5055 17.3334 20.0524 17.3334C21.1076 17.3334 21.8753 18.2217 21.8753 19.3192C21.8753 21.54 18.2295 23.8334 18.2295 23.8334Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
@@ -99,7 +107,9 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
   // its own viewBox, so it sits slightly under the others to look the same
   // weight beside them.
   const items = [
-    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 30 },
+    // Marked out specifically as reading small/cut-off next to its siblings -
+    // 15px bigger than the other resting icons.
+    { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 45 },
     { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 30 },
     { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 30 },
     { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 30 },
