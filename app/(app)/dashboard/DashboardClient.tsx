@@ -56,7 +56,6 @@ interface Props {
   motivation: string
   babyWeeks: number
   babyAgeLabel: string
-  nextMilestone: string
   lastFeedAgo: string | null
   lastSleepAgo: string | null
   todayLogs: BabyLog[]
@@ -103,7 +102,7 @@ function fmtDurShort(min: number): string {
 
 export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
-  nextMilestone, todayLogs: initialLogs,
+  todayLogs: initialLogs,
   todaySchedule: initialSchedule, isPregnancy, dueDate,
   pregnancyTests: initialPregnancyTests,
 }: Props) {
@@ -984,28 +983,6 @@ export default function DashboardClient({
           </div>
         )}
       </div>
-
-      {/* ── Short developmental info for current age (baby only) ── */}
-      {!isPregnancy && profile?.baby_name && nextMilestone && (
-        <div className="card" style={{ background: 'rgba(92,122,106,0.06)', borderColor: 'rgba(92,122,106,0.16)' }}>
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="font-medium text-sm flex items-center gap-2" style={{ color: 'var(--text)' }}>
-              <Sparkles className="w-3.5 h-3.5" style={{ color: '#5C7A6A' }} />
-              מה קורה בגיל הזה
-            </h2>
-            <span className="text-xs font-medium px-3 py-1 rounded-full" style={{ background: 'rgba(92,122,106,0.12)', color: '#5C7A6A' }}>
-              {babyAgeLabel}
-            </span>
-          </div>
-          <p className="text-sm font-light leading-relaxed mb-3" style={{ color: 'var(--text-muted)' }}>
-            {nextMilestone}
-          </p>
-          <Link href="/development" className="flex items-center gap-1 text-xs font-medium" style={{ color: 'var(--primary)' }}>
-            עוד על ההתפתחות
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-      )}
 
       {/* ── Products that may interest you (teaser) ── */}
       <Link

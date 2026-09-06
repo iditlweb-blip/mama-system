@@ -34,7 +34,6 @@ export default async function DashboardPage() {
   // Compute baby age
   let babyWeeks = 0
   let babyAgeLabel = ''
-  let nextMilestone = ''
 
   if (profile?.baby_birthdate) {
     const birth = new Date(profile.baby_birthdate)
@@ -61,22 +60,6 @@ export default async function DashboardPage() {
         : `${genderPrefix} ${years} שנים`
     }
 
-    const milestones = [
-      { week: 4, text: 'חיוך חברתי ראשון' },
-      { week: 8, text: 'מעקב עיניים אחרי חפצים' },
-      { week: 12, text: 'הרמת ראש בשכיבה על הבטן' },
-      { week: 16, text: 'אחיזת חפצים ביד' },
-      { week: 20, text: 'הפיכה מגב לבטן' },
-      { week: 24, text: 'ישיבה עם תמיכה' },
-      { week: 28, text: 'זחילה ראשונה' },
-      { week: 32, text: 'עמידה עם תמיכה' },
-      { week: 36, text: 'מילים ראשונות' },
-      { week: 40, text: 'צעדים ראשונים' },
-      { week: 44, text: 'הבנת הוראות פשוטות' },
-      { week: 52, text: 'יום הולדת ראשון!' },
-    ]
-    const next = milestones.find(m => m.week > babyWeeks)
-    if (next) nextMilestone = `עוד ${next.week - babyWeeks} שבועות - ${next.text}`
   }
 
   // Last feed/sleep
@@ -93,7 +76,6 @@ export default async function DashboardPage() {
       motivation={motivation}
       babyWeeks={babyWeeks}
       babyAgeLabel={babyAgeLabel}
-      nextMilestone={nextMilestone}
       lastFeedAgo={lastFeedAgo}
       lastSleepAgo={lastSleepAgo}
       todayLogs={logs || []}

@@ -11,6 +11,7 @@ import RemindersPopup from '@/components/RemindersPopup'
 import ParentPopup from '@/components/ParentPopup'
 import PushPermissionPrompt from '@/components/PushPermissionPrompt'
 import PushResync from '@/components/PushResync'
+import ScrollToTopOnNavigate from '@/components/layout/ScrollToTopOnNavigate'
 import { createClient } from '@/lib/supabase/server'
 import { isAdminEmail } from '@/lib/admin'
 import { switchOptionsFor } from '@/lib/switchProfiles'
@@ -42,7 +43,11 @@ export default async function AppShell({ children }: { children: React.ReactNode
   const showParentPopup = profile?.show_parent_popup !== false
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg)' }}>
+    // 100dvh, not 100vh: on a phone, 100vh is the height with the browser's
+    // chrome collapsed, so on load the layout is taller than what is actually
+    // visible and the top bar starts pushed off screen. dvh tracks the real
+    // viewport. The vh value stays as a fallback for anything that lacks dvh.
+    <div className="flex overflow-hidden" style={{ background: 'var(--bg)', height: '100vh', maxHeight: '100dvh' }}>
       <PreloaderLottie />
       <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} adminAccess={adminAccess} />
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -54,7 +59,11 @@ export default async function AppShell({ children }: { children: React.ReactNode
         />
         {profile?.tracking_type !== 'pregnancy' && showSleepTimer && <GlobalTimerBar userId={userId!} />}
         {profile?.tracking_type === 'pregnancy' && <ContractionTimerBar userId={userId!} />}
-        <main className="flex-1 overflow-y-auto">
+        {/* Scrolling happens in here rather than on the document, so the
+            router's own scroll restoration doesn't reach it - every navigation
+            would otherwise open the new page at the previous page's offset. */}
+        <main id="app-scroll" className="flex-1 overflow-y-auto">
+          <ScrollToTopOnNavigate />
           <div className="w-full px-4 md:px-8 pt-4 md:pt-6 pb-[calc(64px+env(safe-area-inset-bottom)+5rem)] md:pb-8">
             {children}
           </div>

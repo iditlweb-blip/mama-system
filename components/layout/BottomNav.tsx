@@ -20,9 +20,12 @@ import { usePathname } from 'next/navigation'
 const BAR_COLOR = '#7F5268'
 const ICON_COLOR = '#F2E6DC'
 const ICON_SIZE_ACTIVE = 50
+// The icon row's own height; the bar is taller than this, because it also
+// pads out below the icons to cover the whole bottom strip of the screen.
 const BAR_HEIGHT = 49
-// The bar floats clear of the screen edge, above the home indicator.
-const BAR_LIFT = 10
+// Clearance under the icons, on top of the device's own safe-area inset. Keeps
+// the glyphs off the bar's edge and clear of the system gesture bar.
+const BAR_PAD_BOTTOM = 14
 // The dome grew with the icons, scaled uniformly from the design's curve so it
 // keeps its shape. Sized so the 50px active glyph clears it by roughly the same
 // margin the design gives its 44px one - the artwork's own padding inside its
@@ -123,10 +126,11 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           right: 0,
           zIndex: 100,
           background: BAR_COLOR,
-          borderRadius: 10,
-          // Lifted clear of the screen edge; the safe-area inset keeps it above
-          // the home indicator on phones that have one.
-          bottom: `calc(${BAR_LIFT}px + env(safe-area-inset-bottom))`,
+          // Only the top corners: the bar runs to the very bottom of the
+          // screen, so rounding the lower ones would just show the page behind.
+          borderRadius: '10px 10px 0 0',
+          bottom: 0,
+          paddingBottom: `calc(${BAR_PAD_BOTTOM}px + env(safe-area-inset-bottom))`,
           // The active icon deliberately grows past the bar's top edge into the
           // dome, so nothing here may clip it.
           overflow: 'visible',
@@ -194,7 +198,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
           .bottom-nav { display: none !important; }
           .bottom-nav-spacer { display: none !important; }
         }
-        .bottom-nav-spacer { height: calc(${BAR_HEIGHT + BAR_LIFT}px + env(safe-area-inset-bottom)); }
+        .bottom-nav-spacer { height: calc(${BAR_HEIGHT + BAR_PAD_BOTTOM}px + env(safe-area-inset-bottom)); }
         /* Animate the icon growing and the dome sliding, so switching tab reads
            as one shape moving rather than two things snapping. */
         .bottom-nav svg { transition: width 0.22s ease, height 0.22s ease; }
