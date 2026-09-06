@@ -52,6 +52,7 @@ export default async function AdminPage() {
     { data: products },
     { data: analyticsData },
     { data: productsSetting },
+    { data: chatSetting },
     { data: whatsappSetting },
     { data: proFormSetting },
     { data: adminTasks },
@@ -72,6 +73,7 @@ export default async function AdminPage() {
     admin.from('products').select('*').order('sort_order').limit(100),
     admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
     admin.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
+    admin.from('app_settings').select('value').eq('key', 'chat_enabled').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'whatsapp_group').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'pro_form').maybeSingle(),
     admin.from('admin_tasks').select('*').order('created_at', { ascending: false }).limit(200),
@@ -84,6 +86,8 @@ export default async function AdminPage() {
     admin.from('community_questions').select('*, community_answers(count)').order('created_at', { ascending: false }).limit(200),
   ])
   const productsEnabled = productsSetting?.value === true
+  // Off by default (no row yet = disabled) - see setChatEnabled for why.
+  const chatEnabled = chatSetting?.value === true
   const waVal = (whatsappSetting?.value ?? {}) as { url?: string; visible?: boolean }
   const whatsappGroup = { url: waVal.url ?? '', visible: waVal.visible ?? false }
 
@@ -189,6 +193,7 @@ export default async function AdminPage() {
       professionals={professionals ?? []}
       products={products ?? []}
       productsEnabled={productsEnabled}
+      chatEnabled={chatEnabled}
       whatsappGroup={whatsappGroup}
       proForm={proForm}
       adminTasks={adminTasks ?? []}

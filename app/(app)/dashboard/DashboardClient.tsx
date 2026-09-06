@@ -63,6 +63,8 @@ interface Props {
   isPregnancy: boolean
   dueDate: string | null
   pregnancyTests: PregnancyTest[]
+  // Chat is pulled out temporarily, admin-toggled back - see AppShell.
+  chatEnabled: boolean
 }
 
 const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
@@ -104,7 +106,7 @@ export default function DashboardClient({
   userId, profile, tasks: initialTasks, motivation, babyWeeks, babyAgeLabel,
   todayLogs: initialLogs,
   todaySchedule: initialSchedule, isPregnancy, dueDate,
-  pregnancyTests: initialPregnancyTests,
+  pregnancyTests: initialPregnancyTests, chatEnabled,
 }: Props) {
   const supabase = createClient()
   const timer = useSleepTimer(userId)
@@ -1219,7 +1221,8 @@ export default function DashboardClient({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
           { href: '/development', label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות', Icon: NavBabyIcon },
-          { href: '/chat',        label: "AI",      Icon: NavChatIcon },
+          // Chat is pulled out temporarily (no row = disabled) - see AppShell.
+          ...(chatEnabled ? [{ href: '/chat', label: 'AI', Icon: NavChatIcon }] : []),
           { href: '/tasks',       label: 'משימות',  Icon: NavTaskIcon },
           { href: '/tracker',     label: 'מעקב',    Icon: null },
         ].map(({ href, label, Icon }) => (

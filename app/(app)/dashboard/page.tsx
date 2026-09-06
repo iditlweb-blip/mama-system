@@ -10,12 +10,15 @@ export default async function DashboardPage() {
   const todayDow = new Date().getDay()
   // `profile` reuses the request-cached row already fetched by the layout, so
   // it costs nothing extra here. The rest run in parallel.
-  const [profile, { data: tasks }, { data: logs }, { data: todaySchedule }] = await Promise.all([
+  const [profile, { data: tasks }, { data: logs }, { data: todaySchedule }, { data: chatSetting }] = await Promise.all([
     getProfile(),
     supabase.from('tasks').select('*').eq('user_id', userId!).in('status', ['todo', 'inprogress']).order('created_at', { ascending: false }).limit(5),
     supabase.from('baby_logs').select('*').eq('user_id', userId!).or(`start_time.gte.${new Date().toISOString().split('T')[0]},end_time.gte.${new Date().toISOString().split('T')[0]}`).order('start_time', { ascending: false }).limit(10),
     supabase.from('weekly_schedule').select('*').eq('user_id', userId!).eq('day_of_week', todayDow).order('start_time'),
+    // Chat is pulled out temporarily (no row = disabled) - see AppShell/actions.
+    supabase.from('app_settings').select('value').eq('key', 'chat_enabled').maybeSingle(),
   ])
+  const chatEnabled = chatSetting?.value === true
 
   // Pregnancy mode: fetch the woman's tests so the dashboard can show upcoming
   // tests + quick-add instead of the baby feed/sleep widgets.
@@ -83,6 +86,7 @@ export default async function DashboardPage() {
       isPregnancy={isPregnancy}
       dueDate={profile?.due_date ?? null}
       pregnancyTests={pregnancyTests}
+      chatEnabled={chatEnabled}
     />
   )
 }

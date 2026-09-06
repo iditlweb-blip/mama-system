@@ -17,7 +17,7 @@ import {
   deleteUser, sendPasswordReset, createUserByAdmin,
   upsertProfessional, deleteProfessional,
   upsertProduct, deleteProduct, fetchProductImage,
-  setProductsEnabled, setWhatsappGroup, setProForm as saveProFormLinks,
+  setProductsEnabled, setChatEnabled, setWhatsappGroup, setProForm as saveProFormLinks,
 } from './actions'
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
@@ -89,6 +89,7 @@ interface Props {
   professionals: Professional[]
   products: Product[]
   productsEnabled: boolean
+  chatEnabled: boolean
   whatsappGroup: { url: string; visible: boolean }
   proForm: { formUrl: string; sheetUrl: string }
   adminTasks: AdminTask[]
@@ -104,7 +105,7 @@ type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
 type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments' | 'blog' | 'community'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, chatEnabled: initChatEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   // A Telegram/push notification link (e.g. "?view=community") should land
   // directly on the right tab instead of the default overview.
@@ -119,6 +120,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   const [products, setProducts] = useState(initProducts)
   const [productsEnabled, setProductsEnabledState] = useState(initProductsEnabled)
   const [togglingProducts, setTogglingProducts] = useState(false)
+  const [chatEnabled, setChatEnabledState] = useState(initChatEnabled)
+  const [togglingChat, setTogglingChat] = useState(false)
 
   // WhatsApp group settings (link + show/hide)
   const [waUrl, setWaUrl]         = useState(whatsappGroup.url)
@@ -186,6 +189,19 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     if (res.ok) {
       setProductsEnabledState(next)
       showToast(next ? 'עמוד המוצרים הופעל' : 'עמוד המוצרים כובה')
+    } else {
+      showToast(res.error ?? 'שגיאה בעדכון', false)
+    }
+  }
+
+  async function handleToggleChat() {
+    const next = !chatEnabled
+    setTogglingChat(true)
+    const res = await setChatEnabled(next)
+    setTogglingChat(false)
+    if (res.ok) {
+      setChatEnabledState(next)
+      showToast(next ? "הצ'אט הופעל" : "הצ'אט כובה")
     } else {
       showToast(res.error ?? 'שגיאה בעדכון', false)
     }
@@ -535,6 +551,29 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
         {view === 'overview' && (
         <>
+        {/* Chat on/off - pulled temporarily out of the sidebar, bottom nav,
+            dashboard quick actions and the marketing site; flip this to bring
+            it back everywhere at once. /chat itself redirects home while off. */}
+        <div className="flex items-center justify-between gap-3 mb-6 p-3 rounded-xl border flex-wrap"
+          style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
+          <div>
+            <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>צ'אט AI</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {chatEnabled ? 'פעיל - מוצג בתפריטים ובדשבורד' : 'כבוי - מוסר מהתפריטים, /chat מפנה לדשבורד'}
+            </p>
+          </div>
+          <button
+            onClick={handleToggleChat}
+            disabled={togglingChat}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+            style={{ background: chatEnabled ? '#4A7C59' : '#9CA3AF' }}>
+            {togglingChat
+              ? <Loader2 className="w-4 h-4 animate-spin" />
+              : chatEnabled ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {chatEnabled ? "הצ'אט מופעל" : "הצ'אט כבוי"}
+          </button>
+        </div>
+
         {/* Stats grid */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
           <StatCard icon={Users}      color="#7F5268" label="משתמשות רשומות" value={stats.total}       />

@@ -95,6 +95,28 @@ export async function setProductsEnabled(enabled: boolean): Promise<{ ok: boolea
   }
 }
 
+// ─── App settings: AI chat on/off toggle ────────────────────────────────────────
+// Chat is off by default (no row = disabled) - it was pulled temporarily out of
+// the sidebar, bottom nav, dashboard quick actions and the marketing site; this
+// is what brings it back everywhere at once. /chat itself redirects home while
+// this is off, so a stale link or a bookmark can't reach it either.
+export async function setChatEnabled(enabled: boolean): Promise<{ ok: boolean; error?: string }> {
+  try {
+    const admin = await verifyAdmin()
+    const { error } = await admin.from('app_settings').upsert(
+      { key: 'chat_enabled', value: enabled, updated_at: new Date().toISOString() },
+      { onConflict: 'key' },
+    )
+    if (error) return { ok: false, error: error.message }
+    revalidatePath('/admin')
+    revalidatePath('/dashboard')
+    revalidatePath('/chat')
+    return { ok: true }
+  } catch (e: unknown) {
+    return { ok: false, error: (e as Error).message }
+  }
+}
+
 // ─── App settings: WhatsApp group link + visibility ────────────────────────────
 export async function setWhatsappGroup(url: string, visible: boolean): Promise<{ ok: boolean; error?: string }> {
   try {

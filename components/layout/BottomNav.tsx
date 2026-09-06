@@ -69,13 +69,10 @@ function HomeIcon({ size }: IconProps) {
   )
 }
 
-function ChatIcon({ size }: IconProps) {
-  // The exported file wrapped this in a clipPath identical to the viewBox, so
-  // it clipped nothing - dropped here to avoid a duplicate id on the page.
+function TasksIcon({ size }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M2.5 1.25C2.16848 1.25 1.85054 1.3817 1.61612 1.61612C1.3817 1.85054 1.25 2.16848 1.25 2.5V12.5C1.25 12.8315 1.3817 13.1495 1.61612 13.3839C1.85054 13.6183 2.16848 13.75 2.5 13.75H14.4825C15.1455 13.7501 15.7813 14.0136 16.25 14.4825L18.75 16.9825V2.5C18.75 2.16848 18.6183 1.85054 18.3839 1.61612C18.1495 1.3817 17.8315 1.25 17.5 1.25H2.5ZM17.5 0C18.163 0 18.7989 0.263392 19.2678 0.732233C19.7366 1.20107 20 1.83696 20 2.5V18.4913C20 18.6149 19.9633 18.7358 19.8945 18.8386C19.8257 18.9414 19.728 19.0215 19.6138 19.0687C19.4995 19.116 19.3737 19.1282 19.2525 19.104C19.1312 19.0797 19.0198 19.0201 18.9325 18.9325L15.3663 15.3663C15.1319 15.1318 14.814 15.0001 14.4825 15H2.5C1.83696 15 1.20107 14.7366 0.732233 14.2678C0.263392 13.7989 0 13.163 0 12.5V2.5C0 1.83696 0.263392 1.20107 0.732233 0.732233C1.20107 0.263392 1.83696 0 2.5 0L17.5 0Z" fill="currentColor" />
-      <path d="M9.99968 4.99119C12.0797 2.85244 17.2809 6.59494 9.99968 11.4062C2.71843 6.59369 7.91968 2.85244 9.99968 4.99119Z" fill="currentColor" />
+      <path d="M10 2C5.58 2 2 5.58 2 10C2 14.42 5.58 18 10 18C14.42 18 18 14.42 18 10C18 5.58 14.42 2 10 2ZM9.385 14.66H8.045L4.805 10.12L6.146 8.87L8.715 11.27L13.856 5.339L15.196 6.279L9.385 14.66Z" fill="currentColor" />
     </svg>
   )
 }
@@ -97,17 +94,17 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
 
   // Laid out right-to-left (the page is RTL), so the first entry sits on the
   // right and "בית" lands dead centre - matching the design's left-to-right
-  // run of chat, community, home, tracker, products.
+  // run of tasks, community, home, tracker, products.
   //
-  // `size` is the resting size. The chat glyph is drawn a little larger inside
-  // its own viewBox, so it sits slightly under the others to look the same
-  // weight beside them.
+  // Chat used to sit in the tasks slot; it was pulled out (temporarily,
+  // admin-toggled back - see AppShell/Sidebar) and this slot given to tasks
+  // instead, unconditionally - that swap doesn't reverse when chat comes back.
   const items = [
     { href: '/products', label: 'מוצרים', Icon: ProductsIcon, size: 30 },
     { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 30 },
     { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 30 },
     { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 30 },
-    { href: '/chat', label: "צ'אט AI", Icon: ChatIcon, size: 25 },
+    { href: '/tasks', label: 'משימות', Icon: TasksIcon, size: 30 },
   ]
 
   const activeIndex = items.findIndex(

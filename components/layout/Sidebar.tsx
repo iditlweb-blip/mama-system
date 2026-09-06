@@ -40,13 +40,15 @@ function PregnancyIcon() {
   )
 }
 
-export default function Sidebar({ userName, trackingType, adminAccess }: {
+export default function Sidebar({ userName, trackingType, adminAccess, chatEnabled }: {
   userName?: string | null
   trackingType?: 'pregnancy' | 'baby' | null
   // 'none'   - regular user, no back-office link
   // 'direct' - already signed in as the admin account, plain link
   // 'switch' - owner account that must hop to the admin account first
   adminAccess?: 'none' | 'direct' | 'switch'
+  // Chat is pulled out temporarily, admin-toggled back - see AppShell.
+  chatEnabled?: boolean
 }) {
   const isPregnancy = trackingType === 'pregnancy'
 
@@ -68,7 +70,7 @@ export default function Sidebar({ userName, trackingType, adminAccess }: {
     { href: '/content/blog',          icon: FileText,          label: 'בלוג' },
     { href: '/content/community',     icon: MessagesSquare,    label: 'קהילה' },
     { href: '/personal',              icon: Heart,             label: 'לעצמי' },
-    { href: '/chat',                  icon: MessageCircle,     label: "צ'אט AI" },
+    ...(chatEnabled ? [{ href: '/chat', icon: MessageCircle, label: "צ'אט AI" } as NavItem] : []),
     { href: '/settings',              icon: Settings,          label: 'הגדרות' },
   ]
   const pathname  = usePathname()

@@ -32,6 +32,13 @@ export default async function AppShell({ children }: { children: React.ReactNode
   const { data: { user } } = await supabase.auth.getUser()
   const isAdmin = isAdminEmail(user?.email)
 
+  // Chat is pulled out temporarily (no row = disabled) - an admin toggle
+  // brings it back into the sidebar; see app/(app)/chat/page.tsx for the
+  // matching gate on the route itself.
+  const { data: chatSetting } = await supabase
+    .from('app_settings').select('value').eq('key', 'chat_enabled').maybeSingle()
+  const chatEnabled = chatSetting?.value === true
+
   const switchOptions = switchOptionsFor(user?.email)
   const adminAccess: 'none' | 'direct' | 'switch' =
     isAdmin ? 'direct'
@@ -49,7 +56,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
     // viewport. The vh value stays as a fallback for anything that lacks dvh.
     <div className="flex overflow-hidden" style={{ background: 'var(--bg)', height: '100vh', maxHeight: '100dvh' }}>
       <PreloaderLottie />
-      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} adminAccess={adminAccess} />
+      <Sidebar userName={profile?.name} trackingType={profile?.tracking_type as 'pregnancy' | 'baby' | null} adminAccess={adminAccess} chatEnabled={chatEnabled} />
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar
           babyName={profile?.baby_name}

@@ -1,3 +1,4 @@
+import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
 import ChatClient from './ChatClient'
@@ -8,6 +9,13 @@ const ALL_MODES: ChatMode[] = ['baby', 'time', 'emotional', 'pregnancy']
 export default async function ChatPage() {
   const supabase = await createClient()
   const userId = await getAuthUserId()
+
+  // Pulled out temporarily (no row = disabled) - an admin toggle in
+  // /admin brings it back. Redirecting here, not just hiding the nav
+  // links, means a bookmark or a stale link can't reach it either.
+  const { data: chatSetting } = await supabase
+    .from('app_settings').select('value').eq('key', 'chat_enabled').maybeSingle()
+  if (chatSetting?.value !== true) redirect('/dashboard')
 
   const [{ data: allMessages }, profile] = await Promise.all([
     supabase
