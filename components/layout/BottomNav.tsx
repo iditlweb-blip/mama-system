@@ -25,7 +25,7 @@ const ICON_SIZE_ACTIVE = 50
 const BAR_HEIGHT = 49
 // Clearance under the icons, on top of the device's own safe-area inset. Keeps
 // the glyphs off the bar's edge and clear of the system gesture bar.
-const BAR_PAD_BOTTOM = 14
+const BAR_PAD_BOTTOM = 18
 // The dome grew with the icons, scaled uniformly from the design's curve so it
 // keeps its shape. Sized so the 50px active glyph clears it by roughly the same
 // margin the design gives its 44px one - the artwork's own padding inside its

@@ -51,6 +51,11 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  // Without this the page never extends under the notch or the home
+  // indicator, and every `env(safe-area-inset-*)` in the app silently
+  // resolves to 0 - which is why the bottom bar and the modals that pad
+  // against it were being clipped by the system gesture bar on a phone.
+  viewportFit: "cover",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
