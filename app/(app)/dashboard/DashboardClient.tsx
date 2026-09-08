@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, Droplets, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock, Sunrise, Bell } from 'lucide-react'
+import { Sparkles, Baby, CheckSquare, Moon, ChevronLeft, Milk, BedDouble, Plus, X, Check, Pencil, Activity, Briefcase, Home, Play, Square, Clock, Droplet, Circle, Stethoscope, CalendarClock, Sunrise, Bell } from 'lucide-react'
 import { Task, BabyLog, Profile, WeeklyScheduleItem } from '@/types/database'
 import EntryPopup from './EntryPopup'
 import BirthdayPopup from '@/components/BirthdayPopup'
@@ -11,6 +11,7 @@ import GaveBirthModal from '@/components/GaveBirthModal'
 import { useSleepTimer, LOG_ADDED_EVT } from '@/lib/useSleepTimer'
 import { getActiveParent } from '@/lib/activeParent'
 import { STANDARD_TESTS, calcPregnancyWeek, formatGestational, weeksRemaining, babySizeForWeek } from '@/lib/pregnancy'
+import { TRACKER_ICONS } from '@/app/(app)/tracker/trackerIcons'
 
 export interface PregnancyTest {
   id: string
@@ -79,9 +80,9 @@ const categoryIcons = { work: Briefcase, home: Home, baby: Baby }
 const categoryClass   = { work: 'cat-work', home: 'cat-home', baby: 'cat-baby' }
 
 const TRACK = [
-  { type: 'feed'   as const, icon: Milk,     label: 'האכלה', color: '#7F5268' },
-  { type: 'sleep'  as const, icon: BedDouble, label: 'שינה',  color: '#5C7A6A' },
-  { type: 'diaper' as const, icon: Droplets,  label: 'חיתול', color: '#7A6A3C' },
+  { type: 'feed'   as const, icon: TRACKER_ICONS.feed.Icon,   label: 'האכלה', color: TRACKER_ICONS.feed.color },
+  { type: 'sleep'  as const, icon: TRACKER_ICONS.sleep.Icon,  label: 'שינה',  color: TRACKER_ICONS.sleep.color },
+  { type: 'diaper' as const, icon: TRACKER_ICONS.diaper.Icon, label: 'חיתול', color: TRACKER_ICONS.diaper.color },
 ]
 
 // Format a Date as a local wall-clock value for a <input type="datetime-local">.
@@ -696,7 +697,7 @@ export default function DashboardClient({
                     style={{ background: `${track.color}0d` }}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-wrap">
-                      <Icon className="w-3.5 h-3.5" style={{ color: track.color, flexShrink: 0 }} />
+                      <Icon size={14} />
                       <span className="text-xs font-medium" style={{ color: track.color }}>{track.label}</span>
                       {time && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>{time}</span>}
                       {durLabel && <span className="text-xs font-light" style={{ color: 'var(--text-muted)' }}>· {durLabel}</span>}
@@ -769,7 +770,7 @@ export default function DashboardClient({
               >
                 <div className="flex items-center gap-1">
                   <Plus className="w-3 h-3" style={{ color }} />
-                  <Icon className="w-4 h-4" style={{ color }} />
+                  <Icon size={16} />
                 </div>
                 <span className="text-xs font-medium" style={{ color }}>{label}</span>
               </button>
@@ -1023,7 +1024,7 @@ export default function DashboardClient({
             <div className="card w-full max-w-sm space-y-4 max-h-[85vh] overflow-y-auto">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <CfgIcon className="w-6 h-6" style={{ color: cfg.color }} />
+                  <CfgIcon size={24} />
                   <h3 className="font-bold text-lg" style={{ color: 'var(--text)' }}>{editingLogId ? 'עריכת' : 'רישום'} {cfg.label}</h3>
                 </div>
                 <button

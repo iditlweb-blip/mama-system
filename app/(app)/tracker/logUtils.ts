@@ -51,3 +51,32 @@ export function buildLogDescription(log: BabyLog): string {
   }
   return ''
 }
+
+const TYPE_LABEL: Record<string, string> = { feed: 'האכלה', sleep: 'שינה', diaper: 'חיתול', activity: 'פעילות' }
+
+/** A single-line, single-detail summary for the compact timeline row - the
+ *  full breakdown from buildLogDescription is reserved for the view popup. */
+export function buildLogSummary(log: BabyLog): string {
+  const label = TYPE_LABEL[log.type] ?? ''
+  if (log.type === 'feed') {
+    if (log.feed_type === 'bottle' && log.amount_ml) return `${label} - ${log.amount_ml} מ"ל בקבוק`
+    const l = log.feed_left_min ?? 0, r = log.feed_right_min ?? 0
+    if (l || r) return `${label} - הנקה ${l + r} דק’`
+    if (log.duration_min) return `${label} - ${log.duration_min} דק’`
+    return label
+  }
+  if (log.type === 'sleep') {
+    if (!log.duration_min) return label
+    const h = Math.floor(log.duration_min / 60), m = log.duration_min % 60
+    const dur = `${h > 0 ? h + ' שע’ ' : ''}${m > 0 ? m + ' דק’' : ''}`.trim()
+    return `${label} - ${dur}`
+  }
+  if (log.type === 'diaper') {
+    const labels = { wet: 'רטוב', dirty: 'מלוכלך', both: 'רטוב + מלוכלך' }
+    return `${label} - ${log.diaper_type ? labels[log.diaper_type] : ''}`
+  }
+  if (log.type === 'activity') {
+    return `${label} - ${log.activity_tags?.[0] ?? ''}`
+  }
+  return label
+}

@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { BabyLog } from '@/types/database'
-import { Moon, BedDouble, Clock, ChevronRight, ChevronLeft, Sun } from 'lucide-react'
+import { Moon, Clock, ChevronRight, ChevronLeft, Sun } from 'lucide-react'
+import { BedIcon } from './trackerIcons'
 
 // Colours match the daily timeline: night sleeps are night-blue, day naps green.
 const NIGHT = '#3C3C6E'
@@ -153,7 +154,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
             <ChevronRight className="w-4 h-4" style={{ color: 'var(--text)' }} />
           </button>
           <div className="text-center">
-            <p className="text-sm font-bold" style={{ color: 'var(--text)' }}>{selectedLabel}</p>
+            <p className="text-sm font-medium" style={{ color: 'var(--text)' }}>{selectedLabel}</p>
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{isToday ? 'היום' : ''}</p>
           </div>
           <button
@@ -181,8 +182,8 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
                   ? { background: '#7F5268', color: '#fff' }
                   : { background: 'var(--surface-2, #FAF4ED)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
               >
-                <span className="text-[10px] font-medium">{d.toLocaleDateString('he-IL', { weekday: 'short' })}</span>
-                <span className="text-sm font-bold">{d.getDate()}</span>
+                <span className="text-[10px] font-light">{d.toLocaleDateString('he-IL', { weekday: 'short' })}</span>
+                <span className="text-sm font-medium">{d.getDate()}</span>
                 <span
                   className="w-1.5 h-1.5 rounded-full mt-0.5"
                   style={{ background: hasData ? (active ? '#fff' : '#5C7A6A') : 'transparent' }}
@@ -195,18 +196,17 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
 
       {/* Summary + timeline */}
       <div className="card">
-        <h2 className="font-semibold mb-4 flex items-center gap-2" style={{ color: 'var(--text)' }}>
-          <Moon className="w-4 h-4" style={{ color: NIGHT }} />
+        <h2 className="mb-4" style={{ color: '#000', fontSize: 15, fontWeight: 500 }}>
           ציר שינה - {selectedLabel}
         </h2>
 
         {loading ? (
-          <p className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>טוענת...</p>
+          <p className="text-center py-8" style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 300 }}>טוענת...</p>
         ) : segments.length === 0 ? (
           <div className="text-center py-10">
-            <BedDouble className="w-10 h-10 mx-auto mb-3" style={{ color: '#7F5268' }} />
-            <p className="font-semibold" style={{ color: 'var(--text)' }}>אין רישומי שינה ליום זה</p>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>בחרי יום אחר מהרצועה למעלה</p>
+            <BedIcon size={40} />
+            <p className="mt-3" style={{ color: '#000', fontSize: 14, fontWeight: 500 }}>אין רישומי שינה ליום זה</p>
+            <p className="mt-1" style={{ color: 'var(--text-muted)', fontSize: 12, fontWeight: 300 }}>בחרי יום אחר מהרצועה למעלה</p>
           </div>
         ) : (
           <>
@@ -258,7 +258,8 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
               </div>
             </div>
 
-            {/* Per-sleep list */}
+            {/* Per-sleep list - same icon set, text sizes and weights as the
+                daily tab's timeline rows (light body text, medium values). */}
             <div className="space-y-2 mt-4">
               {segments.map(seg => (
                 <div
@@ -268,16 +269,16 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
                 >
                   <div className="flex items-center gap-2 min-w-0">
                     {seg.isNight
-                      ? <Moon className="w-4 h-4 flex-shrink-0" style={{ color: NIGHT }} />
-                      : <BedDouble className="w-4 h-4 flex-shrink-0" style={{ color: DAY }} />}
-                    <span className="text-sm font-medium" style={{ color: seg.isNight ? NIGHT : DAY }}>
+                      ? <Moon size={18} style={{ color: NIGHT }} />
+                      : <BedIcon size={18} />}
+                    <span style={{ color: seg.isNight ? NIGHT : DAY, fontSize: 12, fontWeight: 500 }}>
                       {seg.isNight ? 'שנת לילה' : 'שנ״צ'}
                     </span>
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--text-muted)', fontSize: 10, fontWeight: 300 }}>
                       {seg.fromLabel}{seg.toLabel ? `-${seg.toLabel}` : ''}
                     </span>
                   </div>
-                  <span className="text-xs font-semibold flex-shrink-0" style={{ color: 'var(--text)' }}>
+                  <span className="flex-shrink-0" style={{ color: 'var(--text)', fontSize: 12, fontWeight: 500 }}>
                     {fmtDur(seg.minutes)}
                   </span>
                 </div>
@@ -301,8 +302,8 @@ function ArchiveTile({ icon: Icon, color, label, value }: {
   return (
     <div className="rounded-xl p-2.5 text-center" style={{ background: `${color}0f`, border: `1px solid ${color}25` }}>
       <Icon className="w-5 h-5 mx-auto" style={{ color }} />
-      <p className="text-sm font-bold mt-1" style={{ color }}>{value}</p>
-      <p className="text-[11px] font-medium mt-0.5" style={{ color: 'var(--text-muted)' }}>{label}</p>
+      <p className="mt-1" style={{ color, fontSize: 14, fontWeight: 500 }}>{value}</p>
+      <p className="mt-0.5" style={{ color: 'var(--text-muted)', fontSize: 11, fontWeight: 300 }}>{label}</p>
     </div>
   )
 }

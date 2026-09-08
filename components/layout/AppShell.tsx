@@ -6,6 +6,7 @@ import ContractionTimerBar from '@/components/layout/ContractionTimerBar'
 import PwaTracker from '@/components/PwaTracker'
 import PreloaderLottie from '@/components/PreloaderLottie'
 import BottomNav from '@/components/layout/BottomNav'
+import QuickAddFab from '@/components/layout/QuickAddFab'
 import PageTimeTracker from '@/components/PageTimeTracker'
 import RemindersPopup from '@/components/RemindersPopup'
 import ParentPopup from '@/components/ParentPopup'
@@ -92,6 +93,7 @@ export default async function AppShell({ children }: { children: React.ReactNode
       />
       <PushPermissionPrompt />
       <PushResync />
+      {profile?.tracking_type !== 'pregnancy' && <QuickAddFab userId={userId!} />}
       <BottomNav trackingType={(profile?.tracking_type as 'pregnancy' | 'baby') ?? 'baby'} />
     </div>
   )

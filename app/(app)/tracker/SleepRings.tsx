@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { Moon, TrendingUp, TrendingDown, Minus } from 'lucide-react'
+import { TrendingUp, TrendingDown, Minus } from 'lucide-react'
 
 const BRAND = '#805268'
 
@@ -170,15 +170,14 @@ export default function SleepRings({ userId, todayMin, totalLow, totalHigh }: Pr
   }, [score, lastWeek])
 
   return (
-    <div className="card">
-      <h2 className="font-semibold flex items-center justify-center gap-2 mb-3 text-center" style={{ color: 'var(--text)' }}>
-        <Moon className="w-4 h-4" style={{ color: BRAND }} />
+    <div className="card" style={{ borderRadius: 20 }}>
+      <h2 className="text-center mb-3" style={{ color: '#000', fontSize: 20, fontWeight: 500 }}>
         מדדי שינה
       </h2>
 
       <div className="grid grid-cols-2 gap-3">
         <Ring
-          label="שינה ב-24 שעות"
+          label="שינה ב24 שעות"
           pct={todayPct}
           center={fmtHours(todayMin)}
           centerSub="שעות"
@@ -207,7 +206,7 @@ export default function SleepRings({ userId, todayMin, totalLow, totalHigh }: Pr
         />
       </div>
 
-      <p className="text-[11px] leading-relaxed mt-3 text-center" style={{ color: 'var(--text-muted)' }}>
+      <p className="leading-relaxed mt-3 text-center" style={{ color: BRAND, fontSize: 10, fontWeight: 300 }}>
         ציון איכות השינה מחושב מהתיעודים שלך: אורך הרצף הארוך ביותר בלילה, כמה פעמים הלילה נקטע, ואיכות השינה שסימנת.
         הטווח המומלץ הוא הערכה לפי גיל בלבד - לכל תינוק יש קצב משלו. אם משהו מדאיג אותך, כדאי להתייעץ עם רופא ילדים או יועצת שינה.
       </p>
@@ -227,7 +226,8 @@ function trendLabel(trend: { dir: 'up' | 'down' | 'flat'; delta: number }): stri
 // A single SVG progress ring. Rotated -90° so the arc starts at 12 o'clock,
 // and drawn with a stroke-dasharray offset rather than a path, which keeps the
 // rounded cap looking right at every fill level.
-const R = 34
+const RING_SIZE = 94
+const R = 39
 const CIRC = 2 * Math.PI * R
 
 function Ring({ label, pct, center, centerSub, foot, footIcon: FootIcon }: {
@@ -240,13 +240,13 @@ function Ring({ label, pct, center, centerSub, foot, footIcon: FootIcon }: {
 }) {
   return (
     <div className="flex flex-col items-center text-center gap-1.5">
-      <span className="text-xs font-medium text-center" style={{ color: 'var(--text-muted)' }}>{label}</span>
+      <span className="text-center" style={{ color: BRAND, fontSize: 12, fontWeight: 300 }}>{label}</span>
 
       <div className="relative">
-        <svg width="88" height="88" viewBox="0 0 88 88" style={{ transform: 'rotate(-90deg)' }}>
-          <circle cx="44" cy="44" r={R} fill="none" stroke="var(--border)" strokeWidth="8" />
+        <svg width={RING_SIZE} height={RING_SIZE} viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`} style={{ transform: 'rotate(-90deg)' }}>
+          <circle cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={R} fill="none" stroke="var(--border)" strokeWidth="8" />
           <circle
-            cx="44" cy="44" r={R} fill="none"
+            cx={RING_SIZE / 2} cy={RING_SIZE / 2} r={R} fill="none"
             stroke={BRAND} strokeWidth="8" strokeLinecap="round"
             strokeDasharray={CIRC}
             strokeDashoffset={CIRC * (1 - Math.max(0, Math.min(1, pct)))}
@@ -254,12 +254,12 @@ function Ring({ label, pct, center, centerSub, foot, footIcon: FootIcon }: {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold leading-none" style={{ color: BRAND }}>{center}</span>
-          {centerSub && <span className="text-[10px] mt-0.5" style={{ color: 'var(--text-muted)' }}>{centerSub}</span>}
+          <span className="leading-tight" style={{ color: BRAND, fontSize: 18, fontWeight: 500 }}>{center}</span>
+          {centerSub && <span className="leading-tight" style={{ color: BRAND, fontSize: 18, fontWeight: 500 }}>{centerSub}</span>}
         </div>
       </div>
 
-      <span className="text-[11px] flex items-center gap-1 justify-center text-center" style={{ color: 'var(--text-muted)' }}>
+      <span className="flex items-center gap-1 justify-center text-center" style={{ color: BRAND, fontSize: 11, fontWeight: 300 }}>
         {FootIcon && <FootIcon className="w-3 h-3 shrink-0" />}
         {foot}
       </span>
