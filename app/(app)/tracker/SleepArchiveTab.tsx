@@ -1,10 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { createClient } from '@/lib/supabase/client'
 import { BabyLog } from '@/types/database'
 import { Moon, Clock, ChevronRight, ChevronLeft, Sun } from 'lucide-react'
 import { BedIcon } from './trackerIcons'
+import { LOG_ADDED_EVT } from '@/lib/useSleepTimer'
+import LogViewPopup from './LogViewPopup'
+
+const AddLogModal = dynamic(() => import('./AddLogModal'), { ssr: false })
 
 // Colours match the daily timeline: night sleeps are night-blue, day naps green.
 const NIGHT = '#3C3C6E'
@@ -41,11 +46,13 @@ interface DaySegment {
   crossesOut: boolean  // continues past this day (past midnight)
 }
 
-export default function SleepArchiveTab({ babyName }: { babyName: string | null }) {
+export default function SleepArchiveTab({ userId, babyName }: { userId: string; babyName: string | null }) {
   const supabase = createClient()
   const [sleeps, setSleeps] = useState<BabyLog[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<Date>(() => startOfDay(new Date()))
+  const [popupLog, setPopupLog] = useState<BabyLog | null>(null)
+  const [editingLog, setEditingLog] = useState<BabyLog | null>(null)
 
   // Fetch the last 45 days of sleep logs once. We include any sleep whose
   // end_time OR start_time falls in the window so overnight sleeps stay visible.
@@ -67,6 +74,23 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
     })()
     return () => { cancelled = true }
   }, [supabase])
+
+  // An edit saved from this tab's own popup (or a sleep added/edited
+  // elsewhere) broadcasts the log it touched - keep the archive in sync.
+  useEffect(() => {
+    const onLogAdded = (e: Event) => {
+      const log = (e as CustomEvent<BabyLog>).detail
+      if (!log || log.type !== 'sleep') return
+      setSleeps(prev => (prev.some(l => l.id === log.id) ? prev.map(l => (l.id === log.id ? log : l)) : [...prev, log]))
+    }
+    window.addEventListener(LOG_ADDED_EVT, onLogAdded)
+    return () => window.removeEventListener(LOG_ADDED_EVT, onLogAdded)
+  }, [])
+
+  async function deleteLog(id: string) {
+    await supabase.from('baby_logs').delete().eq('id', id)
+    setSleeps(prev => prev.filter(l => l.id !== id))
+  }
 
   // End time for a sleep: explicit end_time, else start + duration, else null.
   function sleepEnd(log: BabyLog): Date | null {
@@ -259,12 +283,19 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
             </div>
 
             {/* Per-sleep list - same icon set, text sizes and weights as the
-                daily tab's timeline rows (light body text, medium values). */}
+                daily tab's timeline rows (light body text, medium values).
+                Tap a row to open the same read-only popup as the daily tab -
+                all the detail fields (quality, position, fell-asleep-by,
+                notes) live there, not in this compact row. */}
             <div className="space-y-2 mt-4">
               {segments.map(seg => (
-                <div
+                <button
                   key={seg.id}
-                  className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl"
+                  onClick={() => {
+                    const full = sleeps.find(s => s.id === seg.id)
+                    if (full) setPopupLog(full)
+                  }}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-right"
                   style={{ background: `${seg.isNight ? NIGHT : DAY}12` }}
                 >
                   <div className="flex items-center gap-2 min-w-0">
@@ -281,7 +312,7 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
                   <span className="flex-shrink-0" style={{ color: 'var(--text)', fontSize: 12, fontWeight: 500 }}>
                     {fmtDur(seg.minutes)}
                   </span>
-                </div>
+                </button>
               ))}
             </div>
           </>
@@ -291,6 +322,23 @@ export default function SleepArchiveTab({ babyName }: { babyName: string | null 
       <p className="text-xs text-center" style={{ color: 'var(--text-muted)' }}>
         הארכיון שומר את שנת {babyName || 'התינוק/ת'} מ־45 הימים האחרונים 💜
       </p>
+
+      {popupLog && (
+        <LogViewPopup
+          log={popupLog}
+          onClose={() => setPopupLog(null)}
+          onEdit={() => { setEditingLog(popupLog); setPopupLog(null) }}
+          onDelete={() => { deleteLog(popupLog.id); setPopupLog(null) }}
+        />
+      )}
+      {editingLog && (
+        <AddLogModal
+          userId={userId}
+          initialType="sleep"
+          editingLog={editingLog}
+          onClose={() => setEditingLog(null)}
+        />
+      )}
     </div>
   )
 }

@@ -46,11 +46,14 @@ export default function QuickAddFab({ userId }: { userId: string }) {
       {open && (
         <div
           onClick={() => setOpen(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 149 }}
+          style={{ position: 'fixed', inset: 0, zIndex: 104 }}
         />
       )}
 
-      <div className="quick-add-fab" style={{ position: 'fixed', zIndex: 150 }}>
+      {/* Above BottomNav (z-index 100) but below the hamburger menu drawer
+          (Sidebar.tsx: button z-[120], open drawer z-[110]) - otherwise the
+          FAB floats over the mobile nav menu while it's open. */}
+      <div className="quick-add-fab" style={{ position: 'fixed', zIndex: 105 }}>
         {MINIS.map(({ type, dx, dy, iconSize }, i) => {
           const { Icon, color, tint, label } = TRACKER_ICONS[type]
           const half = MINI_SIZE / 2
