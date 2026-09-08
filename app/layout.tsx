@@ -7,10 +7,10 @@ import "./globals.css"
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "אמא בסדר",
+    default: "אמא בסדר - אפליקציה למעקב הריון וניהול התפתחות תינוק",
     template: "%s · אמא בסדר",
   },
-  description: "מערכת ותוכן לאימהות טריות - מעקב תינוק, התפתחות, משימות, בלוג וקהילת שאלות ותשובות.",
+  description: "מעקב שינה, האכלות וחיתולים, בדיקות הריון, משימות, בלוג וקהילת שאלות ותשובות - הכל במקום אחד.",
   manifest: "/manifest.json",
   alternates: {
     canonical: "/",
@@ -25,8 +25,8 @@ export const metadata: Metadata = {
     apple: "/icons/icon-192.png",
   },
   openGraph: {
-    title: "אמא בסדר",
-    description: "מערכת ותוכן לאימהות טריות - מעקב תינוק, התפתחות, משימות, בלוג וקהילה.",
+    title: "אמא בסדר - אפליקציה למעקב הריון וניהול התפתחות תינוק",
+    description: "מעקב שינה, האכלות וחיתולים, בדיקות הריון, משימות, בלוג וקהילה.",
     siteName: SITE_NAME,
     url: SITE_URL,
     locale: "he_IL",
@@ -34,8 +34,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "אמא בסדר",
-    description: "מערכת ותוכן לאימהות טריות",
+    title: "אמא בסדר - אפליקציה למעקב הריון וניהול התפתחות תינוק",
+    description: "מעקב הריון וניהול התפתחות תינוק, הכל במקום אחד.",
   },
   // Google Search Console verification. Set GOOGLE_SITE_VERIFICATION in the
   // environment once the property exists. Applies to Next-rendered routes; the
