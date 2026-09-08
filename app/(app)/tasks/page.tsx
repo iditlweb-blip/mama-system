@@ -1,14 +1,9 @@
-import { createClient } from '@/lib/supabase/server'
-import { getAuthUserId, getProfile } from '@/lib/supabase/auth'
-import TasksClient from './TasksClient'
+import { redirect } from 'next/navigation'
 
-export default async function TasksPage() {
-  const supabase = await createClient()
-  const userId = await getAuthUserId()
-  const [{ data: tasks }, profile] = await Promise.all([
-    supabase.from('tasks').select('*').eq('user_id', userId!).order('created_at', { ascending: false }),
-    getProfile(),
-  ])
-
-  return <TasksClient tasks={tasks || []} userId={userId!} trackingType={(profile?.tracking_type as 'pregnancy' | 'baby' | null) ?? null} />
+// /tasks was folded into the "ניהול" page's own "משימות" tab (see
+// app/(app)/business/BusinessClient.tsx) - keep this route alive as a
+// redirect so old links (bookmarks, push-notification deep links) still land
+// somewhere useful instead of 404ing.
+export default function TasksPage() {
+  redirect('/business')
 }

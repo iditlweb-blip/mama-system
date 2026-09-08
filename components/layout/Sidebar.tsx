@@ -4,7 +4,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
-  LayoutDashboard, Baby, CheckSquare, Activity,
+  LayoutDashboard, Baby, Activity,
   MessageCircle, LogOut, Menu, X, Briefcase, Settings, Heart, Shield, Loader2,
   FileText, MessagesSquare,
 } from 'lucide-react'
@@ -63,7 +63,6 @@ export default function Sidebar({ userName, trackingType, adminAccess, chatEnabl
     ...(isPregnancy
       ? [{ href: '/contractions',     icon: Activity,          label: 'מד צירים' } as NavItem]
       : []),
-    { href: '/tasks',                 icon: CheckSquare,       label: 'משימות' },
     { href: '/business',              icon: Briefcase,         label: 'ניהול' },
     { href: '/development',           icon: Baby,              label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות' },
     { href: '/products', customIcon: <ShoppingBagIcon />,      label: 'מוצרים ובעלי מקצוע' },

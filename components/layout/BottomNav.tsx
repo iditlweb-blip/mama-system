@@ -104,7 +104,7 @@ export default function BottomNav({ trackingType }: { trackingType: 'pregnancy' 
     { href: isPregnancy ? '/pregnancy' : '/tracker', label: isPregnancy ? 'הריון' : 'מעקב', Icon: TrackIcon, size: 30 },
     { href: '/dashboard', label: 'בית', Icon: HomeIcon, size: 30 },
     { href: '/content/community', label: 'קהילה', Icon: CommunityIcon, size: 30 },
-    { href: '/tasks', label: 'משימות', Icon: TasksIcon, size: 30 },
+    { href: '/business', label: 'משימות', Icon: TasksIcon, size: 30 },
   ]
 
   const activeIndex = items.findIndex(

@@ -5,11 +5,11 @@ import { createClient } from '@/lib/supabase/client'
 import {
   Briefcase, CheckSquare, Calendar, Plus, Trash2, Check,
   ChevronDown, Loader2, X,
-  Baby, Flower2, Coffee, AlertTriangle, PartyPopper,
-  Sparkles, CheckCircle2, Pencil, StickyNote,
-  CalendarDays, Package, Wallet, Info
+  Baby, Home, Flower2, Coffee, AlertTriangle, PartyPopper,
+  Sparkles, CheckCircle2, Circle, Pencil, StickyNote,
+  CalendarDays, Package, Wallet, Info, Bell, Paperclip, FileText, ClipboardList,
 } from 'lucide-react'
-import { Profile, Task, WeeklyScheduleItem } from '@/types/database'
+import { Profile, Task, TaskCategory, TaskPriority, WeeklyScheduleItem } from '@/types/database'
 
 interface Props {
   profile: Profile | null
@@ -29,6 +29,7 @@ const scheduleTypeColors = {
 }
 
 const priorityColors = { high: '#C0392B', medium: '#B8860B', low: '#4A7C59' }
+const priorityLabels: Record<TaskPriority, string> = { high: 'דחוף', medium: 'בינוני', low: 'נמוך' }
 
 export default function BusinessClient({ profile, tasks: initialTasks, schedule: initialSchedule, userId }: Props) {
   const supabase = createClient()
@@ -36,12 +37,22 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
   const [tasks, setTasks] = useState(initialTasks)
   const [schedule, setSchedule] = useState(initialSchedule)
   const [activeTab, setActiveTab] = useState<'tasks' | 'schedule' | 'leave' | 'equipment'>('tasks')
+  const babyLabel = isPregnancy ? 'הריון' : 'תינוק'
 
-  // Task form
+  // Task form - merged in from the old standalone /tasks page (see
+  // buildLogSummary-style history note: that page's richer feature set -
+  // reminders, file attachments, home/baby/work filtering - replaces this
+  // tab's old work-only, no-frills task list).
   const [showTaskForm, setShowTaskForm] = useState(false)
+  const [filterCat, setFilterCat] = useState<TaskCategory | 'all'>('all')
+  const [editingTaskId, setEditingTaskId] = useState<string | null>(null)
+  const [uploadingId, setUploadingId] = useState<string | null>(null)
   const [taskTitle, setTaskTitle] = useState('')
-  const [taskPriority, setTaskPriority] = useState<'high' | 'medium' | 'low'>('medium')
+  const [taskCategory, setTaskCategory] = useState<TaskCategory>('work')
+  const [taskPriority, setTaskPriority] = useState<TaskPriority>('medium')
   const [taskDueDate, setTaskDueDate] = useState('')
+  const [taskRemind, setTaskRemind] = useState('')
+  const [taskNotes, setTaskNotes] = useState('')
   const [taskSaving, setTaskSaving] = useState(false)
 
   // Schedule form
@@ -57,38 +68,52 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
   async function addTask() {
     if (!taskTitle.trim()) return
     setTaskSaving(true)
-    const { data } = await supabase.from('tasks').insert({
-      user_id: userId,
-      title: taskTitle,
-      category: 'work',
-      status: 'todo',
-      priority: taskPriority,
-      due_date: taskDueDate || null,
-    }).select().single()
-    if (data) setTasks(prev => [data, ...prev])
-    setTaskTitle('')
-    setTaskPriority('medium')
-    setTaskDueDate('')
-    setShowTaskForm(false)
+    const row: Record<string, unknown> = {
+      user_id: userId, title: taskTitle.trim(), category: taskCategory, priority: taskPriority,
+      due_date: taskDueDate || null, status: 'todo',
+    }
+    if (taskRemind) { row.remind_at = new Date(taskRemind).toISOString(); row.reminded = false }
+    if (taskNotes.trim()) row.notes = taskNotes.trim()
+    const { data, error } = await supabase.from('tasks').insert(row).select().single()
     setTaskSaving(false)
+    if (error || !data) { alert(`שמירת המשימה נכשלה: ${error?.message ?? 'שגיאה'}`); return }
+    setTasks(prev => [data as Task, ...prev])
+    setTaskTitle(''); setTaskDueDate(''); setTaskRemind(''); setTaskNotes(''); setTaskPriority('medium')
+    setShowTaskForm(false)
   }
 
   async function toggleTask(id: string, currentStatus: string) {
     const newStatus = currentStatus === 'done' ? 'todo' : 'done'
+    setTasks(prev => prev.map(t => (t.id === id ? { ...t, status: newStatus as Task['status'] } : t)))
     await supabase.from('tasks').update({ status: newStatus }).eq('id', id)
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus as any } : t))
   }
 
-  async function updateTask(id: string, title: string, priority: 'high' | 'medium' | 'low') {
-    const t = title.trim()
-    if (!t) return
-    setTasks(prev => prev.map(x => x.id === id ? { ...x, title: t, priority } : x))
-    await supabase.from('tasks').update({ title: t, priority }).eq('id', id)
+  async function saveTaskEdit(id: string, patch: Partial<Task>) {
+    setTasks(prev => prev.map(x => (x.id === id ? { ...x, ...patch } as Task : x)))
+    const { error } = await supabase.from('tasks').update(patch).eq('id', id)
+    if (error) alert(`עדכון נכשל: ${error.message}`)
+    else setEditingTaskId(null)
   }
 
   async function deleteTask(id: string) {
-    await supabase.from('tasks').delete().eq('id', id)
+    if (!confirm('למחוק את המשימה?')) return
     setTasks(prev => prev.filter(t => t.id !== id))
+    await supabase.from('tasks').delete().eq('id', id)
+  }
+
+  async function uploadTaskFile(id: string, file: File) {
+    setUploadingId(id)
+    const ext = (file.name.split('.').pop() || 'dat').toLowerCase()
+    const path = `${userId}/tasks/${id}-${Date.now()}.${ext}`
+    const { error } = await supabase.storage.from('task-files').upload(path, file, { upsert: true, contentType: file.type || undefined })
+    if (error) {
+      alert(/bucket|not found|exist/i.test(error.message) ? 'האחסון עדיין לא הוגדר - יש להריץ מיגרציה 020 ב-Supabase' : `שגיאה בהעלאה: ${error.message}`)
+      setUploadingId(null); return
+    }
+    const { data: url } = supabase.storage.from('task-files').getPublicUrl(path)
+    setTasks(prev => prev.map(x => (x.id === id ? { ...x, file_url: url.publicUrl } : x)))
+    await supabase.from('tasks').update({ file_url: url.publicUrl }).eq('id', id)
+    setUploadingId(null)
   }
 
   async function addScheduleItem() {
@@ -130,9 +155,13 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
   // In pregnancy mode there's no baby yet, so baby-category tasks are noise -
   // hide them here (they still live in the DB for when tracking switches).
-  const visibleTasks = isPregnancy ? tasks.filter(t => t.category !== 'baby') : tasks
+  const visibleTasks = (isPregnancy ? tasks.filter(t => t.category !== 'baby') : tasks)
+    .filter(t => filterCat === 'all' || t.category === filterCat)
   const doneTasks = visibleTasks.filter(t => t.status === 'done')
   const openTasks = visibleTasks.filter(t => t.status !== 'done')
+  const catLabel = (c: TaskCategory) => (c === 'work' ? 'עבודה' : c === 'home' ? 'בית' : babyLabel)
+  const CatIcon = (c: TaskCategory) => (c === 'work' ? Briefcase : c === 'home' ? Home : Baby)
+  const today = new Date().toISOString().split('T')[0]
 
   return (
     <div className="space-y-5 max-w-3xl">
@@ -183,6 +212,19 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
       {/* TASKS TAB */}
       {activeTab === 'tasks' && (
         <div className="space-y-3 pb-24 md:pb-0">
+          {/* Category filter */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {(['all', 'work', 'home', 'baby'] as const).map(cat => (
+              <button key={cat} onClick={() => setFilterCat(cat)}
+                className="px-4 py-1.5 rounded-full text-sm font-medium transition-all flex items-center gap-1.5"
+                style={filterCat === cat
+                  ? { background: 'var(--primary)', color: 'white' }
+                  : { background: 'var(--surface)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                {cat === 'all' ? `הכל (${visibleTasks.length})` : `${catLabel(cat)} (${visibleTasks.filter(t => t.category === cat).length})`}
+              </button>
+            ))}
+          </div>
+
           {/* Add task */}
           {!showTaskForm ? (
             <button
@@ -191,12 +233,12 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
               style={{ borderColor: 'var(--border)', color: 'var(--text-muted)' }}
             >
               <Plus className="w-4 h-4" />
-              הוספת משימה עסקית
+              הוספת משימה
             </button>
           ) : (
             <div className="card space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-sm" style={{ color: 'var(--text)' }}>משימה חדשה</h3>
+                <h3 className="font-semibold text-sm flex items-center gap-1.5" style={{ color: 'var(--text)' }}>משימה חדשה <Sparkles className="w-4 h-4" style={{ color: '#7F5268' }} /></h3>
                 <button onClick={() => setShowTaskForm(false)} style={{ color: 'var(--text-muted)' }}>
                   <X className="w-4 h-4" />
                 </button>
@@ -210,12 +252,25 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                 onKeyDown={e => e.key === 'Enter' && addTask()}
                 autoFocus
               />
-              <div className="flex gap-2">
-                <div className="flex-1">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>קטגוריה</label>
+                  <select
+                    value={taskCategory}
+                    onChange={e => setTaskCategory(e.target.value as TaskCategory)}
+                    className="w-full px-3 py-2 rounded-xl border text-sm outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                  >
+                    <option value="work">עבודה</option>
+                    <option value="home">בית</option>
+                    {!isPregnancy && <option value="baby">{babyLabel}</option>}
+                  </select>
+                </div>
+                <div>
                   <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>עדיפות</label>
                   <select
                     value={taskPriority}
-                    onChange={e => setTaskPriority(e.target.value as any)}
+                    onChange={e => setTaskPriority(e.target.value as TaskPriority)}
                     className="w-full px-3 py-2 rounded-xl border text-sm outline-none"
                     style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
                   >
@@ -224,7 +279,7 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                     <option value="low">נמוך</option>
                   </select>
                 </div>
-                <div className="flex-1">
+                <div>
                   <label className="block text-xs mb-1" style={{ color: 'var(--text-muted)' }}>תאריך יעד</label>
                   <input
                     type="date"
@@ -234,7 +289,25 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
                     style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
                   />
                 </div>
+                <div>
+                  <label className="block text-xs mb-1 flex items-center gap-1" style={{ color: 'var(--text-muted)' }}><Bell className="w-3 h-3" /> תזכורת</label>
+                  <input
+                    type="datetime-local"
+                    value={taskRemind}
+                    onChange={e => setTaskRemind(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl border text-sm outline-none"
+                    style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+                  />
+                </div>
               </div>
+              <textarea
+                value={taskNotes}
+                onChange={e => setTaskNotes(e.target.value)}
+                placeholder="הערות (אופציונלי)"
+                rows={2}
+                className="w-full px-3 py-2 rounded-xl border text-sm outline-none resize-none"
+                style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
+              />
               <button
                 onClick={addTask}
                 disabled={taskSaving || !taskTitle.trim()}
@@ -249,19 +322,34 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
 
           {/* Open tasks */}
           {openTasks.length === 0 && !showTaskForm ? (
-            <div className="card text-center py-8">
-              <div className="flex justify-center mb-2">
-                <PartyPopper size={32} style={{ color: '#7F5268' }} />
+            visibleTasks.length === 0 ? (
+              <div className="card text-center py-10">
+                <ClipboardList className="w-7 h-7 mx-auto mb-2" style={{ color: 'var(--text-muted)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-muted)' }}>אין משימות עדיין - לחצי &quot;הוספת משימה&quot;</p>
               </div>
-              <p className="font-semibold" style={{ color: 'var(--text)' }}>כל המשימות הושלמו!</p>
-              <p className="text-sm mt-1 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
-                את מדהימה <Sparkles size={14} style={{ color: '#7F5268' }} />
-              </p>
-            </div>
+            ) : (
+              <div className="card text-center py-8">
+                <div className="flex justify-center mb-2">
+                  <PartyPopper size={32} style={{ color: '#7F5268' }} />
+                </div>
+                <p className="font-semibold" style={{ color: 'var(--text)' }}>כל המשימות הושלמו!</p>
+                <p className="text-sm mt-1 flex items-center justify-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                  את מדהימה <Sparkles size={14} style={{ color: '#7F5268' }} />
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-2">
               {openTasks.map(task => (
-                <TaskRow key={task.id} task={task} onToggle={toggleTask} onEdit={updateTask} onDelete={deleteTask} />
+                <TaskRow key={task.id} task={task} today={today} catLabel={catLabel} CatIcon={CatIcon}
+                  editing={editingTaskId === task.id} uploading={uploadingId === task.id}
+                  onToggle={() => toggleTask(task.id, task.status)}
+                  onDelete={() => deleteTask(task.id)}
+                  onEdit={() => setEditingTaskId(task.id)}
+                  onCancelEdit={() => setEditingTaskId(null)}
+                  onSave={patch => saveTaskEdit(task.id, patch)}
+                  onUpload={file => uploadTaskFile(task.id, file)}
+                />
               ))}
             </div>
           )}
@@ -278,7 +366,15 @@ export default function BusinessClient({ profile, tasks: initialTasks, schedule:
               </summary>
               <div className="mt-3 space-y-2">
                 {doneTasks.map(task => (
-                  <TaskRow key={task.id} task={task} onToggle={toggleTask} onEdit={updateTask} onDelete={deleteTask} />
+                  <TaskRow key={task.id} task={task} today={today} catLabel={catLabel} CatIcon={CatIcon}
+                    editing={editingTaskId === task.id} uploading={uploadingId === task.id}
+                    onToggle={() => toggleTask(task.id, task.status)}
+                    onDelete={() => deleteTask(task.id)}
+                    onEdit={() => setEditingTaskId(task.id)}
+                    onCancelEdit={() => setEditingTaskId(null)}
+                    onSave={patch => saveTaskEdit(task.id, patch)}
+                    onUpload={file => uploadTaskFile(task.id, file)}
+                  />
                 ))}
               </div>
             </details>
@@ -709,100 +805,109 @@ function DeliveryEquipment({ userId }: { userId: string }) {
   )
 }
 
-const priorityLabels: Record<'high' | 'medium' | 'low', string> = { high: 'דחוף', medium: 'בינוני', low: 'נמוך' }
-
-function TaskRow({ task, onToggle, onEdit, onDelete }: {
-  task: Task
-  onToggle: (id: string, status: string) => void
-  onEdit: (id: string, title: string, priority: 'high' | 'medium' | 'low') => void
-  onDelete: (id: string) => void
+// Full-featured task row (folded in from the old standalone /tasks page):
+// category badge, priority dot, due date, reminder, file attachment, notes.
+function TaskRow({ task, today, catLabel, CatIcon, editing, uploading, onToggle, onDelete, onEdit, onCancelEdit, onSave, onUpload }: {
+  task: Task; today: string
+  catLabel: (c: TaskCategory) => string; CatIcon: (c: TaskCategory) => React.ElementType
+  editing: boolean; uploading: boolean
+  onToggle: () => void; onDelete: () => void; onEdit: () => void; onCancelEdit: () => void
+  onSave: (patch: Partial<Task>) => void; onUpload: (file: File) => void
 }) {
   const done = task.status === 'done'
-  const overdue = task.due_date && !done && new Date(task.due_date) < new Date()
-  const [editing, setEditing] = useState(false)
-  const [editTitle, setEditTitle] = useState(task.title)
-  const [editPriority, setEditPriority] = useState<'high' | 'medium' | 'low'>(task.priority)
+  const color = priorityColors[task.priority]
+  const Icon = CatIcon(task.category)
+  const isOverdue = task.due_date && task.due_date < today && !done
 
-  function startEdit() {
-    setEditTitle(task.title)
-    setEditPriority(task.priority)
-    setEditing(true)
-  }
+  const [title, setTitle] = useState(task.title)
+  const [notes, setNotes] = useState(task.notes ?? '')
+  const [prio, setPrio] = useState<TaskPriority>(task.priority)
+  const [cat, setCat] = useState<TaskCategory>(task.category)
+  const [due, setDue] = useState(task.due_date ?? '')
+  const [remind, setRemind] = useState(task.remind_at ? task.remind_at.slice(0, 16) : '')
+  const inputSty: React.CSSProperties = { borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }
 
-  function save() {
-    if (!editTitle.trim()) return
-    onEdit(task.id, editTitle, editPriority)
-    setEditing(false)
-  }
-
-  if (editing) {
-    return (
-      <div className="p-3 rounded-xl space-y-2" style={{ background: 'var(--surface)', border: '1px solid rgba(127,82,104,0.3)' }}>
-        <input
-          value={editTitle}
-          onChange={e => setEditTitle(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false) }}
-          autoFocus
-          className="w-full px-3 py-2 rounded-lg border text-sm outline-none"
-          style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-        />
-        <div className="flex items-center gap-2">
-          <select
-            value={editPriority}
-            onChange={e => setEditPriority(e.target.value as 'high' | 'medium' | 'low')}
-            className="flex-1 px-3 py-2 rounded-lg border text-sm outline-none"
-            style={{ borderColor: 'var(--border)', background: 'var(--bg)', color: 'var(--text)' }}
-          >
-            <option value="high">דחוף</option>
-            <option value="medium">בינוני</option>
-            <option value="low">נמוך</option>
-          </select>
-          <button onClick={save} className="px-3 py-2 rounded-lg text-white text-sm font-medium flex items-center gap-1" style={{ background: '#4A7C59' }}>
-            <Check className="w-3.5 h-3.5" /> שמירה
+  return (
+    <div className="card p-3" style={{ background: isOverdue ? 'rgba(192,57,43,0.04)' : undefined, opacity: done ? 0.7 : 1 }}>
+      <div className="flex items-start gap-3">
+        <button onClick={onToggle} className="mt-0.5 flex-shrink-0 hover:scale-110 transition-transform" title="סימון כבוצע">
+          {done ? <CheckCircle2 className="w-5 h-5" style={{ color: '#4A7C59' }} /> : <Circle className="w-5 h-5" style={{ color: 'var(--border)' }} />}
+        </button>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium leading-snug" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>{task.title}</p>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs px-2 py-0.5 rounded-full font-medium flex items-center gap-1" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>
+              <Icon className="w-3 h-3" /> {catLabel(task.category)}
+            </span>
+            <span className="text-xs flex items-center gap-1" style={{ color }}><Circle className="w-2.5 h-2.5" fill={color} stroke="none" /> {priorityLabels[task.priority]}</span>
+            {task.due_date && (
+              <span className="text-xs font-medium flex items-center gap-1" style={{ color: isOverdue ? '#C0392B' : 'var(--text-muted)' }}>
+                {isOverdue ? <AlertTriangle className="w-3 h-3" /> : <Calendar className="w-3 h-3" />}
+                {new Date(task.due_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })}
+              </span>
+            )}
+            {task.remind_at && (
+              <span className="text-xs font-medium flex items-center gap-1" style={{ color: '#7F5268' }}>
+                <Bell className="w-3 h-3" /> {new Date(task.remind_at).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' })} {new Date(task.remind_at).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+            {task.file_url && (
+              <a href={task.file_url} target="_blank" rel="noopener noreferrer" className="text-xs font-medium flex items-center gap-1" style={{ color: '#5C6BA0' }}>
+                <FileText className="w-3 h-3" /> קובץ מצורף
+              </a>
+            )}
+          </div>
+          {task.notes && !editing && <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>{task.notes}</p>}
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <button onClick={editing ? onCancelEdit : onEdit} className="p-1.5 rounded-lg" style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }} title="עריכה">
+            {editing ? <X className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
           </button>
-          <button onClick={() => setEditing(false)} className="px-3 py-2 rounded-lg text-sm" style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
-            ביטול
+          <button onClick={onDelete} className="p-1.5 rounded-lg" style={{ background: 'rgba(192,57,43,0.1)', color: '#C0392B' }} title="מחיקה">
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
-    )
-  }
 
-  return (
-    <div className="flex items-center gap-3 p-3 rounded-xl transition-all group"
-      style={{ background: 'var(--surface)', opacity: done ? 0.6 : 1 }}>
-      <button
-        onClick={() => onToggle(task.id, task.status)}
-        className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
-        style={done
-          ? { background: '#4A7C59', borderColor: '#4A7C59' }
-          : { borderColor: priorityColors[task.priority] }
-        }
-      >
-        {done && <Check className="w-3 h-3 text-white" />}
-      </button>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm" style={{ color: 'var(--text)', textDecoration: done ? 'line-through' : 'none' }}>
-          {task.title}
-        </p>
-        {task.due_date && (
-          <p className="text-xs mt-0.5 flex items-center gap-1" style={{ color: overdue ? '#C0392B' : 'var(--text-muted)' }}>
-            {overdue ? <AlertTriangle size={11} /> : <Calendar size={11} />}
-            {new Date(task.due_date).toLocaleDateString('he-IL')}
-          </p>
-        )}
-      </div>
-      <span className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0" style={{ background: `${priorityColors[task.priority]}18`, color: priorityColors[task.priority] }}>
-        {priorityLabels[task.priority]}
-      </span>
-      {!done && (
-        <button onClick={startEdit} title="עריכת משימה" className="opacity-30 group-hover:opacity-100 transition-opacity">
-          <Pencil className="w-3.5 h-3.5" style={{ color: '#7F5268' }} />
-        </button>
+      {editing && (
+        <div className="mt-3 pt-3 space-y-2" style={{ borderTop: '1px solid var(--border)' }}>
+          <input value={title} onChange={e => setTitle(e.target.value)} className="w-full px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty} />
+          <div className="grid grid-cols-2 gap-2">
+            <select value={cat} onChange={e => setCat(e.target.value as TaskCategory)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+              <option value="work">{catLabel('work')}</option>
+              <option value="home">{catLabel('home')}</option>
+              <option value="baby">{catLabel('baby')}</option>
+            </select>
+            <select value={prio} onChange={e => setPrio(e.target.value as TaskPriority)} className="px-3 py-2 rounded-xl border outline-none text-sm" style={inputSty}>
+              <option value="high">דחוף</option>
+              <option value="medium">בינוני</option>
+              <option value="low">נמוך</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>תאריך יעד
+              <input type="date" value={due} onChange={e => setDue(e.target.value)} className="px-2 py-1.5 rounded-lg border outline-none text-sm" style={inputSty} /></label>
+            <label className="text-xs flex flex-col gap-1" style={{ color: 'var(--text-muted)' }}>תזכורת
+              <input type="datetime-local" value={remind} onChange={e => setRemind(e.target.value)} className="px-2 py-1.5 rounded-lg border outline-none text-sm" style={inputSty} /></label>
+          </div>
+          <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="הערות" rows={2} className="w-full px-3 py-2 rounded-xl border outline-none text-sm resize-none" style={inputSty} />
+          <div className="flex items-center gap-2">
+            <label className="text-xs font-medium flex items-center gap-1.5 px-3 py-2 rounded-xl cursor-pointer" style={{ background: 'rgba(92,107,160,0.1)', color: '#5C6BA0' }}>
+              {uploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Paperclip className="w-3.5 h-3.5" />}
+              {task.file_url ? 'החלפת קובץ' : 'צירוף קובץ'}
+              <input type="file" accept="image/*,application/pdf" className="hidden" onChange={e => { const f = e.target.files?.[0]; if (f) onUpload(f) }} />
+            </label>
+            <button
+              onClick={() => onSave({
+                title: title.trim() || task.title, notes: notes.trim() || null, priority: prio, category: cat,
+                due_date: due || null, remind_at: remind ? new Date(remind).toISOString() : null, reminded: false,
+              })}
+              className="flex-1 py-2 rounded-xl text-sm font-semibold text-white" style={{ background: '#4A7C59' }}>
+              שמירה
+            </button>
+          </div>
+        </div>
       )}
-      <button onClick={() => onDelete(task.id)} title="מחיקה" className="opacity-30 hover:opacity-100 transition-opacity">
-        <Trash2 className="w-3.5 h-3.5" style={{ color: '#C0392B' }} />
-      </button>
     </div>
   )
 }

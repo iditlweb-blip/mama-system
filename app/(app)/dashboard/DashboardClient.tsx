@@ -839,7 +839,7 @@ export default function DashboardClient({
             >
               <Plus className="w-3.5 h-3.5" /> הוספה
             </button>
-            <Link href="/tasks" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
+            <Link href="/business" className="text-xs font-medium" style={{ color: 'var(--primary)' }}>
               כל המשימות
             </Link>
           </div>
@@ -1224,7 +1224,7 @@ export default function DashboardClient({
           { href: '/development', label: isPregnancy ? 'מה קורה השבוע' : 'התפתחות', Icon: NavBabyIcon },
           // Chat is pulled out temporarily (no row = disabled) - see AppShell.
           ...(chatEnabled ? [{ href: '/chat', label: 'AI', Icon: NavChatIcon }] : []),
-          { href: '/tasks',       label: 'משימות',  Icon: NavTaskIcon },
+          { href: '/business',    label: 'משימות',  Icon: NavTaskIcon },
           { href: '/tracker',     label: 'מעקב',    Icon: null },
         ].map(({ href, label, Icon }) => (
           <Link

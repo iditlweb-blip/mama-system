@@ -80,7 +80,7 @@ export async function GET(req: Request) {
     const toSend = dueTasks.filter(t => !optedOut.has(t.user_id))
 
     await Promise.all(toSend.map(t =>
-      sendPushToUser(t.user_id, { title: 'תזכורת ממשימות', body: t.title, url: '/tasks', tag: `task-${t.id}` })
+      sendPushToUser(t.user_id, { title: 'תזכורת ממשימות', body: t.title, url: '/business', tag: `task-${t.id}` })
     ))
     // Mark ALL matched tasks handled (including opted-out ones) so they don't
     // get re-evaluated on every cron run forever.

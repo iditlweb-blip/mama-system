@@ -8,12 +8,12 @@ export default async function BusinessPage() {
 
   const [profile, { data: tasks }, { data: schedule }] = await Promise.all([
     getProfile(),
+    // All tasks regardless of category (work/home/baby) or status now that
+    // /tasks has been folded into this page's own "משימות" tab.
     supabase
       .from('tasks')
       .select('*')
       .eq('user_id', userId!)
-      .eq('category', 'work')
-      .neq('status', 'done')
       .order('created_at', { ascending: false }),
     supabase
       .from('weekly_schedule')

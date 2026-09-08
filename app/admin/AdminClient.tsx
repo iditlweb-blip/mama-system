@@ -490,7 +490,7 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
               { href: '/tracker',     label: 'מעקב תינוק',  Icon: Baby,          color: '#5C7A6A' },
               { href: '/pregnancy',   label: 'מעקב הריון',  Icon: Activity,      color: '#C4548A' },
               { href: '/dashboard',   label: 'דשבורד',      Icon: Home,          color: '#7F5268' },
-              { href: '/tasks',       label: 'משימות',      Icon: CheckSquare,   color: '#5C6BA0' },
+              { href: '/business',    label: 'משימות',      Icon: CheckSquare,   color: '#5C6BA0' },
               { href: '/development', label: 'התפתחות',     Icon: BookOpen,      color: '#B8860B' },
               { href: '/products',    label: 'מוצרים',      Icon: ShoppingBag,   color: '#4A7C59' },
               { href: '/contractions',label: 'מד צירים',    Icon: Timer,         color: '#C0392B' },
