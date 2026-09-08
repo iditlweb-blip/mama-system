@@ -8,8 +8,18 @@
 // key, which bypasses RLS.
 //
 // Usage:  node scripts/publish-blog-post.mjs
-// Reads:  content/next-post.json  { title, slug, excerpt, category, body, imagePath }
+// Reads:  content/next-post.json
+//   { title, slug, excerpt, category, body, imagePath,
+//     inlineImages?: [{ path: "content/.tmp-inline-1.png", token: "IMG1" }] }
 // Needs:  NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in .env.local
+//
+// Body placeholders resolved before insert (see also blog-topics content rules):
+//   cid:<token>                                 -> public URL of inlineImages[token]
+//   <!--WHATSAPP_CTA_START-->...<!--WHATSAPP_CTA_END-->
+//     kept (with {{WHATSAPP_GROUP_URL}} filled in) only if app_settings.whatsapp_group.visible
+//     is true; stripped entirely otherwise so the article never shows a dead CTA.
+//   <!--PRODUCTS_PROMO_START-->...<!--PRODUCTS_PROMO_END-->
+//     kept only if app_settings.products_enabled is true; stripped otherwise.
 //
 // Prints a JSON line with the created draft's id/slug/title on success.
 
@@ -97,12 +107,48 @@ if (post.imagePath) {
   coverUrl = pub.publicUrl
 }
 
+// ── Upload inline in-body images (optional) ──────────────────────────────────
+let body = String(post.body)
+for (const img of post.inlineImages || []) {
+  if (!img?.path || !img?.token) fail('כל inlineImages צריך path ו-token')
+  const imgPath = resolve(ROOT, img.path)
+  if (!existsSync(imgPath)) fail(`תמונה פנימית לא נמצאה: ${imgPath}`)
+  const bytes = readFileSync(imgPath)
+  const ext = (imgPath.split('.').pop() || 'jpg').toLowerCase()
+  const storagePath = `generated/${slug}-inline-${img.token}-${Date.now()}.${ext}`
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg'
+  const { error: upErr } = await admin.storage.from('blog-images')
+    .upload(storagePath, bytes, { upsert: true, contentType })
+  if (upErr) fail(`העלאת תמונה פנימית (${img.token}) נכשלה: ${upErr.message}`)
+  const { data: pub } = admin.storage.from('blog-images').getPublicUrl(storagePath)
+  body = body.replaceAll(`cid:${img.token}`, pub.publicUrl)
+}
+
+// ── Resolve dynamic CTA blocks against live app settings ─────────────────────
+// Never publish a WhatsApp/products CTA that points at something turned off.
+const { data: settingsRows } = await admin.from('app_settings')
+  .select('key, value').in('key', ['whatsapp_group', 'products_enabled'])
+const settings = Object.fromEntries((settingsRows || []).map((r) => [r.key, r.value]))
+const waUrl = settings.whatsapp_group?.visible ? settings.whatsapp_group.url : null
+const productsOn = settings.products_enabled === true
+
+body = body.replace(/<!--WHATSAPP_CTA_START-->([\s\S]*?)<!--WHATSAPP_CTA_END-->/g, (_, inner) =>
+  waUrl ? inner.replaceAll('{{WHATSAPP_GROUP_URL}}', waUrl) : ''
+)
+// Stray token with no wrapping block: fall back to the community page rather than a dead link.
+body = body.replaceAll('{{WHATSAPP_GROUP_URL}}', waUrl || '/community')
+
+body = body.replace(/<!--PRODUCTS_PROMO_START-->([\s\S]*?)<!--PRODUCTS_PROMO_END-->/g, (_, inner) =>
+  productsOn ? inner : ''
+)
+body = body.trim()
+
 // ── Insert the DRAFT row ─────────────────────────────────────────────────────
 const { data: row, error } = await admin.from('blog_posts').insert({
   slug,
   title: String(post.title).trim(),
   excerpt: post.excerpt ? String(post.excerpt).trim() : null,
-  body: String(post.body),
+  body,
   category: post.category ? String(post.category).trim() : null,
   cover_image_url: coverUrl,
   status: 'draft',
