@@ -14,17 +14,17 @@ const MAIN_BG = '#F7EDE2'
 const MAIN_RING = 'rgba(127,82,104,0.5)'
 const PLUS_COLOR = '#7F5268'
 
-const MINI_SIZE = 48
+const MINI_SIZE = 63
 
 // Each mini button's offset from the main button's own centre once open, its
 // own icon size, and its colours - lifted from the Figma fan-out layout
 // (four circles at slightly different radii/heights around the trigger, not
 // a plain arc).
 const MINIS: { type: LogType; dx: number; dy: number; iconSize: number }[] = [
-  { type: 'feed',     dx: -37, dy: -47, iconSize: 24 },
-  { type: 'diaper',   dx: 33,  dy: -47, iconSize: 28 },
-  { type: 'sleep',    dx: -65, dy: 9,   iconSize: 30 },
-  { type: 'activity', dx: 63,  dy: 10,  iconSize: 27 },
+  { type: 'feed',     dx: -49, dy: -67, iconSize: 32 },
+  { type: 'diaper',   dx: 44,  dy: -67, iconSize: 38 },
+  { type: 'sleep',    dx: -86, dy: 8,   iconSize: 40 },
+  { type: 'activity', dx: 83,  dy: 9,   iconSize: 36 },
 ]
 
 // Global floating "+" button on every page - replaces the old per-page
@@ -83,7 +83,7 @@ export default function QuickAddFab({ userId }: { userId: string }) {
               }}
             >
               <Icon size={iconSize} />
-              <span style={{ fontSize: 7.5, fontWeight: 300, color, whiteSpace: 'nowrap' }}>+ {label}</span>
+              <span style={{ fontSize: 10, fontWeight: 300, color, whiteSpace: 'nowrap' }}>+ {label}</span>
             </button>
           )
         })}
