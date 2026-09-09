@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import Markdown from '@/components/public/Markdown'
 import Breadcrumbs from '@/components/public/Breadcrumbs'
 import RelatedPosts from '@/components/content/RelatedPosts'
+import { SITE_URL, SITE_NAME } from '@/lib/site'
 
 export interface BlogPostData {
   id: string
@@ -50,8 +51,30 @@ export default async function BlogPost({ slug, basePath, communityBasePath }: {
     ? { label: 'דשבורד', href: '/dashboard' }
     : { label: 'עמוד בית', href: '/' }
 
+  // Only the public /blog surface should claim to be THE article (the
+  // in-app mirror at /content/blog is the same content behind a login, not
+  // a second canonical copy) - so this schema is skipped there.
+  const articleJsonLd = !basePath.startsWith('/content') ? {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.title,
+    description: post.excerpt ?? undefined,
+    image: post.cover_image_url ?? undefined,
+    datePublished: post.published_at ?? undefined,
+    dateModified: post.updated_at ?? post.published_at ?? undefined,
+    author: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    publisher: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    mainEntityOfPage: { '@type': 'WebPage', '@id': `${SITE_URL}${basePath}/${post.slug}` },
+  } : null
+
   return (
     <article>
+      {articleJsonLd && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+        />
+      )}
       <Breadcrumbs
         items={[
           homeCrumb,
