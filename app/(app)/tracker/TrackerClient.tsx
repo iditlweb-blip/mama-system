@@ -52,6 +52,7 @@ interface Props {
   babyGender: 'boy' | 'girl' | null
   initialHealthEvents: HealthEvent[]
   napDroppedBand: string | null
+  kupatCholim: string | null
 }
 
 // Exact per-type accent colours for the stats cards and timeline, pulled from
@@ -315,7 +316,7 @@ function fmtWW(min: number): string {
 }
 
 // ─── Main Component ───────────────────────────────────────────
-export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents, napDroppedBand }: Props) {
+export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate, babyName, babyGender, initialHealthEvents, napDroppedBand, kupatCholim }: Props) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<'daily' | 'archive' | 'weaning' | 'health'>('daily')
   const [logs, setLogs] = useState(initialLogs)
@@ -458,6 +459,7 @@ export default function TrackerClient({ logs: initialLogs, userId, babyBirthdate
           userId={userId}
           babyBirthdate={babyBirthdate}
           babyMonths={babyMonths}
+          kupatCholim={kupatCholim}
         />
       )}
     </div>

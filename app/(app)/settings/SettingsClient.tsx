@@ -267,7 +267,7 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
             ))}
           </select>
           <p className="text-[11px] mt-1" style={{ color: 'var(--text-muted)' }}>
-            בעמוד מעקב ההריון נוסיף קישור ישיר לעמוד הבדיקות של הקופה שלך.
+            נוסיף קישור ישיר לעמוד הבדיקות של הקופה שלך במעקב הריון, ולעמוד תורי החיסונים במעקב תינוק.
           </p>
         </div>
       </Section>

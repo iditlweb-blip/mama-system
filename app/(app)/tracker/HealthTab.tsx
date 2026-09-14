@@ -4,11 +4,13 @@
 // schedule/health-event UI isn't part of the initial JS bundle for users who
 // land on the default "daily" tab.
 import { useState } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import {
   Syringe, CalendarPlus, Baby, ClipboardList, Clock, Calendar,
   CheckCircle2, Circle, Trash2,
 } from 'lucide-react'
+import { kupatCholimBabyUrl, kupatCholimLabel } from '@/lib/kupotCholim'
 
 export interface HealthEvent {
   id: string
@@ -31,10 +33,11 @@ const VACCINE_SCHEDULE = [
   { month: 24, title: 'הפטיטיס A', desc: 'חיסון שנתיים' },
 ]
 
-export default function HealthTab({ healthEvents, setHealthEvents, userId, babyBirthdate, babyMonths }: {
+export default function HealthTab({ healthEvents, setHealthEvents, userId, babyBirthdate, babyMonths, kupatCholim }: {
   healthEvents: HealthEvent[]
   setHealthEvents: React.Dispatch<React.SetStateAction<HealthEvent[]>>
   userId: string; babyBirthdate: string | null; babyMonths: number | null
+  kupatCholim: string | null
 }) {
   const supabase = createClient()
   const [showForm, setShowForm] = useState(false)
@@ -106,6 +109,23 @@ export default function HealthTab({ healthEvents, setHealthEvents, userId, babyB
           <CalendarPlus className="w-4 h-4" /> הוסיפי
         </button>
       </div>
+
+      {/* Direct link to the fund's own vaccine/well-baby ("טיפת חלב") hub -
+          same idea as the pregnancy tracker's per-test link, one level up
+          since vaccines here are booked together rather than per-item. */}
+      {kupatCholimBabyUrl(kupatCholim) ? (
+        <a href={kupatCholimBabyUrl(kupatCholim)!} target="_blank" rel="noopener noreferrer"
+          className="flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-sm font-semibold text-white"
+          style={{ background: '#7F5268', textDecoration: 'none' }}>
+          תורים וזכאות לחיסונים ב{kupatCholimLabel(kupatCholim)} ←
+        </a>
+      ) : (
+        <Link href="/settings"
+          className="block text-center rounded-xl py-2.5 text-xs"
+          style={{ background: 'var(--bg)', color: 'var(--primary)', border: '1px solid var(--border)', textDecoration: 'underline' }}>
+          הוסיפי את קופת החולים שלך בהגדרות כדי לראות קישור ישיר לתורי חיסונים
+        </Link>
+      )}
 
       {/* Add form */}
       {showForm && (
