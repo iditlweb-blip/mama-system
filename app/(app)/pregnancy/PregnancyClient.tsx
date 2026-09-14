@@ -285,6 +285,29 @@ export default function PregnancyClient({ profile, tests: initialTests, userId }
         <span style={{ fontSize: '1.2rem' }}>‹</span>
       </Link>
 
+      {/* Health-fund link - same idea as the per-test one further down (and
+          the equivalent on the baby tracker's חיסונים tab), but always
+          visible up here instead of buried inside a collapsed test card. */}
+      {kupatCholimUrl(profile?.kupat_cholim) ? (
+        <a href={kupatCholimUrl(profile?.kupat_cholim)!} target="_blank" rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, textDecoration: 'none',
+            background: '#7F5268', color: '#fff', borderRadius: 12, padding: '10px 16px',
+            marginBottom: 20, fontSize: '0.88rem', fontWeight: 600,
+          }}>
+          בדיקת זכאות ותורים ב{kupatCholimLabel(profile?.kupat_cholim)} ←
+        </a>
+      ) : (
+        <Link href="/settings"
+          style={{
+            display: 'block', textAlign: 'center', textDecoration: 'underline',
+            background: 'transparent', color: '#7F5268', borderRadius: 12, padding: '8px 16px',
+            marginBottom: 20, fontSize: '0.8rem', border: '1px solid rgba(127,82,104,0.25)',
+          }}>
+          הוסיפי את קופת החולים שלך בהגדרות כדי לראות קישור ישיר לזכאות ותורים
+        </Link>
+      )}
+
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: 'rgba(127,82,104,0.06)', borderRadius: 12, padding: 4 }}>
         {[
