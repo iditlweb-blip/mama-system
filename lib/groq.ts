@@ -1,6 +1,23 @@
 import Groq from 'groq-sdk'
 import { ChatMode } from '@/types/database'
 
+// Groq retires models with little notice - `llama-3.3-70b-versatile`, which
+// this used to run on, stopped existing and every chat turn came back as a
+// 404 model_not_found. Keeping the ids here (and importing them where they're
+// needed) means the next retirement is a one-line fix instead of a hunt.
+//
+// CHAT_MODEL was picked over the alternatives on the account for Hebrew
+// quality on Israeli-specific terms: asked what "סקירת מערכות" is, it
+// correctly answers the fetal anatomy scan at weeks 18-22, where
+// gpt-oss-120b describes a general review of the mother's body systems and
+// qwen3.8 produces broken Hebrew.
+export const CHAT_MODEL = 'groq/compound-mini'
+
+// The WhatsApp agent needs function calling, which the compound models
+// reject outright ("tool calling is not supported with this model"), so it
+// runs on the best tool-capable model on the account instead.
+export const TOOL_MODEL = 'openai/gpt-oss-120b'
+
 const systemPrompts: Record<ChatMode, string> = {
   baby: `את עוזרת אישית לאמא ישראלית עם תינוק בגילאי 0-12 חודשים.
 ענ/י בעברית בלבד, בטון חם, תומך ומבין.
@@ -53,7 +70,7 @@ export async function streamGroqResponse(
   const groq = new Groq({ apiKey })
 
   const stream = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
+    model: CHAT_MODEL,
     messages: [
       { role: 'system', content: systemPrompts[mode] },
       ...messages,
@@ -95,7 +112,7 @@ export async function getGroqReply(
 
   try {
     const completion = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: CHAT_MODEL,
       messages: [
         { role: 'system', content: systemPrompts[mode] },
         ...messages,

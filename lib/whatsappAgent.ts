@@ -1,6 +1,7 @@
 import Groq from 'groq-sdk'
 import { SupabaseClient } from '@supabase/supabase-js'
 import { replyAsAssistant } from '@/lib/aiChat'
+import { TOOL_MODEL } from '@/lib/groq'
 
 // ─── The MamaFlow WhatsApp assistant ("עוזרת אישית") ─────────────
 // Ella-style: the mother writes in free natural language ("התינוק נרדם",
@@ -9,7 +10,8 @@ import { replyAsAssistant } from '@/lib/aiChat'
 // warmly in Hebrew. Anything that isn't an action falls through to the same
 // AI chat that powers the in-app assistant (replyAsAssistant).
 
-const MODEL = 'llama-3.3-70b-versatile'
+// Tool-calling model - see lib/groq.ts for why this differs from the chat one.
+const MODEL = TOOL_MODEL
 
 const SYSTEM_PROMPT = `את "מאמא" - עוזרת אישית חמה בוואטסאפ לאמא ישראלית עם תינוק.
 את חלק מאפליקציית MamaFlow ויכולה לבצע פעולות אמיתיות במעקב של האמא.
