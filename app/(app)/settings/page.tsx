@@ -20,12 +20,22 @@ export default async function SettingsPage() {
   const wa = (waSetting?.value ?? {}) as { url?: string; visible?: boolean }
   const whatsappGroup = { url: wa.url ?? '', visible: wa.visible ?? false }
 
+  // Past cycles (see "add a new pregnancy" below) - just enough to show she
+  // hasn't lost anything, not a full history browser. Prop is named
+  // `pastChildren`, not `children` - that name is reserved for JSX children.
+  const { data: pastChildren } = await supabase
+    .from('children')
+    .select('*')
+    .eq('user_id', userId!)
+    .order('archived_at', { ascending: false })
+
   return (
     <SettingsClient
       profile={profile}
       userId={userId!}
       userEmail={userEmail}
       whatsappGroup={whatsappGroup}
+      pastChildren={pastChildren ?? []}
     />
   )
 }

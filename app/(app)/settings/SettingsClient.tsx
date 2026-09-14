@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import {
   User, Baby, Check, Loader2, Camera, AlertTriangle, X, Heart,
-  UserRound, LogOut, MessageCircle, Bell
+  UserRound, LogOut, MessageCircle, Bell, Plus, Archive
 } from 'lucide-react'
 import { setActiveParent } from '@/lib/activeParent'
 import { KUPOT_CHOLIM, type KupatCholim } from '@/lib/kupotCholim'
+import type { ChildRecord } from '@/types/database'
 
 function PregnancyIcon({ className }: { className?: string }) {
   return (
@@ -53,9 +54,10 @@ interface Props {
   userId: string
   userEmail: string
   whatsappGroup: { url: string; visible: boolean }
+  pastChildren: ChildRecord[]
 }
 
-export default function SettingsClient({ profile, userId, userEmail, whatsappGroup }: Props) {
+export default function SettingsClient({ profile, userId, userEmail, whatsappGroup, pastChildren }: Props) {
   const supabase = createClient()
   const router   = useRouter()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -97,6 +99,28 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
   const [babyGender,    setBabyGender]    = useState<'boy' | 'girl' | ''>(
     (profile?.baby_gender as 'boy' | 'girl') || ''
   )
+
+  // ── Start a new pregnancy (already tracking a baby, pregnant again).
+  // Archives the current baby's logs/tests server-side in one transaction
+  // (supabase/migrations/039_new_pregnancy_cycle.sql) rather than deleting
+  // anything - see the read-only "ילדים קודמים" list below.
+  const [askNewPregnancy,     setAskNewPregnancy]     = useState(false)
+  const [startingNewPregnancy, setStartingNewPregnancy] = useState(false)
+  const [newPregnancyError,   setNewPregnancyError]   = useState<string | null>(null)
+
+  async function handleStartNewPregnancy() {
+    setStartingNewPregnancy(true)
+    setNewPregnancyError(null)
+    const { error: rpcErr } = await supabase.rpc('start_new_pregnancy_cycle')
+    if (rpcErr) {
+      setNewPregnancyError('לא הצלחנו להתחיל מעקב הריון חדש: ' + rpcErr.message)
+      setStartingNewPregnancy(false)
+      return
+    }
+    // Same reasoning as the old mode-switch: this touches nearly every page,
+    // so a hard navigation guarantees everything re-renders in pregnancy mode.
+    window.location.href = '/dashboard'
+  }
 
   // ── Photo upload
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -311,9 +335,88 @@ export default function SettingsClient({ profile, userId, userEmail, whatsappGro
                 ))}
               </div>
             </div>
+
+            <div className="pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+              <button
+                onClick={() => setAskNewPregnancy(true)}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-medium mt-4"
+                style={{ background: 'var(--bg)', color: '#C4548A', border: '1px solid rgba(196,84,138,0.3)' }}
+              >
+                <Plus className="w-4 h-4" /> שוב בהריון? התחלת מעקב הריון חדש
+              </button>
+              <p className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
+                {babyName ? `הפרטים והתיעוד של ${babyName} יישמרו בארכיון - שום דבר לא נמחק.` : 'הפרטים והתיעוד של התינוק/ת הנוכחי/ת יישמרו בארכיון - שום דבר לא נמחק.'}
+              </p>
+            </div>
           </div>
         )}
       </Section>
+
+      {newPregnancyError && (
+        <div className="rounded-xl p-4 flex items-start gap-3" style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#DC2626' }} />
+          <p className="text-sm flex-1" style={{ color: '#DC2626' }}>{newPregnancyError}</p>
+          <button onClick={() => setNewPregnancyError(null)}><X className="w-4 h-4" style={{ color: '#DC2626' }} /></button>
+        </div>
+      )}
+
+      {askNewPregnancy && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-5"
+          style={{ background: 'rgba(0,0,0,0.5)' }}
+          onClick={() => !startingNewPregnancy && setAskNewPregnancy(false)}>
+          <div className="card w-full max-w-sm space-y-4" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start gap-3">
+              <Heart className="w-6 h-6 shrink-0" style={{ color: '#C4548A' }} />
+              <div>
+                <h3 className="font-semibold mb-1" style={{ color: 'var(--text)' }}>מזל טוב! מתחילות מעקב הריון חדש?</h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--text-muted)' }}>
+                  {babyName || 'התינוק/ת'} {babyName ? 'ו' : ''}כל התיעוד שלו/ה (שינה, האכלות, חיתולים) יישמרו בארכיון,
+                  ולא יימחקו - אבל לא יופיעו יותר במעקב הפעיל. יתחיל מעקב הריון חדש מאפס, ותוכלי למלא תאריך לידה משוער בהגדרות.
+                </p>
+                <p className="text-sm leading-relaxed mt-2 font-medium" style={{ color: 'var(--text)' }}>
+                  לא ניתן לבטל את הפעולה הזו.
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={handleStartNewPregnancy}
+                disabled={startingNewPregnancy}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold text-white disabled:opacity-60 flex items-center justify-center gap-2"
+                style={{ background: '#C4548A' }}>
+                {startingNewPregnancy ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
+                כן, מתחילות הריון חדש
+              </button>
+              <button
+                onClick={() => setAskNewPregnancy(false)}
+                disabled={startingNewPregnancy}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium disabled:opacity-60"
+                style={{ background: 'var(--bg)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Past cycles (read-only) ──────────────────────────────── */}
+      {pastChildren.length > 0 && (
+        <Section icon={Archive} title="ילדים קודמים" color="#9a8790">
+          <div className="space-y-2">
+            {pastChildren.map(child => (
+              <div key={child.id} className="flex items-center justify-between px-3 py-2.5 rounded-xl"
+                style={{ background: 'var(--bg)', border: '1px solid var(--border)' }}>
+                <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{child.name || 'ללא שם'}</span>
+                {child.birthdate && (
+                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                    נולד/ה {new Date(child.birthdate).toLocaleDateString('he-IL')}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
 
       {/* ── WhatsApp app group (admin-controlled visibility) ──────── */}
       {whatsappGroup.visible && whatsappGroup.url && (

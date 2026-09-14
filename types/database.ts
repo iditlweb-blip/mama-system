@@ -58,6 +58,21 @@ export interface Contraction {
   created_at: string
 }
 
+// A closed-out cycle: the baby that was being tracked before a new pregnancy
+// started. See supabase/migrations/039_new_pregnancy_cycle.sql - this row
+// itself is the only trace kept in the live tables; the actual baby_logs
+// and pregnancy_tests for it live in archived_baby_logs/archived_pregnancy_tests.
+export interface ChildRecord {
+  id: string
+  user_id: string
+  tracking_type: 'pregnancy' | 'baby'
+  name: string | null
+  gender: string | null
+  due_date: string | null
+  birthdate: string | null
+  archived_at: string
+}
+
 export interface Task {
   id: string
   user_id: string
