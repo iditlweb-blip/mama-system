@@ -9,7 +9,7 @@ import {
   Briefcase, ShoppingBag, Plus, Edit2, BarChart2, ImageDown,
   Home, MessageCircle, ShoppingCart, BookOpen, User, LogIn, Mail,
   CheckCircle2, Hourglass, XCircle, Lock, Timer,
-  LayoutDashboard, Wallet, MapPin, Phone, Ticket, ExternalLink,
+  LayoutDashboard, MapPin, Phone, Ticket, ExternalLink,
   ClipboardList, FileSpreadsheet, Copy, FileText, MessagesSquare,
   Moon,
 } from 'lucide-react'
@@ -22,7 +22,6 @@ import {
 import AdminTasks, { type AdminTask } from './AdminTasks'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminMailingList from './AdminMailingList'
-import AdminPayments, { type AdminPayment } from './AdminPayments'
 import AdminBlog, { type BlogPost } from './AdminBlog'
 import AdminCommunity, { type CommunityQuestion } from './AdminCommunity'
 import ProfileSwitcher, { type SwitchOption } from '@/components/layout/ProfileSwitcher'
@@ -37,6 +36,7 @@ interface UserRow {
   confirmed: boolean
   pwa_installed_at: string | null
   weeklySeconds: number
+  totalSeconds: number
   topPage: string | null
   trackingType: 'pregnancy' | 'baby' | null
   profileLabel: string | null
@@ -94,7 +94,6 @@ interface Props {
   proForm: { formUrl: string; sheetUrl: string }
   adminTasks: AdminTask[]
   adminContent: AdminContent[]
-  adminPayments: AdminPayment[]
   adminNotes: AdminNote[]
   blogPosts: BlogPost[]
   communityQuestions: CommunityQuestion[]
@@ -103,9 +102,9 @@ interface Props {
 
 type ModalType = 'delete' | 'reset' | 'create' | 'user-detail' | null
 type ManageTab = 'professionals' | 'products'
-type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'payments' | 'blog' | 'community'
+type AdminView = 'overview' | 'content' | 'tasks' | 'marketing' | 'blog' | 'community'
 
-export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, chatEnabled: initChatEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminPayments, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
+export default function AdminClient({ users: initialUsers, stats, professionals: initPros, products: initProducts, productsEnabled: initProductsEnabled, chatEnabled: initChatEnabled, whatsappGroup, proForm: proFormLinks, adminTasks, adminContent, adminNotes, blogPosts, communityQuestions, switchOptions }: Props) {
   const [view, setView]     = useState<AdminView>('overview')
   // A Telegram/push notification link (e.g. "?view=community") should land
   // directly on the right tab instead of the default overview.
@@ -238,8 +237,10 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   function openDetail(u: UserRow) { setSelected(u); setModal('user-detail') }
   function closeModal()           { setModal(null); setSelected(null); setFormError('') }
 
+  // Relative label - "מתי לאחרונה". Always pair with fmtExact() in a title
+  // attribute so the exact date/time is one hover away.
   function fmt(dateStr: string | null) {
-    if (!dateStr) return '-'
+    if (!dateStr) return 'אף פעם'
     const d    = new Date(dateStr)
     const diff = Date.now() - d.getTime()
     const mins  = Math.floor(diff / 60000)
@@ -252,24 +253,37 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
     return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' })
   }
 
+  // Exact date + time, for a title="" tooltip on top of the relative fmt() label.
+  function fmtExact(dateStr: string | null): string {
+    if (!dateStr) return 'אין נתון'
+    return new Date(dateStr).toLocaleString('he-IL', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+  }
+
+  // How long ago the account was created - "הצטרפה לפני X".
   function memberDuration(dateStr: string): string {
     const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000)
     if (days === 0) return 'היום'
-    if (days === 1) return 'יום'
-    if (days < 7)   return `${days} ימים`
+    if (days === 1) return 'אתמול'
+    if (days < 7)   return `לפני ${days} ימים`
     const weeks = Math.floor(days / 7)
-    if (weeks < 5)  return `${weeks} שב’`
+    if (weeks < 5)  return `לפני ${weeks} שב’`
     const months = Math.floor(days / 30)
-    if (months < 12) return `${months} חוד’`
-    return `${Math.floor(days / 365)} שנים`
+    if (months < 12) return `לפני ${months} חוד’`
+    return `לפני ${Math.floor(days / 365)} שנים`
   }
 
-  function fmtHours(seconds: number): string {
-    if (seconds < 60)  return '<1 דק’'
-    const mins = Math.floor(seconds / 60)
-    if (mins < 60)     return `${mins} דק’`
-    const hrs = (seconds / 3600).toFixed(1)
-    return `${hrs} ש’`
+  // Real time spent in the app, in clear hours+minutes (not decimal hours) -
+  // built from actual page-visit durations tracked by PageTimeTracker, not a
+  // placeholder. seconds <= 0 means she has no tracked usage at all.
+  function fmtDuration(seconds: number): string {
+    if (seconds <= 0) return 'אין נתון'
+    if (seconds < 60) return 'פחות מדקה'
+    const totalMinutes = Math.floor(seconds / 60)
+    const hours = Math.floor(totalMinutes / 60)
+    const mins  = totalMinutes % 60
+    if (hours === 0) return `${mins} דק’`
+    if (mins === 0)  return `${hours} ש’`
+    return `${hours} ש’ ${mins} דק’`
   }
 
   function fmtPage(page: string | null): React.ReactNode {
@@ -518,7 +532,6 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             { key: 'community', label: 'קהילה',   Icon: MessagesSquare },
             { key: 'tasks',     label: 'משימות',  Icon: CheckSquare },
             { key: 'marketing', label: 'שיווק',   Icon: MessageCircle },
-            { key: 'payments',  label: 'תשלומים', Icon: Wallet },
           ] as const).map(({ key, label, Icon }) => (
             <button key={key} onClick={() => setView(key)}
               className="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-colors"
@@ -545,10 +558,6 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             <AdminMarketing initialContent={adminContent} initialNotes={adminNotes} onToast={showToast} />
           </div>
         )}
-        {view === 'payments' && (
-          <AdminPayments initialPayments={adminPayments} onToast={showToast} />
-        )}
-
         {view === 'overview' && (
         <>
         {/* Chat on/off - pulled temporarily out of the sidebar, bottom nav,
@@ -617,10 +626,10 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
             style={{ color: 'var(--text-muted)', borderColor: 'var(--border)' }}>
             <span>משתמשת</span>
             <span>מייל</span>
-            <span>כניסה אחרונה</span>
-            <span>במערכת</span>
-            <span className="flex items-center gap-1"><BarChart2 className="w-3 h-3" /> שבועי</span>
-            <span className="flex items-center gap-1"><Moon className="w-3 h-3" /> שינה אחרונה</span>
+            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> כניסה אחרונה</span>
+            <span className="flex items-center gap-1" title="זמן שימוש אמיתי באפליקציה, נמדד לפי זמן בפועל בעמודים"><Timer className="w-3 h-3" /> זמן שימוש בפועל</span>
+            <span>הצטרפה</span>
+            <span className="flex items-center gap-1" title="מעקב שינה של התינוק/ת שהאמא מתעדת - לא פעילות האמא עצמה"><Moon className="w-3 h-3" /> שינה (תינוק/ת)</span>
             <span>סטטוס</span>
             <span>פעולות</span>
           </div>
@@ -661,50 +670,53 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                   )}
                 </div>
 
-                {/* Last sign in */}
-                <div className="flex items-center gap-1">
+                {/* Last sign in - relative label, exact date/time on hover */}
+                <div className="flex items-center gap-1" title={fmtExact(u.last_sign_in)}>
                   <Clock className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                  <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmt(u.last_sign_in)}</span>
+                  <span className="text-xs" style={{ color: u.last_sign_in ? 'var(--text)' : 'var(--text-muted)' }}>{fmt(u.last_sign_in)}</span>
                 </div>
 
-                {/* Membership duration */}
+                {/* Real usage time - total ever + this week, from tracked page-visit durations */}
                 <div>
-                  <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>
-                    {memberDuration(u.created_at)}
-                  </span>
-                </div>
-
-                {/* Weekly analytics */}
-                <div>
-                  {u.weeklySeconds > 0 ? (
-                    <div className="flex flex-col gap-0.5">
+                  {u.totalSeconds > 0 ? (
+                    <div className="flex flex-col gap-0.5" title="סה״כ זמן שימוש בפועל מאז ההרשמה, לפי זמן ממשי שנמדד בעמודים">
                       <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#7F5268' }}>
                         <Timer className="w-3 h-3" />
-                        {fmtHours(u.weeklySeconds)}
+                        {fmtDuration(u.totalSeconds)} סה״כ
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        השבוע: {fmtDuration(u.weeklySeconds)}
                       </span>
                       {u.topPage && (
                         <span className="text-xs" style={{ color: 'var(--text-muted)' }}>{fmtPage(u.topPage)}</span>
                       )}
                     </div>
                   ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }} title="לא נמדד עדיין זמן שימוש בעמודים">אין נתון</span>
                   )}
                 </div>
 
-                {/* Last sleep */}
+                {/* Joined - relative label, exact signup date/time on hover */}
+                <div title={fmtExact(u.created_at)}>
+                  <span className="text-xs font-medium" style={{ color: 'var(--text)' }}>
+                    {memberDuration(u.created_at)}
+                  </span>
+                </div>
+
+                {/* Baby sleep tracking - not the mother's own activity */}
                 <div>
                   {u.isAsleepNow ? (
-                    <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#5C6BA0' }}>
+                    <span className="text-xs font-semibold inline-flex items-center gap-1" style={{ color: '#5C6BA0' }} title={fmtExact(u.sleepStartedAt)}>
                       <Moon className="w-3 h-3" />
-                      ישנה כרגע ({fmt(u.sleepStartedAt)})
+                      ישנה כרגע (מ{fmt(u.sleepStartedAt)})
                     </span>
                   ) : u.lastSleepAt ? (
-                    <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+                    <span className="text-xs inline-flex items-center gap-1" style={{ color: 'var(--text-muted)' }} title={fmtExact(u.lastSleepAt)}>
                       <Moon className="w-3 h-3" />
                       {fmt(u.lastSleepAt)}
                     </span>
                   ) : (
-                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>-</span>
+                    <span className="text-xs" style={{ color: 'var(--text-muted)' }}>אין תיעוד</span>
                   )}
                 </div>
 
@@ -1210,9 +1222,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 {selected.provider === 'google' ? 'Google' : 'Email'}
               </span>
             } />
-            <DetailRow label="הצטרף/ה"     value={fmt(selected.created_at)} />
-            <DetailRow label="כניסה אחרונה" value={fmt(selected.last_sign_in)} />
-            <DetailRow label="ותק"          value={memberDuration(selected.created_at) + ' במערכת'} />
+            <DetailRow label="הצטרפה"       value={`${memberDuration(selected.created_at)} (${fmtExact(selected.created_at)})`} />
+            <DetailRow label="כניסה אחרונה" value={selected.last_sign_in ? `${fmt(selected.last_sign_in)} (${fmtExact(selected.last_sign_in)})` : 'אף פעם'} />
             <DetailRow label="PWA" value={selected.pwa_installed_at
               ? <span className="inline-flex items-center gap-1.5"><Smartphone className="w-3.5 h-3.5" />{new Date(selected.pwa_installed_at).toLocaleDateString('he-IL')}</span>
               : '-'} />
@@ -1221,9 +1232,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 ? <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5" />מאושרת</span>
                 : <span className="inline-flex items-center gap-1.5"><Hourglass className="w-3.5 h-3.5" />ממתינה</span>
             } />
-            {selected.weeklySeconds > 0 && (
-              <DetailRow label={<span className="inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5" />זמן השבוע</span>} value={fmtHours(selected.weeklySeconds)} highlight />
-            )}
+            <DetailRow label={<span className="inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5" />זמן שימוש סה״כ</span>} value={fmtDuration(selected.totalSeconds)} highlight />
+            <DetailRow label={<span className="inline-flex items-center gap-1"><Timer className="w-3.5 h-3.5" />זמן שימוש השבוע</span>} value={fmtDuration(selected.weeklySeconds)} />
             {selected.topPage && (
               <DetailRow label={<span className="inline-flex items-center gap-1"><BarChart2 className="w-3.5 h-3.5" />עמוד מוביל</span>} value={fmtPage(selected.topPage)} />
             )}

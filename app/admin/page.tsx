@@ -50,14 +50,14 @@ export default async function AdminPage() {
     { data: activeTimersData },
     { data: professionals },
     { data: products },
-    { data: analyticsData },
+    { data: weeklyAnalyticsData },
+    { data: allTimeAnalyticsData },
     { data: productsSetting },
     { data: chatSetting },
     { data: whatsappSetting },
     { data: proFormSetting },
     { data: adminTasks },
     { data: adminContent },
-    { data: adminPayments },
     { data: adminNotes },
     { data: blogPosts },
     { data: communityQuestions },
@@ -72,13 +72,15 @@ export default async function AdminPage() {
     admin.from('professionals').select('*').order('sort_order').limit(100),
     admin.from('products').select('*').order('sort_order').limit(100),
     admin.from('user_analytics').select('user_id, page, duration_seconds, session_date').gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0]),
+    // Total real time spent in the app since ever - same table, no date
+    // filter, reduced in JS below (see totalSecondsMap).
+    admin.from('user_analytics').select('user_id, duration_seconds'),
     admin.from('app_settings').select('value').eq('key', 'products_enabled').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'chat_enabled').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'whatsapp_group').maybeSingle(),
     admin.from('app_settings').select('value').eq('key', 'pro_form').maybeSingle(),
     admin.from('admin_tasks').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_content').select('*').order('created_at', { ascending: false }).limit(200),
-    admin.from('admin_payments').select('*').order('created_at', { ascending: false }).limit(200),
     admin.from('admin_notes').select('*').order('created_at', { ascending: false }).limit(200),
     // Blog + community may not be migrated yet - errors are swallowed by the
     // destructure (data is null) so the admin page still renders.
@@ -112,10 +114,16 @@ export default async function AdminPage() {
 
   // Per-user analytics summary (last 7 days)
   const userAnalytics: Record<string, { totalSeconds: number; pages: Record<string, number> }> = {}
-  for (const row of (analyticsData ?? [])) {
+  for (const row of (weeklyAnalyticsData ?? [])) {
     if (!userAnalytics[row.user_id]) userAnalytics[row.user_id] = { totalSeconds: 0, pages: {} }
     userAnalytics[row.user_id].totalSeconds += row.duration_seconds ?? 0
     userAnalytics[row.user_id].pages[row.page] = (userAnalytics[row.user_id].pages[row.page] ?? 0) + (row.duration_seconds ?? 0)
+  }
+
+  // Real total time ever spent in the app per user (all-time sum, not just this week).
+  const totalSecondsMap: Record<string, number> = {}
+  for (const row of (allTimeAnalyticsData ?? [])) {
+    totalSecondsMap[row.user_id] = (totalSecondsMap[row.user_id] ?? 0) + (row.duration_seconds ?? 0)
   }
 
   // Last sleep + total sleep-log count per user (babyLogsData is newest-first,
@@ -155,6 +163,7 @@ export default async function AdminPage() {
       confirmed: !!u.email_confirmed_at,
       pwa_installed_at: pwaMap[u.id] ?? null,
       weeklySeconds: userAnalytics[u.id]?.totalSeconds ?? 0,
+      totalSeconds: totalSecondsMap[u.id] ?? 0,
       topPage: userAnalytics[u.id]
         ? Object.entries(userAnalytics[u.id].pages).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null
         : null,
@@ -198,7 +207,6 @@ export default async function AdminPage() {
       proForm={proForm}
       adminTasks={adminTasks ?? []}
       adminContent={adminContent ?? []}
-      adminPayments={adminPayments ?? []}
       adminNotes={adminNotes ?? []}
       blogPosts={blogPosts ?? []}
       communityQuestions={communityQuestions ?? []}

@@ -232,50 +232,6 @@ export async function deleteAdminContent(id: string): Promise<{ ok: boolean; err
   }
 }
 
-// ─── Back-office: Payments CRUD ─────────────────────────────────────────────────
-export async function upsertAdminPayment(data: {
-  id?: string
-  name: string
-  amount: number
-  currency?: string
-  recurrence?: string
-  due_date?: string
-  paid?: boolean
-  notes?: string
-}): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const admin = await verifyAdmin()
-    const payload: Record<string, unknown> = {
-      name: data.name,
-      amount: data.amount,
-      currency: data.currency ?? 'ILS',
-      recurrence: data.recurrence ?? 'monthly',
-      due_date: data.due_date || null,
-      paid: data.paid ?? false,
-      notes: data.notes ?? null,
-    }
-    if (data.id) payload.id = data.id
-    const { error } = await admin.from('admin_payments').upsert(payload, { onConflict: 'id' })
-    if (error) return { ok: false, error: error.message }
-    revalidatePath('/admin')
-    return { ok: true }
-  } catch (e: unknown) {
-    return { ok: false, error: (e as Error).message }
-  }
-}
-
-export async function deleteAdminPayment(id: string): Promise<{ ok: boolean; error?: string }> {
-  try {
-    const admin = await verifyAdmin()
-    const { error } = await admin.from('admin_payments').delete().eq('id', id)
-    if (error) return { ok: false, error: error.message }
-    revalidatePath('/admin')
-    return { ok: true }
-  } catch (e: unknown) {
-    return { ok: false, error: (e as Error).message }
-  }
-}
-
 // ─── Back-office: WhatsApp / group notes CRUD ───────────────────────────────────
 export async function upsertAdminNote(data: {
   id?: string
