@@ -5,6 +5,11 @@ import { createClient } from '@/lib/supabase/server'
 import { sendPushToAdmin } from '@/lib/push'
 import { sendTelegram, escapeHtml } from '@/lib/telegram'
 import { SITE_URL } from '@/lib/site'
+import { isUuid, rateLimit } from '@/lib/security'
+
+const MAX_TITLE = 200
+const MAX_BODY = 5000
+const MAX_CATEGORY = 50
 
 // Reads the signed-in user + her display name. Posting requires a session;
 // RLS additionally enforces that user_id matches the caller, so these can't be
@@ -36,7 +41,13 @@ export async function postQuestion(data: {
 }): Promise<{ ok: boolean; error?: string; id?: string }> {
   const ctx = await currentUser()
   if (!ctx) return { ok: false, error: 'צריך להתחבר כדי לפרסם שאלה' }
-  if (!data.title.trim()) return { ok: false, error: 'צריך לכתוב שאלה' }
+  if (typeof data?.title !== 'string' || !data.title.trim()) return { ok: false, error: 'צריך לכתוב שאלה' }
+  if (data.title.length > MAX_TITLE || (data.body?.length ?? 0) > MAX_BODY || (data.category?.length ?? 0) > MAX_CATEGORY) {
+    return { ok: false, error: 'הטקסט ארוך מדי' }
+  }
+  if (!(await rateLimit(`community-q:${ctx.userId}`, 5, 3600))) {
+    return { ok: false, error: 'פרסמת הרבה שאלות בזמן קצר, נסי שוב מאוחר יותר' }
+  }
 
   // Questions need the owner's approval before they're visible to anyone -
   // status starts at 'pending' (overriding the column's own 'published'
@@ -55,7 +66,10 @@ export async function postQuestion(data: {
     .select('id')
     .single()
 
-  if (error || !row) return { ok: false, error: error?.message ?? 'שמירת השאלה נכשלה' }
+  if (error || !row) {
+    if (error) console.error('[postQuestion]', error)
+    return { ok: false, error: 'שמירת השאלה נכשלה' }
+  }
   revalidatePath('/admin')
 
   // Awaited (not fire-and-forget): on Vercel, a serverless invocation can
@@ -94,7 +108,12 @@ export async function postAnswer(data: {
 }): Promise<{ ok: boolean; error?: string }> {
   const ctx = await currentUser()
   if (!ctx) return { ok: false, error: 'צריך להתחבר כדי לענות' }
-  if (!data.body.trim()) return { ok: false, error: 'צריך לכתוב תשובה' }
+  if (typeof data?.body !== 'string' || !data.body.trim()) return { ok: false, error: 'צריך לכתוב תשובה' }
+  if (!isUuid(data.questionId)) return { ok: false, error: 'שאלה לא נמצאה' }
+  if (data.body.length > MAX_BODY) return { ok: false, error: 'התשובה ארוכה מדי' }
+  if (!(await rateLimit(`community-a:${ctx.userId}`, 20, 3600))) {
+    return { ok: false, error: 'פרסמת הרבה תשובות בזמן קצר, נסי שוב מאוחר יותר' }
+  }
 
   const { error } = await ctx.supabase
     .from('community_answers')
@@ -105,7 +124,10 @@ export async function postAnswer(data: {
       ...authorFields(ctx, data.anonymous),
     })
 
-  if (error) return { ok: false, error: error.message }
+  if (error) {
+    console.error('[postAnswer]', error)
+    return { ok: false, error: 'שמירת התשובה נכשלה' }
+  }
   revalidatePath(`/community/${data.questionId}`)
   revalidatePath('/community')
   revalidatePath(`/content/community/${data.questionId}`)

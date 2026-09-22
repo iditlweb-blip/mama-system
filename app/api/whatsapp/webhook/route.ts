@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendWhatsAppText, downloadWhatsAppMedia, verifyWebhookSignature } from '@/lib/whatsapp'
 import { runWhatsAppAgent } from '@/lib/whatsappAgent'
+import { rateLimit, safeEqual } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -12,7 +13,7 @@ export async function GET(req: Request) {
   const mode = searchParams.get('hub.mode')
   const token = searchParams.get('hub.verify_token')
   const challenge = searchParams.get('hub.challenge')
-  if (mode === 'subscribe' && token && token === process.env.WHATSAPP_VERIFY_TOKEN) {
+  if (mode === 'subscribe' && process.env.WHATSAPP_VERIFY_TOKEN && safeEqual(token, process.env.WHATSAPP_VERIFY_TOKEN)) {
     return new Response(challenge ?? '', { status: 200 })
   }
   return new Response('Forbidden', { status: 403 })
@@ -54,7 +55,9 @@ export async function POST(req: Request) {
 
 async function handleMessage(message: InboundMessage) {
   const from = message.from // E.164 without '+', e.g. 972501234567
-  if (!from) return
+  if (!from || !/^\d{6,16}$/.test(from)) return
+  // Flood guard: every text reaches the AI provider, so cap per sender.
+  if (!(await rateLimit(`wa-msg:${from}`, 40, 600))) return
   const supabase = createAdminClient()
 
   // Which app user owns this WhatsApp number?
@@ -68,7 +71,10 @@ async function handleMessage(message: InboundMessage) {
   if (!profile) {
     if (message.type === 'text') {
       const code = (message.text?.body ?? '').trim()
-      const linked = await tryLinkNumber(supabase, from, code)
+      // Link codes are short, so without a cap a number could guess its way
+      // into someone else's account. 5 tries an hour per number, 50 overall.
+      const allowed = await rateLimit(`wa-link:${from}`, 5, 3600) && await rateLimit('wa-link:all', 50, 3600)
+      const linked = allowed && await tryLinkNumber(supabase, from, code)
       await sendWhatsAppText(from, linked
         ? 'מעולה! 🎉 המספר שלך חובר ל-MamaFlow. מעכשיו אפשר לכתוב לי כאן - למשל "התינוק נרדם", "האכלתי בקבוק 120", או "כמה חיתולים היום?"'
         : 'שלום! 👋 כדי לחבר את הוואטסאפ שלך ל-MamaFlow, היכנסי לאפליקציה → הגדרות → "חיבור וואטסאפ", וקבלי קוד חיבור. שלחי לי אותו כאן.')

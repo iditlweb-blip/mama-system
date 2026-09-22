@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 import { notifyRegistrationOnce } from '@/lib/adminNotify'
+import { safeRedirectPath } from '@/lib/security'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -9,7 +10,7 @@ export async function GET(request: Request) {
   // recovery links should land on /auth/reset instead of /dashboard).
   // Restricted to a same-app relative path to avoid open-redirect issues.
   const nextParam = searchParams.get('next')
-  const next = nextParam && nextParam.startsWith('/') ? nextParam : '/dashboard'
+  const next = safeRedirectPath(nextParam, '/dashboard')
 
   if (code) {
     const supabase = await createClient()

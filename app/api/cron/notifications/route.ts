@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendPushToUser } from '@/lib/push'
+import { hasCronSecret } from '@/lib/security'
 import { STANDARD_TESTS, calcPregnancyWeek } from '@/lib/pregnancy'
 
 // A day nap running longer than this is worth a "want to wake her?" nudge.
@@ -48,17 +49,8 @@ export const dynamic = 'force-dynamic'
  * has a request timeout (often ~30s), and sequential sends were measured at
  * ~20s+ even with a couple dozen matches.
  */
-function isAuthorized(req: Request): boolean {
-  const secret = process.env.CRON_SECRET
-  if (!secret) return false
-  const url = new URL(req.url)
-  if (url.searchParams.get('secret') === secret) return true
-  const auth = req.headers.get('authorization')
-  return auth === `Bearer ${secret}`
-}
-
 export async function GET(req: Request) {
-  if (!isAuthorized(req)) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
+  if (!hasCronSecret(req)) return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
 
   const admin = createAdminClient()
   const nowIso = new Date().toISOString()

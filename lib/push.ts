@@ -1,6 +1,7 @@
 import webpush from 'web-push'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { ADMIN_EMAIL } from '@/lib/admin'
+import { isValidPushEndpoint } from '@/lib/security'
 
 /**
  * Server-side Web Push sender. Needs three env vars (server-only):
@@ -54,7 +55,9 @@ async function sendToSubscriptions(subs: SubRow[], payload: PushPayload): Promis
     clear: payload.clear,
   })
 
-  await Promise.all(subs.map(async (sub) => {
+  // Rows can be written straight through the Supabase API (RLS only checks
+  // ownership), so re-check the endpoint here - never POST to a non-push host.
+  await Promise.all(subs.filter(sub => isValidPushEndpoint(sub.endpoint)).map(async (sub) => {
     try {
       await webpush.sendNotification(
         { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth_key } },

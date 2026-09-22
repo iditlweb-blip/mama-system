@@ -72,7 +72,7 @@ export default async function BlogPost({ slug, basePath, communityBasePath }: {
       {articleJsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd).replace(/</g, '\\u003c') }}
         />
       )}
       <Breadcrumbs

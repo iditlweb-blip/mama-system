@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { hasCronSecret } from '@/lib/security'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -9,9 +10,7 @@ export const dynamic = 'force-dynamic'
 // console.error only visible in server logs. Protected by CRON_SECRET (reused
 // rather than adding another env var) since this sends a real message.
 export async function GET(req: Request) {
-  const secret = process.env.CRON_SECRET
-  const url = new URL(req.url)
-  if (!secret || url.searchParams.get('secret') !== secret) {
+  if (!hasCronSecret(req)) {
     return NextResponse.json({ ok: false, error: 'unauthorized' }, { status: 401 })
   }
 
