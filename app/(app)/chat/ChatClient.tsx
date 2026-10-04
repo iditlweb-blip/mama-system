@@ -6,6 +6,12 @@ import { ChatMode, ChatMessage } from '@/types/database'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+const FALLBACK_ERROR = 'אירעה שגיאה. אנא נסי שוב.'
+
+// Carries a message that's already fit to show a mother, so the catch below
+// can tell "the server explained why" apart from an unexpected throw.
+class ChatError extends Error {}
+
 // Inline pregnancy belly SVG icon component
 function PregnancyIcon({ className, style }: { className?: string; style?: React.CSSProperties }) {
   return (
@@ -108,8 +114,14 @@ export default function ChatClient(
         body: JSON.stringify({ messages: newMessages, mode: sendMode }),
       })
 
-      if (!res.ok) throw new Error('שגיאה בחיבור לצ\'אט')
-      if (!res.body) throw new Error('No response body')
+      // The API answers failures as JSON with a Hebrew `error` (rate limit,
+      // chat switched off). Collapsing them all into one generic message left
+      // a mother who'd hit the 30-messages cap retrying with no idea why.
+      if (!res.ok) {
+        const msg = await res.json().then(d => d?.error).catch(() => null)
+        throw new ChatError(typeof msg === 'string' && /[\u0590-\u05FF]/.test(msg) ? msg : FALLBACK_ERROR)
+      }
+      if (!res.body) throw new ChatError(FALLBACK_ERROR)
 
       const reader = res.body.getReader()
       const decoder = new TextDecoder()
@@ -138,7 +150,10 @@ export default function ChatClient(
     } catch (e) {
       setMessagesByMode(prev => ({
         ...prev,
-        [sendMode]: [...newMessages, { role: 'assistant', content: 'אירעה שגיאה. אנא נסי שוב.' }],
+        [sendMode]: [...newMessages, {
+          role: 'assistant',
+          content: e instanceof ChatError ? e.message : FALLBACK_ERROR,
+        }],
       }))
       setStreaming('')
     }
