@@ -1,7 +1,9 @@
 import BackButton from '@/components/layout/BackButton'
 import { createClient } from '@/lib/supabase/server'
-import { ShoppingBag, Stethoscope, MapPin, Phone, Gift, Sparkles, Briefcase } from 'lucide-react'
+import { ShoppingBag, Stethoscope, Gift, Sparkles, Briefcase } from 'lucide-react'
 import ProductsGrid from './ProductsGrid'
+import { ProfessionalTile } from '@/components/professionals/ProfessionalCard'
+import type { Professional } from '@/components/professionals/types'
 
 // Invites businesses / professionals to apply for a spot on this page, via the
 // Google Form the owner manages from the admin panel (app_settings.pro_form).
@@ -73,10 +75,12 @@ export default async function ProductsPage() {
     )
   }
 
-  const { data: professionals } = await supabase
+  const { data: allProfessionals } = await supabase
     .from('professionals')
     .select('*')
     .order('sort_order')
+  // is_active only exists after migration 041; rows without it stay visible.
+  const professionals = ((allProfessionals ?? []) as Professional[]).filter(p => p.is_active !== false)
 
   const { data: products } = await supabase
     .from('products')
@@ -120,41 +124,7 @@ export default async function ProductsPage() {
             <Stethoscope size={20} /> בעלי מקצוע מומלצים
           </h2>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(250px,1fr))', gap: 16 }}>
-            {professionals.map((pro) => (
-              <div key={pro.id} style={{
-                background: '#fff',
-                borderRadius: 16,
-                padding: 20,
-                boxShadow: '0 2px 16px rgba(127,82,104,0.1)',
-                border: '1px solid rgba(127,82,104,0.08)',
-              }}>
-                {pro.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={pro.image_url} alt={pro.name}
-                    style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', marginBottom: 12 }} />
-                ) : (
-                  <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'rgba(127,82,104,0.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12 }}>
-                    <Stethoscope size={26} color="#7F5268" strokeWidth={1.6} />
-                  </div>
-                )}
-                <h3 style={{ color: '#3a1e2d', fontSize: '0.95rem', fontWeight: 700, margin: '0 0 4px' }}>{pro.name}</h3>
-                {pro.title && <p style={{ color: '#7F5268', fontSize: '0.82rem', margin: '0 0 4px', fontWeight: 500 }}>{pro.title}</p>}
-                {pro.region && (
-                  <p style={{ color: '#999', fontSize: '0.78rem', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <MapPin size={13} /> {pro.region}
-                  </p>
-                )}
-                {pro.phone && (
-                  <a href={`tel:${pro.phone}`} style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                    background: '#7F5268', color: '#fff', borderRadius: 20,
-                    padding: '7px 16px', fontSize: '0.82rem', textDecoration: 'none', fontWeight: 600,
-                  }}>
-                    <Phone size={13} /> {pro.phone}
-                  </a>
-                )}
-              </div>
-            ))}
+            {professionals.map(pro => <ProfessionalTile key={pro.id} pro={pro} />)}
           </div>
         </section>
       )}

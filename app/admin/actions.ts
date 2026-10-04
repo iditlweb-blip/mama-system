@@ -263,27 +263,38 @@ export async function deleteAdminNote(id: string): Promise<{ ok: boolean; error?
 }
 
 // ─── Professionals CRUD ────────────────────────────────────────────────────────
-export async function upsertProfessional(data: {
+// Text fields editable from the admin form (migration 041). Empty strings are
+// stored as NULL so the card simply hides that section.
+const PRO_TEXT_FIELDS = [
+  'title', 'phone', 'email', 'region', 'category', 'service_mode', 'image_url',
+  'tagline', 'about', 'credentials', 'services', 'price_range', 'response_time',
+  'benefit', 'coupon_code', 'benefit_terms', 'benefit_valid_until',
+  'instagram', 'website', 'facebook',
+] as const
+export type ProfessionalInput = {
   id?: string
   name: string
-  title?: string
-  phone?: string
-  region?: string
   sort_order?: number
-}): Promise<{ ok: boolean; error?: string }> {
+  is_active?: boolean
+} & Partial<Record<(typeof PRO_TEXT_FIELDS)[number], string>>
+
+export async function upsertProfessional(data: ProfessionalInput): Promise<{ ok: boolean; error?: string }> {
   try {
     const admin = await verifyAdmin()
     const payload: Record<string, unknown> = {
-      name: data.name,
-      title: data.title ?? null,
-      phone: data.phone ?? null,
-      region: data.region ?? null,
+      name: data.name.trim(),
       sort_order: data.sort_order ?? null,
+      is_active: data.is_active ?? true,
     }
+    for (const key of PRO_TEXT_FIELDS) payload[key] = data[key]?.trim() || null
     if (data.id) payload.id = data.id
 
     const { error } = await admin.from('professionals').upsert(payload, { onConflict: 'id' })
-    if (error) return { ok: false, error: error.message }
+    if (error) {
+      // New columns missing → migration 041 hasn't been run yet.
+      const needsMigration = /column|schema cache/i.test(error.message)
+      return { ok: false, error: needsMigration ? `יש להריץ את מיגרציה 041 ב-Supabase (${error.message})` : error.message }
+    }
     revalidatePath('/admin')
     revalidatePath('/products')
     return { ok: true }

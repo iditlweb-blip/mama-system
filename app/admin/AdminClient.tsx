@@ -15,11 +15,14 @@ import {
 } from 'lucide-react'
 import {
   deleteUser, sendPasswordReset, createUserByAdmin,
-  upsertProfessional, deleteProfessional,
+  deleteProfessional,
   upsertProduct, deleteProduct, fetchProductImage,
   setProductsEnabled, setChatEnabled, setWhatsappGroup, setProForm as saveProFormLinks,
 } from './actions'
 import AdminTasks, { type AdminTask } from './AdminTasks'
+import AdminProfessionalForm from './AdminProfessionalForm'
+import type { Professional } from '@/components/professionals/types'
+import { ProAvatar } from '@/components/professionals/ProfessionalCard'
 import AdminMarketing, { type AdminContent, type AdminNote } from './AdminMarketing'
 import AdminMailingList from './AdminMailingList'
 import AdminBlog, { type BlogPost } from './AdminBlog'
@@ -51,15 +54,6 @@ interface UserRow {
   sleepStartedAt: string | null
 }
 
-interface Professional {
-  id: string
-  name: string
-  title: string | null
-  phone: string | null
-  region: string | null
-  image_url: string | null
-  sort_order: number | null
-}
 
 interface Product {
   id: string
@@ -141,8 +135,8 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
   const [manageTab, setManageTab] = useState<ManageTab>('professionals')
 
   // Pro form
-  const emptyPro = { id: '', name: '', title: '', phone: '', region: '', sort_order: '' }
-  const [proForm, setProForm]       = useState(emptyPro)
+  // null = adding a new professional; otherwise the row being edited
+  const [editingPro, setEditingPro]   = useState<Professional | null>(null)
   const [showProForm, setShowProForm] = useState(false)
 
   // Product form
@@ -358,31 +352,9 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
   // ── Professional actions ───────────────────────────────────────────────────────
   function editPro(p: Professional) {
-    setProForm({ id: p.id, name: p.name, title: p.title ?? '', phone: p.phone ?? '', region: p.region ?? '', sort_order: p.sort_order?.toString() ?? '' })
+    setEditingPro(p)
     setShowProForm(true)
-  }
-
-  function handleSavePro(e: React.FormEvent) {
-    e.preventDefault()
-    if (!proForm.name.trim()) return
-    startTransition(async () => {
-      const res = await upsertProfessional({
-        id: proForm.id || undefined,
-        name: proForm.name,
-        title: proForm.title || undefined,
-        phone: proForm.phone || undefined,
-        region: proForm.region || undefined,
-        sort_order: proForm.sort_order ? parseInt(proForm.sort_order) : undefined,
-      })
-      if (res.ok) {
-        showToast(proForm.id ? 'בעל/ת מקצוע עודכן/ה' : 'בעל/ת מקצוע נוסף/ה')
-        setShowProForm(false)
-        setProForm(emptyPro)
-        window.location.reload()
-      } else {
-        showToast(res.error ?? 'שגיאה בשמירה', false)
-      }
-    })
+    requestAnimationFrame(() => document.getElementById('pro-form-anchor')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
 
   function handleDeletePro(id: string, name: string) {
@@ -840,49 +812,22 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
 
               <div className="flex justify-end mb-4">
                 <button
-                  onClick={() => { setProForm(emptyPro); setShowProForm(true) }}
+                  onClick={() => { setEditingPro(null); setShowProForm(true) }}
                   className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white"
                   style={{ background: '#7F5268' }}>
                   <Plus className="w-4 h-4" />הוספת איש/ת מקצוע
                 </button>
               </div>
 
+              <div id="pro-form-anchor" />
               {showProForm && (
-                <form onSubmit={handleSavePro}
-                  className="p-4 rounded-xl mb-4 border space-y-3"
-                  style={{ borderColor: 'var(--border)', background: 'rgba(127,82,104,0.04)' }}>
-                  <p className="font-semibold text-sm" style={{ color: 'var(--text)' }}>
-                    {proForm.id ? 'עריכת' : 'הוספת'} איש/ת מקצוע
-                  </p>
-                  <div className="grid grid-cols-2 gap-3">
-                    <input value={proForm.name} onChange={e => setProForm(f => ({ ...f, name: e.target.value }))}
-                      placeholder="שם *" required
-                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
-                    <input value={proForm.title} onChange={e => setProForm(f => ({ ...f, title: e.target.value }))}
-                      placeholder="תפקיד (עובדת סוציאלית, מטפלת...)"
-                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
-                    <input value={proForm.phone} onChange={e => setProForm(f => ({ ...f, phone: e.target.value }))}
-                      placeholder="טלפון"
-                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
-                    <input value={proForm.region} onChange={e => setProForm(f => ({ ...f, region: e.target.value }))}
-                      placeholder="אזור (מרכז, צפון, דרום...)"
-                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
-                    <input type="number" value={proForm.sort_order}
-                      onChange={e => setProForm(f => ({ ...f, sort_order: e.target.value }))}
-                      placeholder="סדר תצוגה"
-                      className="px-3 py-2 rounded-xl border text-sm outline-none" style={inputSty} />
-                  </div>
-                  <div className="flex gap-2">
-                    <button type="submit" disabled={isPending}
-                      className="px-5 py-2 rounded-xl text-sm font-semibold text-white flex items-center gap-2 disabled:opacity-60"
-                      style={{ background: '#7F5268' }}>
-                      {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : null}שמירה
-                    </button>
-                    <button type="button" onClick={() => setShowProForm(false)}
-                      className="px-5 py-2 rounded-xl text-sm border"
-                      style={{ borderColor: 'var(--border)', color: 'var(--text)' }}>ביטול</button>
-                  </div>
-                </form>
+                <AdminProfessionalForm
+                  key={editingPro?.id ?? 'new'}
+                  initial={editingPro}
+                  onToast={showToast}
+                  onCancel={() => { setShowProForm(false); setEditingPro(null) }}
+                  onSaved={() => window.location.reload()}
+                />
               )}
 
               <div className="space-y-2">
@@ -891,9 +836,14 @@ export default function AdminClient({ users: initialUsers, stats, professionals:
                 ) : pros.map(p => (
                   <div key={p.id} className="flex items-start justify-between gap-3 px-4 py-3 rounded-xl border"
                     style={{ borderColor: 'var(--border)' }}>
+                    <ProAvatar pro={p} size={44} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-semibold" style={{ color: 'var(--text)' }}>{p.name}</p>
+                        {p.is_active === false && (
+                          <span className="text-xs px-2 py-0.5 rounded-full font-medium"
+                            style={{ background: 'rgba(156,163,175,0.2)', color: '#6B7280' }}>מוסתר</span>
+                        )}
                         {p.title && (
                           <span className="text-xs px-2 py-0.5 rounded-full font-medium"
                             style={{ background: 'rgba(127,82,104,0.1)', color: '#7F5268' }}>{p.title}</span>
